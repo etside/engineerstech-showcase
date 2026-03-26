@@ -1,3 +1,5 @@
+import etLogo from "@/assets/et-logo-white.png";
+
 export default function FooterSection({ onDownloadPDF }: { onDownloadPDF: () => void }) {
   return (
     <footer id="contact" className="bg-secondary text-secondary-foreground">
