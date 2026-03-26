@@ -49,7 +49,7 @@ export default function FooterSection({ onDownloadPDF }: { onDownloadPDF: () => 
                 <img
                   src={etLogo}
                   alt="engineersTech"
-                  className="h-10 w-auto object-contain [filter:invert(1)_sepia(1)_saturate(3)_hue-rotate(190deg)_brightness(0.85)]"
+                  className="h-10 w-auto object-contain"
                 />
               </div>
               <p className="text-secondary-foreground/70 text-sm leading-relaxed max-w-xs mb-4">
