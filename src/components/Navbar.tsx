@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import etLogo from "@/assets/et-logo-white.png";
 
 const navItems = [
   { label: "About", href: "#about" },
@@ -29,18 +30,12 @@ export default function Navbar({ onDownloadPDF }: { onDownloadPDF: () => void })
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16 md:h-18">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm" style={{ background: "hsl(217 91% 55%)" }}>
-              eT
-            </div>
-            <div className="leading-tight">
-              <div className={`font-black text-lg tracking-tight transition-colors ${scrolled ? "text-foreground" : "text-white"}`}>
-                engineers<span style={{ color: "hsl(217 91% 55%)" }}>Tech</span>
-              </div>
-              <div className={`text-[10px] font-medium transition-colors ${scrolled ? "text-muted-foreground" : "text-white/70"}`}>
-                #drivenByEngineers
-              </div>
-            </div>
+          <a href="#" className="flex items-center group">
+            <img
+              src={etLogo}
+              alt="engineersTech"
+              className={`h-9 w-auto object-contain transition-all duration-300 ${scrolled ? "[filter:invert(1)_sepia(1)_saturate(3)_hue-rotate(190deg)_brightness(0.85)]" : "brightness-100"}`}
+            />
           </a>
 
           {/* Desktop Nav */}

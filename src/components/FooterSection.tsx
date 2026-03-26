@@ -1,3 +1,5 @@
+import etLogo from "@/assets/et-logo-white.png";
+
 export default function FooterSection({ onDownloadPDF }: { onDownloadPDF: () => void }) {
   return (
     <footer id="contact" className="bg-secondary text-secondary-foreground">
@@ -43,16 +45,12 @@ export default function FooterSection({ onDownloadPDF }: { onDownloadPDF: () => 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
             {/* Brand */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black" style={{ background: "hsl(217 91% 55%)" }}>
-                  eT
-                </div>
-                <div>
-                  <div className="font-black text-xl text-secondary-foreground">
-                    engineers<span style={{ color: "hsl(217 91% 55%)" }}>Tech</span>
-                  </div>
-                  <div className="text-xs text-secondary-foreground/60">#drivenByEngineers</div>
-                </div>
+              <div className="mb-4">
+                <img
+                  src={etLogo}
+                  alt="engineersTech"
+                  className="h-10 w-auto object-contain"
+                />
               </div>
               <p className="text-secondary-foreground/70 text-sm leading-relaxed max-w-xs mb-4">
                 A software engineering company built by engineers. Delivering enterprise-grade solutions since 2017.
