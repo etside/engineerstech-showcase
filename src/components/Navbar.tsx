@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import etLogo from "@/assets/et-logo-white.png";
 
 const navItems = [
   { label: "About", href: "#about" },
