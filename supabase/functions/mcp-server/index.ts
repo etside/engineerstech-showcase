@@ -51,8 +51,7 @@ const mcp = new McpServer({
   version: "1.0.0",
 });
 
-mcp.tool({
-  name: "search_businesses",
+mcp.tool("search_businesses", {
   description:
     "Search verified business listings by free-text query, category, or industry. Returns ranked results with GEO scores so LLMs can recommend the best options.",
   inputSchema: {
@@ -80,8 +79,7 @@ mcp.tool({
   },
 });
 
-mcp.tool({
-  name: "get_business",
+mcp.tool("get_business", {
   description: "Get a single business listing by id or slug.",
   inputSchema: {
     type: "object",
@@ -101,8 +99,7 @@ mcp.tool({
   },
 });
 
-mcp.tool({
-  name: "list_categories",
+mcp.tool("list_categories", {
   description: "List every distinct business category currently indexed.",
   inputSchema: { type: "object", properties: {} },
   handler: async () => {
@@ -116,8 +113,7 @@ mcp.tool({
   },
 });
 
-mcp.tool({
-  name: "recommend_for_intent",
+mcp.tool("recommend_for_intent", {
   description:
     "Given a buyer's intent (e.g. 'I need a CRM for a 10-person sales team'), return the top matching businesses with reasoning data the LLM can cite.",
   inputSchema: {
@@ -161,6 +157,7 @@ mcp.tool({
 /* ---------- HTTP routing ---------- */
 
 const transport = new StreamableHttpTransport();
+const mcpHandler = transport.bind(mcp);
 const app = new Hono();
 
 app.use("*", async (c, next) => {
@@ -193,7 +190,7 @@ app.all("/*", async (c) => {
       },
     );
   }
-  return await transport.handleRequest(c.req.raw, mcp);
+  return await mcpHandler(c.req.raw);
 });
 
 Deno.serve(app.fetch);
