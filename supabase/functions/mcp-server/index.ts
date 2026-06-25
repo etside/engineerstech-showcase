@@ -168,11 +168,13 @@ app.use("*", async (c, next) => {
   for (const [k, v] of Object.entries(corsHeaders)) c.res.headers.set(k, v);
 });
 
-// Health check (no auth) — handy for the admin panel "test connection" button.
-app.get("/health", (c) => c.json({ ok: true, server: "geoListed-mcp" }));
-
 // MCP endpoint — requires bearer token matching the active mcp_config row.
+// Supabase routes the function as /mcp-server/*, so match any path and gate auth manually.
 app.all("/*", async (c) => {
+  // Health check (no auth) — used by the admin panel "test connection" button.
+  if (c.req.method === "GET" && new URL(c.req.url).pathname.endsWith("/health")) {
+    return c.json({ ok: true, server: "geoListed-mcp" });
+  }
   const cfg = await loadActiveConfig();
   if (!cfg) {
     return c.json({ error: "MCP server not configured" }, 503);
