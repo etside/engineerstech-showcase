@@ -104,6 +104,36 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_config: {
+        Row: {
+          allow_write: boolean
+          api_token: string
+          created_at: string
+          enabled: boolean
+          id: string
+          server_name: string
+          updated_at: string
+        }
+        Insert: {
+          allow_write?: boolean
+          api_token: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          server_name?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_write?: boolean
+          api_token?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          server_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
