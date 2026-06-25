@@ -1,9 +1,16 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Bot, Search, Star, ShieldCheck, Zap, BarChart3, Globe2, MessageSquare, Award, TrendingUp } from "lucide-react";
+import * as Icons from "lucide-react";
+import { ArrowRight, Sparkles, Bot, Search, Star, ShieldCheck, Zap, BarChart3, Globe2, MessageSquare, Award, TrendingUp, LayoutGrid } from "lucide-react";
 import BusinessCard from "@/components/BusinessCard";
 import TrustMarquee from "@/components/TrustMarquee";
 import JsonLd from "@/components/JsonLd";
 import { businesses } from "@/data/mockBusinesses";
+import { supabase } from "@/integrations/supabase/client";
+
+function toPascal(s: string) {
+  return s.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
+}
 
 const stats = [
   { value: "12k+", label: "Verified Businesses" },
@@ -23,6 +30,13 @@ const aiFeatures = [
 
 export default function Home() {
   const featured = businesses.filter((b) => b.is_featured).slice(0, 3);
+  const [cats, setCats] = useState<{ slug: string; name: string; icon: string | null }[]>([]);
+
+  useEffect(() => {
+    supabase.from("categories").select("slug,name,icon").order("name").limit(12).then(({ data }) => {
+      if (data) setCats(data as never);
+    });
+  }, []);
 
   const orgJsonLd = {
     "@context": "https://schema.org",
@@ -123,6 +137,34 @@ export default function Home() {
           {featured.map((b) => <BusinessCard key={b.id} business={b} />)}
         </div>
       </section>
+
+      {/* CATEGORIES */}
+      {cats.length > 0 && (
+        <section className="container-tight py-24">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <div className="section-eyebrow mb-4"><LayoutGrid className="w-3.5 h-3.5" /> Browse by category</div>
+              <h2 className="display-2">Find the right <span className="gradient-text">expertise.</span></h2>
+            </div>
+            <Link to="/categories" className="btn-ghost text-sm hidden md:inline-flex">
+              All categories <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {cats.map((c) => {
+              const Icon = (Icons as Record<string, unknown>)[toPascal(c.icon || "folder")] as React.ComponentType<{ className?: string }> | undefined;
+              return (
+                <Link key={c.slug} to={`/listings?category=${c.slug}`} className="glass-card p-4 flex items-center gap-3 hover:border-primary/50 transition-all group">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20">
+                    {Icon ? <Icon className="w-4 h-4 text-primary-light" /> : <Icons.Folder className="w-4 h-4 text-primary-light" />}
+                  </div>
+                  <span className="text-sm font-medium truncate">{c.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* HOW IT WORKS */}
       <section className="container-tight py-24">
