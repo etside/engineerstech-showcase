@@ -14,9 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_recommendations_log: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          id: string
+          intent: string | null
+          position: number | null
+          score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          id?: string
+          intent?: string | null
+          position?: number | null
+          score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          id?: string
+          intent?: string | null
+          position?: number | null
+          score?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_recommendations_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          business_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key: string
+          last_used: string | null
+          name: string | null
+          permissions: string[]
+          rate_limit: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          last_used?: string | null
+          name?: string | null
+          permissions?: string[]
+          rate_limit?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          last_used?: string | null
+          name?: string | null
+          permissions?: string[]
+          rate_limit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_claims: {
+        Row: {
+          business_id: string
+          created_at: string
+          evidence: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_claims_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
+          ai_summary: Json | null
+          ai_summary_updated_at: string | null
           category: string
+          claimed_by: string | null
           country: string | null
           cover_url: string | null
           created_at: string
@@ -28,6 +157,7 @@ export type Database = {
           hourly_rate: string | null
           id: string
           industry: string | null
+          is_active: boolean
           is_featured: boolean | null
           is_verified: boolean | null
           location: string | null
@@ -38,14 +168,21 @@ export type Database = {
           phone: string | null
           rating: number | null
           review_count: number | null
+          search_vector: unknown
           services: string[] | null
           slug: string
           tagline: string | null
+          tier: string
           updated_at: string
+          verification_docs: string[] | null
+          verification_status: string
           website: string | null
         }
         Insert: {
+          ai_summary?: Json | null
+          ai_summary_updated_at?: string | null
           category: string
+          claimed_by?: string | null
           country?: string | null
           cover_url?: string | null
           created_at?: string
@@ -57,6 +194,7 @@ export type Database = {
           hourly_rate?: string | null
           id?: string
           industry?: string | null
+          is_active?: boolean
           is_featured?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -67,14 +205,21 @@ export type Database = {
           phone?: string | null
           rating?: number | null
           review_count?: number | null
+          search_vector?: unknown
           services?: string[] | null
           slug: string
           tagline?: string | null
+          tier?: string
           updated_at?: string
+          verification_docs?: string[] | null
+          verification_status?: string
           website?: string | null
         }
         Update: {
+          ai_summary?: Json | null
+          ai_summary_updated_at?: string | null
           category?: string
+          claimed_by?: string | null
           country?: string | null
           cover_url?: string | null
           created_at?: string
@@ -86,6 +231,7 @@ export type Database = {
           hourly_rate?: string | null
           id?: string
           industry?: string | null
+          is_active?: boolean
           is_featured?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -96,11 +242,66 @@ export type Database = {
           phone?: string | null
           rating?: number | null
           review_count?: number | null
+          search_vector?: unknown
           services?: string[] | null
           slug?: string
           tagline?: string | null
+          tier?: string
           updated_at?: string
+          verification_docs?: string[] | null
+          verification_status?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      geo_feed_cache: {
+        Row: {
+          cache_key: string
+          expires_at: string
+          generated_at: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          cache_key: string
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          payload: Json
+        }
+        Update: {
+          cache_key?: string
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          payload?: Json
         }
         Relationships: []
       }
@@ -134,6 +335,98 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_configs: {
+        Row: {
+          blacklisted_llms: string[]
+          business_id: string
+          context_window: number
+          custom_prompt: string | null
+          expose_fields: string[]
+          id: string
+          include_logo: boolean
+          is_active: boolean
+          updated_at: string
+          whitelisted_llms: string[]
+        }
+        Insert: {
+          blacklisted_llms?: string[]
+          business_id: string
+          context_window?: number
+          custom_prompt?: string | null
+          expose_fields?: string[]
+          id?: string
+          include_logo?: boolean
+          is_active?: boolean
+          updated_at?: string
+          whitelisted_llms?: string[]
+        }
+        Update: {
+          blacklisted_llms?: string[]
+          business_id?: string
+          context_window?: number
+          custom_prompt?: string | null
+          expose_fields?: string[]
+          id?: string
+          include_logo?: boolean
+          is_active?: boolean
+          updated_at?: string
+          whitelisted_llms?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_configs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_tiers: {
+        Row: {
+          billing_period: string
+          created_at: string
+          display_order: number
+          features: Json
+          id: string
+          is_active: boolean
+          limits: Json
+          name: string
+          price_bdt: number | null
+          price_usd: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          billing_period?: string
+          created_at?: string
+          display_order?: number
+          features?: Json
+          id?: string
+          is_active?: boolean
+          limits?: Json
+          name: string
+          price_bdt?: number | null
+          price_usd?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          billing_period?: string
+          created_at?: string
+          display_order?: number
+          features?: Json
+          id?: string
+          is_active?: boolean
+          limits?: Json
+          name?: string
+          price_bdt?: number | null
+          price_usd?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -163,6 +456,115 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          author_id: string
+          body: string | null
+          business_id: string
+          created_at: string
+          helpful_count: number
+          id: string
+          rating: number
+          status: string
+          title: string | null
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          author_id: string
+          body?: string | null
+          business_id: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          rating: number
+          status?: string
+          title?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          author_id?: string
+          body?: string | null
+          business_id?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          rating?: number
+          status?: string
+          title?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number | null
+          auto_renew: boolean
+          business_id: string
+          created_at: string
+          currency: string
+          id: string
+          raw_payload: Json | null
+          sslcz_tran_id: string | null
+          sslcz_val_id: string | null
+          status: string
+          tier: string
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          amount?: number | null
+          auto_renew?: boolean
+          business_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          raw_payload?: Json | null
+          sslcz_tran_id?: string | null
+          sslcz_val_id?: string | null
+          status?: string
+          tier: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          amount?: number | null
+          auto_renew?: boolean
+          business_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          raw_payload?: Json | null
+          sslcz_tran_id?: string | null
+          sslcz_val_id?: string | null
+          status?: string
+          tier?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
