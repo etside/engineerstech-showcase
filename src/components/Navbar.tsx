@@ -1,118 +1,103 @@
-import { useState, useEffect } from "react";
-import etLogo from "@/assets/et-logo-white.png";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Menu, X, Sparkles } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
+import { cn } from "@/lib/utils";
 
-const navItems = [
-  { label: "About", href: "#about" },
-  { label: "Vision & Mission", href: "#vision-mission" },
-  { label: "Products", href: "#products" },
-  { label: "Services", href: "#services" },
-  { label: "Why Us", href: "#why-us" },
-  { label: "Clients", href: "#clients" },
-  { label: "Contact", href: "#contact" },
+const links = [
+  { to: "/listings", label: "Listings" },
+  { to: "/services", label: "Services" },
+  { to: "/pricing", label: "Pricing" },
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
 ];
 
-export default function Navbar({ onDownloadPDF }: { onDownloadPDF: () => void }) {
+export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
 
+  useEffect(() => setMenuOpen(false), [pathname]);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-border" : "bg-transparent"
-      }`}
+      className={cn(
+        "fixed top-0 inset-x-0 z-50 transition-all duration-500 ease-spring",
+        scrolled ? "bg-background/80 backdrop-blur-xl border-b border-border/60" : "bg-transparent"
+      )}
     >
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between h-16 md:h-18">
-          {/* Logo */}
-          <a href="#" className="flex items-center group">
-            <img
-              src={etLogo}
-              alt="engineersTech"
-              className={`h-9 w-auto object-contain transition-all duration-300 ${scrolled ? "[filter:invert(1)_sepia(1)_saturate(3)_hue-rotate(190deg)_brightness(0.85)]" : "brightness-100"}`}
-            />
-          </a>
+      <div className="container-tight">
+        <div className="h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-primary/30 group-hover:scale-105 transition-transform ease-spring">
+              <Sparkles className="w-4 h-4 text-white" strokeWidth={2.5} />
+            </div>
+            <div className="leading-none">
+              <div className="font-display font-bold text-base tracking-tight text-foreground">
+                geo<span className="gradient-text">Listed</span>
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 font-medium tracking-wider uppercase">
+                AI Discovery
+              </div>
+            </div>
+          </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  scrolled ? "text-muted-foreground" : "text-white/80 hover:text-white"
-                }`}
+          <nav className="hidden lg:flex items-center gap-1">
+            {links.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-spring",
+                    isActive ? "text-foreground bg-muted/40" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                  )
+                }
               >
-                {item.label}
-              </a>
+                {l.label}
+              </NavLink>
             ))}
           </nav>
 
-          {/* CTA */}
-          <div className="hidden lg:flex items-center gap-3">
-            <button onClick={onDownloadPDF} className="btn-outline text-sm py-2 px-4" style={scrolled ? {} : { borderColor: "white", color: "white" }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Download Brochure
-            </button>
-            <a
-              href="https://engineerstechbd.com/contact"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary text-sm py-2 px-5"
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link to="/auth" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Sign in</Link>
+            <Link to="/auth?mode=signup" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">List your business</Link>
+            <button
+              type="button"
+              className="lg:hidden w-10 h-10 inline-flex items-center justify-center rounded-xl border border-border bg-card"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Toggle menu"
             >
-              Get Started
-            </a>
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className={`lg:hidden p-2 rounded-lg transition-colors ${scrolled ? "text-foreground" : "text-white"}`}
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-border shadow-lg animate-slide-up">
-          <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="text-sm font-medium py-3 px-4 rounded-lg hover:bg-muted text-foreground transition-colors"
+        <div className="lg:hidden border-t border-border/60 bg-background/95 backdrop-blur-xl animate-fade-in">
+          <div className="container-tight py-4 flex flex-col gap-1">
+            {links.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  cn("px-4 py-3 rounded-lg text-sm font-medium", isActive ? "bg-muted/40 text-foreground" : "text-muted-foreground")
+                }
               >
-                {item.label}
-              </a>
+                {l.label}
+              </NavLink>
             ))}
-            <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
-              <button onClick={() => { onDownloadPDF(); setMenuOpen(false); }} className="btn-outline justify-center">
-                Download Brochure
-              </button>
-              <a href="https://engineerstechbd.com/contact" target="_blank" rel="noopener noreferrer" className="btn-primary justify-center">
-                Get Started
-              </a>
+            <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/60">
+              <Link to="/auth" className="btn-ghost text-sm py-2.5">Sign in</Link>
+              <Link to="/auth?mode=signup" className="btn-gradient text-sm py-2.5">List business</Link>
             </div>
           </div>
         </div>
