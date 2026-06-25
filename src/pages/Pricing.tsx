@@ -1,41 +1,64 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Check, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { invokeFn } from "@/lib/fn";
 
-const tiers = [
-  { name: "Starter", price: "$0", period: "forever", desc: "Get your business on the directory.", cta: "Get started",
-    features: ["Basic verified profile","Up to 10 reviews","Standard JSON-LD output","Community support"], highlight: false },
-  { name: "Growth", price: "$49", period: "/mo", desc: "For vendors serious about AI discovery.", cta: "Start 14-day trial",
-    features: ["Featured placement in category","Unlimited reviews","Enhanced GEO optimization","AI review summarization","LLM visibility analytics","Priority moderation"], highlight: true },
-  { name: "Enterprise", price: "Custom", period: "", desc: "For multi-brand / multi-location teams.", cta: "Contact sales",
-    features: ["Multi-listing management","Dedicated LLM API quota","Custom JSON-LD schema","SSO & SOC2 documents","Dedicated success manager","White-label review widgets"], highlight: false },
-];
+type Tier = { id: string; slug: string; name: string; price_usd: number; price_bdt: number | null; billing_period: string; features: string[]; display_order: number; is_active: boolean };
 
 export default function Pricing() {
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const nav = useNavigate();
+
+  useEffect(() => {
+    supabase.from("pricing_tiers").select("*").eq("is_active", true).order("display_order")
+      .then(({ data }) => setTiers(((data as unknown) as Tier[]) || []));
+  }, []);
+
+  async function choose(t: Tier) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { nav(`/auth?mode=signup&next=/pricing`); return; }
+    if (t.price_usd === 0) { nav("/submit"); return; }
+    if (t.slug === "enterprise") { nav("/contact"); return; }
+    const { data: bizes } = await supabase.from("businesses").select("id,name").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).limit(1);
+    if (!bizes?.length) { toast("Create a listing first"); nav("/submit"); return; }
+    try {
+      const res = await invokeFn<{ gatewayUrl: string }>("sslcz-init", { businessId: bizes[0].id, tierSlug: t.slug, returnOrigin: window.location.origin });
+      window.location.href = res.gatewayUrl;
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
   return (
     <section className="container-tight py-16">
       <div className="text-center max-w-2xl mx-auto mb-14">
         <div className="section-eyebrow mb-3 justify-center"><Sparkles className="w-3.5 h-3.5" /> Pricing</div>
         <h1 className="display-1 mb-4">Simple, AI-discovery-first <span className="gradient-text">pricing.</span></h1>
-        <p className="text-lg text-muted-foreground">Start free. Upgrade when AI starts driving you leads.</p>
+        <p className="text-lg text-muted-foreground">Start free. Upgrade when AI starts driving you leads. Pay in USD or BDT via SSLCommerz.</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-5">
-        {tiers.map((t) => (
-          <div key={t.name} className={`glass-card p-8 relative ${t.highlight ? "border-primary/60 shadow-2xl shadow-primary/20" : ""}`}>
-            {t.highlight && (
+        {tiers.map((t) => {
+          const featured = t.slug === "pro" || t.slug === "featured";
+          return (
+          <div key={t.id} className={`glass-card p-8 relative ${featured ? "border-primary/60 shadow-2xl shadow-primary/20" : ""}`}>
+            {featured && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider gradient-bg text-white">
                 Most popular
               </div>
             )}
             <div className="font-display font-semibold text-lg">{t.name}</div>
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="font-display font-bold text-4xl">{t.price}</span>
-              <span className="text-muted-foreground text-sm">{t.period}</span>
+              <span className="font-display font-bold text-4xl">{t.price_usd === 0 ? "Free" : t.slug === "enterprise" ? "Custom" : `$${t.price_usd}`}</span>
+              <span className="text-muted-foreground text-sm">{t.price_usd > 0 && t.slug !== "enterprise" ? `/${t.billing_period === "yearly" ? "yr" : "mo"}` : ""}</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-3 mb-6">{t.desc}</p>
-            <Link to="/auth?mode=signup" className={t.highlight ? "btn-gradient w-full justify-center" : "btn-ghost w-full justify-center"}>{t.cta}</Link>
+            {t.price_bdt && t.price_usd > 0 && <div className="text-xs text-muted-foreground">or ৳{t.price_bdt}/mo</div>}
+            <p className="text-sm text-muted-foreground mt-3 mb-6">{t.slug === "free" ? "Get listed for free." : t.slug === "pro" ? "For vendors serious about AI discovery." : t.slug === "featured" ? "Top placements + featured everywhere." : "Multi-brand / multi-location teams."}</p>
+            <button onClick={() => choose(t)} className={(featured ? "btn-gradient" : "btn-ghost") + " w-full justify-center"}>
+              {t.price_usd === 0 ? "Get started" : t.slug === "enterprise" ? "Contact sales" : "Upgrade"}
+            </button>
             <ul className="mt-7 space-y-2.5">
-              {t.features.map((f) => (
+              {(t.features || []).map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
                   <Check className="w-4 h-4 text-primary-light shrink-0 mt-0.5" />
                   <span>{f}</span>
@@ -43,8 +66,12 @@ export default function Pricing() {
               ))}
             </ul>
           </div>
-        ))}
+        );
+        })}
       </div>
+      <p className="text-xs text-muted-foreground text-center mt-8">
+        Already a member? <Link to="/dashboard" className="underline">Manage subscriptions →</Link>
+      </p>
     </section>
   );
 }
