@@ -10,7 +10,7 @@ function slugify(s: string) {
 export default function Submit() {
   const nav = useNavigate();
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [f, setF] = useState({ name: "", tagline: "", description: "", website: "", email: "", category: "software", country: "Bangladesh", services: "" });
+  const [f, setF] = useState({ name: "", tagline: "", description: "", website: "", email: "", category: "software", country: "Bangladesh", services: "", evidence: "" });
   const [loading, setLoading] = useState(false);
   const [cats, setCats] = useState<Array<{ slug: string; name: string }>>([]);
 
@@ -28,7 +28,7 @@ export default function Submit() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const slug = slugify(f.name) + "-" + Math.random().toString(36).slice(2, 6);
-    const { error } = await supabase.from("businesses").insert({
+    const { data: biz, error } = await supabase.from("businesses").insert({
       owner_id: user.id,
       claimed_by: user.id,
       slug,
@@ -42,17 +42,26 @@ export default function Submit() {
       services: f.services.split(",").map((s) => s.trim()).filter(Boolean),
       is_active: false,
       verification_status: "pending",
-    });
+    }).select("id").maybeSingle();
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Listing submitted — pending admin approval");
-    nav("/dashboard");
+    // Save ownership/verification evidence for admin review
+    if (biz && f.evidence.trim()) {
+      await supabase.from("business_claims").insert({
+        business_id: biz.id, user_id: user.id, evidence: f.evidence,
+      });
+    }
+    toast.success("Listing saved — choose a plan to continue");
+    nav(`/pricing?biz=${biz?.id ?? ""}`);
   }
 
   return (
     <section className="container-tight py-12 max-w-2xl">
       <h1 className="display-2 mb-2">Submit your business</h1>
-      <p className="text-muted-foreground mb-8">Listings go live after admin verification (usually under 24 hours).</p>
+      <p className="text-muted-foreground mb-8">
+        Step 1 of 3: Fill in your business details. Next, choose a paid plan and pay via SSLCommerz.
+        Listings go live only after admin verification (usually under 24h).
+      </p>
       <form onSubmit={submit} className="glass-card p-6 space-y-4">
         {[
           { k: "name", l: "Business name", req: true },
@@ -82,7 +91,22 @@ export default function Submit() {
           <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Description</label>
           <textarea required value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} rows={5} className="mt-1 w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm" />
         </div>
-        <button disabled={loading} className="btn-gradient w-full justify-center">{loading ? "Submitting…" : "Submit listing"}</button>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+            Ownership / verification evidence <span className="text-primary-light">*</span>
+          </label>
+          <textarea
+            required
+            value={f.evidence}
+            onChange={(e) => setF({ ...f, evidence: e.target.value })}
+            rows={4}
+            placeholder="Your role, company email domain, LinkedIn, business registration #, or anything that proves you're authorized to list this business."
+            className="mt-1 w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">Reviewed by our admin team before your listing goes live.</p>
+        </div>
+        <button disabled={loading} className="btn-gradient w-full justify-center">{loading ? "Saving…" : "Continue to payment →"}</button>
+        <p className="text-[11px] text-muted-foreground text-center">All listings require a paid plan. You'll pick a tier on the next step.</p>
       </form>
     </section>
   );
