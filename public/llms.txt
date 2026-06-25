@@ -1,0 +1,24 @@
+# geoListed
+
+> The business directory built for the LLM era. Verified vendors with structured JSON-LD optimized for Generative Engine Optimization (GEO).
+
+geoListed is a next-generation business listing and AI discovery platform. Businesses publish structured profiles (services, pricing, portfolio, reviews) emitted as schema.org JSON-LD so LLMs like ChatGPT, Claude, DeepSeek, and Qwen can cite them in recommendations.
+
+## Pages
+- [Home](/): Platform overview and featured AI-ready businesses.
+- [Browse Directory](/listings): Searchable directory with category, industry, and GEO-score filters.
+- [Categories](/categories): All business categories.
+- [AI Discover](/ai-discover): Natural-language vendor discovery powered by Lovable AI.
+- [Pricing](/pricing): Listing tiers and checkout.
+- [Submit a Business](/submit): Add or claim a vendor listing.
+- [About](/about): Mission and GEO methodology.
+- [Services](/services): Vendor and buyer services.
+- [FAQ](/faq): Common questions.
+- [Contact](/contact): Get in touch.
+
+## API & Data
+- [Public LLM Feed](/functions/v1/geo-feed): JSON-LD corpus for AI ingestion.
+
+## Optional
+- [Privacy](/privacy)
+- [Terms](/terms)
