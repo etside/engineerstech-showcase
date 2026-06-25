@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeFn } from "@/lib/fn";
 
-type Tier = { id: string; slug: string; name: string; description: string | null; price_usd: number; price_bdt: number | null; billing_period: string; features: string[]; is_featured: boolean; display_order: number; is_active: boolean };
+type Tier = { id: string; slug: string; name: string; price_usd: number; price_bdt: number | null; billing_period: string; features: string[]; display_order: number; is_active: boolean };
 
 export default function Pricing() {
   const [tiers, setTiers] = useState<Tier[]>([]);
@@ -13,7 +13,7 @@ export default function Pricing() {
 
   useEffect(() => {
     supabase.from("pricing_tiers").select("*").eq("is_active", true).order("display_order")
-      .then(({ data }) => setTiers((data as Tier[]) || []));
+      .then(({ data }) => setTiers(((data as unknown) as Tier[]) || []));
   }, []);
 
   async function choose(t: Tier) {
@@ -38,9 +38,11 @@ export default function Pricing() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-5">
-        {tiers.map((t) => (
-          <div key={t.id} className={`glass-card p-8 relative ${t.is_featured ? "border-primary/60 shadow-2xl shadow-primary/20" : ""}`}>
-            {t.is_featured && (
+        {tiers.map((t) => {
+          const featured = t.slug === "pro" || t.slug === "featured";
+          return (
+          <div key={t.id} className={`glass-card p-8 relative ${featured ? "border-primary/60 shadow-2xl shadow-primary/20" : ""}`}>
+            {featured && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider gradient-bg text-white">
                 Most popular
               </div>
@@ -51,8 +53,8 @@ export default function Pricing() {
               <span className="text-muted-foreground text-sm">{t.price_usd > 0 && t.slug !== "enterprise" ? `/${t.billing_period === "yearly" ? "yr" : "mo"}` : ""}</span>
             </div>
             {t.price_bdt && t.price_usd > 0 && <div className="text-xs text-muted-foreground">or ৳{t.price_bdt}/mo</div>}
-            <p className="text-sm text-muted-foreground mt-3 mb-6">{t.description}</p>
-            <button onClick={() => choose(t)} className={(t.is_featured ? "btn-gradient" : "btn-ghost") + " w-full justify-center"}>
+            <p className="text-sm text-muted-foreground mt-3 mb-6">{t.slug === "free" ? "Get listed for free." : t.slug === "pro" ? "For vendors serious about AI discovery." : t.slug === "featured" ? "Top placements + featured everywhere." : "Multi-brand / multi-location teams."}</p>
+            <button onClick={() => choose(t)} className={(featured ? "btn-gradient" : "btn-ghost") + " w-full justify-center"}>
               {t.price_usd === 0 ? "Get started" : t.slug === "enterprise" ? "Contact sales" : "Upgrade"}
             </button>
             <ul className="mt-7 space-y-2.5">
@@ -64,7 +66,8 @@ export default function Pricing() {
               ))}
             </ul>
           </div>
-        ))}
+        );
+        })}
       </div>
       <p className="text-xs text-muted-foreground text-center mt-8">
         Already a member? <Link to="/dashboard" className="underline">Manage subscriptions →</Link>
