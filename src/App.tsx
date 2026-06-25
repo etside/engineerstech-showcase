@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import Dashboard from "./pages/Dashboard";
 import Submit from "./pages/Submit";
 import AiDiscover from "./pages/AiDiscover";
+import Categories from "./pages/Categories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/ai-discover" element={<AiDiscover />} />
+            <Route path="/categories" element={<Categories />} />
             <Route path="/submit" element={<Submit />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />

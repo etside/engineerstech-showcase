@@ -1,25 +1,43 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import BusinessCard from "@/components/BusinessCard";
 import JsonLd from "@/components/JsonLd";
 import { businesses, categories, industries } from "@/data/mockBusinesses";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Listings() {
+  const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [cat, setCat] = useState<string>("All");
+  const [cat, setCat] = useState<string>(params.get("category") || "All");
   const [ind, setInd] = useState<string>("All");
   const [sort, setSort] = useState<"geo" | "rating" | "reviews">("geo");
+  const [dbCats, setDbCats] = useState<{ slug: string; name: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from("categories").select("slug,name").order("name").then(({ data }) => {
+      if (data) setDbCats(data as { slug: string; name: string }[]);
+    });
+  }, []);
+
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    if (cat === "All") next.delete("category"); else next.set("category", cat);
+    setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cat]);
 
   const filtered = useMemo(() => {
+    const catName = dbCats.find((c) => c.slug === cat)?.name;
     let r = businesses.filter((b) => {
       const matchQ = !query || (b.name + " " + b.tagline + " " + b.services.join(" ")).toLowerCase().includes(query.toLowerCase());
-      const matchC = cat === "All" || b.category === cat;
+      const matchC = cat === "All" || b.category === cat || b.category === catName;
       const matchI = ind === "All" || b.industry === ind;
       return matchQ && matchC && matchI;
     });
     r = r.sort((a, b) => sort === "rating" ? b.rating - a.rating : sort === "reviews" ? b.review_count - a.review_count : b.geo_score - a.geo_score);
     return r;
-  }, [query, cat, ind, sort]);
+  }, [query, cat, ind, sort, dbCats]);
 
   // JSON-LD ItemList for LLM ingestion
   const itemListJsonLd = {
@@ -66,7 +84,9 @@ export default function Listings() {
           <div className="grid grid-cols-2 lg:flex gap-2">
             <select value={cat} onChange={(e) => setCat(e.target.value)} className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none">
               <option value="All">All Categories</option>
-              {categories.map((c) => <option key={c}>{c}</option>)}
+              {dbCats.length > 0
+                ? dbCats.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)
+                : categories.map((c) => <option key={c}>{c}</option>)}
             </select>
             <select value={ind} onChange={(e) => setInd(e.target.value)} className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none">
               <option value="All">All Industries</option>
