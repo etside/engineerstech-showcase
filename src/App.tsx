@@ -16,6 +16,10 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Auth from "./pages/Auth";
 import AdminMCP from "./pages/AdminMCP";
+import Admin from "./pages/Admin";
+import Dashboard from "./pages/Dashboard";
+import Submit from "./pages/Submit";
+import AiDiscover from "./pages/AiDiscover";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +43,10 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/ai-discover" element={<AiDiscover />} />
+            <Route path="/submit" element={<Submit />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/admin/mcp" element={<AdminMCP />} />
             <Route path="*" element={<NotFound />} />
           </Route>
