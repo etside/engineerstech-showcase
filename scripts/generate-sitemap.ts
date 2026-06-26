@@ -35,7 +35,10 @@ const staticEntries: Entry[] = [
 ];
 
 async function dynamicEntries(): Promise<Entry[]> {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.warn("sitemap: missing supabase env, skipping dynamic entries");
+    return [];
+  }
   try {
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
     const [cats, biz] = await Promise.all([
@@ -46,6 +49,7 @@ async function dynamicEntries(): Promise<Entry[]> {
         .eq("is_active", true)
         .limit(5000),
     ]);
+    console.log(`sitemap: cats=${cats.data?.length ?? 0} biz=${biz.data?.length ?? 0}`);
     const catEntries: Entry[] = (cats.data ?? []).flatMap((c: { slug: string; updated_at?: string }) => [
       { path: `/categories/${c.slug}`, changefreq: "daily", priority: "0.8", lastmod: c.updated_at },
       { path: `/listings?category=${c.slug}`, changefreq: "daily", priority: "0.6" },
