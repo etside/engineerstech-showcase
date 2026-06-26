@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Sparkles, ExternalLink, TrendingUp } from "lucide-react";
+import { Sparkles, ExternalLink, TrendingUp, CreditCard, ShieldCheck, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeFn } from "@/lib/fn";
 
@@ -9,8 +9,10 @@ type Biz = { id: string; slug: string; name: string; tier: string; verification_
 
 export default function Dashboard() {
   const [params] = useSearchParams();
+  const nav = useNavigate();
   const [items, setItems] = useState<Biz[]>([]);
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -23,6 +25,15 @@ export default function Dashboard() {
         .or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`)
         .order("updated_at", { ascending: false });
       setItems((data as Biz[]) || []);
+      const ids = (data || []).map((d: any) => d.id);
+      if (ids.length) {
+        const { data: subs } = await supabase
+          .from("subscriptions")
+          .select("business_id,status")
+          .in("business_id", ids)
+          .eq("status", "active");
+        setPaidIds(new Set((subs || []).map((s: any) => s.business_id)));
+      }
     })();
     const p = params.get("payment");
     if (p === "success") toast.success("Payment complete — subscription active");
@@ -61,8 +72,25 @@ export default function Dashboard() {
       )}
 
       <div className="grid gap-4">
-        {items.map((b) => (
+        {items.map((b) => {
+          const paid = paidIds.has(b.id);
+          const verified = b.verification_status === "verified";
+          const live = b.is_active && verified && paid;
+          return (
           <div key={b.id} className="glass-card p-5">
+            {!live && (
+              <div className="mb-4 grid sm:grid-cols-3 gap-2 text-xs">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${paid ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-amber-500/30 bg-amber-500/10 text-amber-400"}`}>
+                  <CreditCard className="w-3.5 h-3.5" /> {paid ? "Payment complete" : "Payment required"}
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${verified ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-amber-500/30 bg-amber-500/10 text-amber-400"}`}>
+                  <ShieldCheck className="w-3.5 h-3.5" /> {verified ? "Admin verified" : "Awaiting admin verification"}
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${live ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-muted-foreground/20 bg-muted/30 text-muted-foreground"}`}>
+                  <Clock className="w-3.5 h-3.5" /> {live ? "Live in directory" : "Not yet live"}
+                </div>
+              </div>
+            )}
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -81,12 +109,16 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-2">
                 <Link to={`/business/${b.slug}`} className="btn-ghost text-xs"><ExternalLink className="w-3 h-3" /> View</Link>
                 <button onClick={() => regen(b.id)} className="btn-ghost text-xs"><Sparkles className="w-3 h-3" /> Refresh AI summary</button>
-                {b.tier === "free" && <button onClick={() => upgrade(b.id, "pro")} className="btn-gradient text-xs">Upgrade to Pro</button>}
-                {b.tier === "pro" && <button onClick={() => upgrade(b.id, "featured")} className="btn-gradient text-xs">Upgrade to Featured</button>}
+                {!paid
+                  ? <button onClick={() => nav(`/pricing?biz=${b.id}`)} className="btn-gradient text-xs"><CreditCard className="w-3 h-3" /> Pay & activate</button>
+                  : b.tier === "pro"
+                    ? <button onClick={() => upgrade(b.id, "featured")} className="btn-gradient text-xs">Upgrade to Featured</button>
+                    : null}
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
