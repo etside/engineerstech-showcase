@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Menu, X, Sparkles } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 const links = [
   { to: "/listings", label: "Listings" },
@@ -17,6 +18,8 @@ const links = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -26,6 +29,21 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    const apply = async (u: any) => {
+      setUser(u ? { id: u.id, email: u.email } : null);
+      if (u) {
+        const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.id);
+        setIsAdmin((data || []).some((r: any) => r.role === "admin"));
+      } else setIsAdmin(false);
+    };
+    supabase.auth.getUser().then(({ data }) => apply(data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => apply(s?.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function signOut() { await supabase.auth.signOut(); window.location.href = "/"; }
 
   return (
     <header
@@ -69,8 +87,19 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link to="/auth" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Sign in</Link>
-            <Link to="/auth?mode=signup" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">List your business</Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Dashboard</Link>
+                {isAdmin && <Link to="/admin" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Admin</Link>}
+                <button onClick={signOut} className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Sign out</button>
+                <Link to="/submit" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">+ Add listing</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/auth" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Sign in</Link>
+                <Link to="/auth?mode=signup" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">List your business</Link>
+              </>
+            )}
             <button
               type="button"
               className="lg:hidden w-10 h-10 inline-flex items-center justify-center rounded-xl border border-border bg-card"
@@ -97,10 +126,19 @@ export default function Navbar() {
                 {l.label}
               </NavLink>
             ))}
-            <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/60">
-              <Link to="/auth" className="btn-ghost text-sm py-2.5">Sign in</Link>
-              <Link to="/auth?mode=signup" className="btn-gradient text-sm py-2.5">List business</Link>
-            </div>
+            {user ? (
+              <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/60">
+                <Link to="/dashboard" className="btn-ghost text-sm py-2.5">Dashboard</Link>
+                {isAdmin && <Link to="/admin" className="btn-ghost text-sm py-2.5">Admin</Link>}
+                <Link to="/submit" className="btn-gradient text-sm py-2.5 col-span-2">+ Add listing</Link>
+                <button onClick={signOut} className="btn-ghost text-sm py-2.5 col-span-2">Sign out</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/60">
+                <Link to="/auth" className="btn-ghost text-sm py-2.5">Sign in</Link>
+                <Link to="/auth?mode=signup" className="btn-gradient text-sm py-2.5">List business</Link>
+              </div>
+            )}
           </div>
         </div>
       )}
