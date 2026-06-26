@@ -101,33 +101,48 @@ export type Database = {
       }
       business_claims: {
         Row: {
+          additional_docs_requested: string | null
           business_id: string
+          claim_type: string
           created_at: string
           evidence: string | null
+          evidence_docs: string[] | null
           id: string
+          rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          updated_at: string
           user_id: string
         }
         Insert: {
+          additional_docs_requested?: string | null
           business_id: string
+          claim_type?: string
           created_at?: string
           evidence?: string | null
+          evidence_docs?: string[] | null
           id?: string
+          rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
+          additional_docs_requested?: string | null
           business_id?: string
+          claim_type?: string
           created_at?: string
           evidence?: string | null
+          evidence_docs?: string[] | null
           id?: string
+          rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -280,6 +295,57 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      claim_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string
+          business_id: string
+          claim_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          notes: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string
+          business_id: string
+          claim_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string
+          business_id?: string
+          claim_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_audit_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_audit_log_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "business_claims"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       geo_feed_cache: {
         Row: {
@@ -625,6 +691,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      refresh_business_active: {
+        Args: { _business_id: string }
+        Returns: undefined
       }
     }
     Enums: {
