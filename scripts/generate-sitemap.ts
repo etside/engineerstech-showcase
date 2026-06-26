@@ -42,7 +42,7 @@ async function dynamicEntries(): Promise<Entry[]> {
   try {
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
     const [cats, biz] = await Promise.all([
-      db.from("categories").select("slug,updated_at"),
+      db.from("categories").select("slug"),
       db
         .from("businesses")
         .select("slug,updated_at,is_active")
@@ -50,8 +50,8 @@ async function dynamicEntries(): Promise<Entry[]> {
         .limit(5000),
     ]);
     console.log(`sitemap: cats=${cats.data?.length ?? 0} biz=${biz.data?.length ?? 0}`);
-    const catEntries: Entry[] = (cats.data ?? []).flatMap((c: { slug: string; updated_at?: string }) => [
-      { path: `/categories/${c.slug}`, changefreq: "daily", priority: "0.8", lastmod: c.updated_at },
+    const catEntries: Entry[] = (cats.data ?? []).flatMap((c: { slug: string }) => [
+      { path: `/categories/${c.slug}`, changefreq: "daily", priority: "0.8" },
       { path: `/listings?category=${c.slug}`, changefreq: "daily", priority: "0.6" },
     ]);
     const bizEntries: Entry[] = (biz.data ?? []).map((b: { slug: string; updated_at?: string }) => ({
