@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Sparkles, ExternalLink, TrendingUp, CreditCard, ShieldCheck, Clock } from "lucide-react";
+import { Sparkles, ExternalLink, TrendingUp, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeFn } from "@/lib/fn";
+import OnboardingStepper from "@/components/OnboardingStepper";
+import VerificationPanel from "@/components/VerificationPanel";
 
 type Biz = { id: string; slug: string; name: string; tier: string; verification_status: string; rating: number; review_count: number; geo_score: number; is_active: boolean };
 
@@ -33,13 +35,25 @@ export default function Dashboard() {
           .in("business_id", ids)
           .eq("status", "active");
         setPaidIds(new Set((subs || []).map((s: any) => s.business_id)));
+        // realtime: refresh on any change to my businesses
+        const ch = supabase.channel(`biz-${user.id}`)
+          .on("postgres_changes", { event: "UPDATE", schema: "public", table: "businesses" }, (payload: any) => {
+            if (!ids.includes(payload.new?.id)) return;
+            setItems((prev) => prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p));
+          })
+          .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, async () => {
+            const { data: s2 } = await supabase.from("subscriptions").select("business_id,status").in("business_id", ids).eq("status", "active");
+            setPaidIds(new Set((s2 || []).map((s: any) => s.business_id)));
+          })
+          .subscribe();
+        return () => { supabase.removeChannel(ch); };
       }
     })();
     const p = params.get("payment");
     if (p === "success") toast.success("Payment complete — subscription active");
     else if (p === "fail") toast.error("Payment failed");
     else if (p === "cancel") toast("Payment cancelled");
-  }, []);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   async function regen(id: string) {
     toast.promise(invokeFn("geo-summarize", { businessId: id }), { loading: "Summarizing reviews…", success: "AI summary refreshed", error: (e) => (e as Error).message });
@@ -78,19 +92,9 @@ export default function Dashboard() {
           const live = b.is_active && verified && paid;
           return (
           <div key={b.id} className="glass-card p-5">
-            {!live && (
-              <div className="mb-4 grid sm:grid-cols-3 gap-2 text-xs">
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${paid ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-amber-500/30 bg-amber-500/10 text-amber-400"}`}>
-                  <CreditCard className="w-3.5 h-3.5" /> {paid ? "Payment complete" : "Payment required"}
-                </div>
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${verified ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-amber-500/30 bg-amber-500/10 text-amber-400"}`}>
-                  <ShieldCheck className="w-3.5 h-3.5" /> {verified ? "Admin verified" : "Awaiting admin verification"}
-                </div>
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${live ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-muted-foreground/20 bg-muted/30 text-muted-foreground"}`}>
-                  <Clock className="w-3.5 h-3.5" /> {live ? "Live in directory" : "Not yet live"}
-                </div>
-              </div>
-            )}
+            <div className="mb-4">
+              <OnboardingStepper state={{ submitted: true, paid, verified, live }} />
+            </div>
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -115,6 +119,9 @@ export default function Dashboard() {
                     ? <button onClick={() => upgrade(b.id, "featured")} className="btn-gradient text-xs">Upgrade to Featured</button>
                     : null}
               </div>
+            </div>
+            <div className="mt-4">
+              <VerificationPanel businessId={b.id} />
             </div>
           </div>
           );
