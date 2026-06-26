@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,21 +10,32 @@ type Tier = { id: string; slug: string; name: string; price_usd: number; price_b
 export default function Pricing() {
   const [tiers, setTiers] = useState<Tier[]>([]);
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const bizParam = params.get("biz");
 
   useEffect(() => {
     supabase.from("pricing_tiers").select("*").eq("is_active", true).order("display_order")
-      .then(({ data }) => setTiers(((data as unknown) as Tier[]) || []));
+      .then(({ data }) => {
+        let rows = ((data as unknown) as Tier[]) || [];
+        // Payment is mandatory for every new listing — hide free tier in submission flow
+        if (bizParam) rows = rows.filter((t) => t.price_usd > 0);
+        setTiers(rows);
+      });
   }, []);
 
   async function choose(t: Tier) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { nav(`/auth?mode=signup&next=/pricing`); return; }
-    if (t.price_usd === 0) { nav("/submit"); return; }
     if (t.slug === "enterprise") { nav("/contact"); return; }
-    const { data: bizes } = await supabase.from("businesses").select("id,name").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).limit(1);
-    if (!bizes?.length) { toast("Create a listing first"); nav("/submit"); return; }
+    if (t.price_usd === 0) { nav("/submit"); return; }
+    let businessId = bizParam;
+    if (!businessId) {
+      const { data: bizes } = await supabase.from("businesses").select("id,name").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).limit(1);
+      if (!bizes?.length) { toast("Create a listing first"); nav("/submit"); return; }
+      businessId = bizes[0].id;
+    }
     try {
-      const res = await invokeFn<{ gatewayUrl: string }>("sslcz-init", { businessId: bizes[0].id, tierSlug: t.slug, returnOrigin: window.location.origin });
+      const res = await invokeFn<{ gatewayUrl: string }>("sslcz-init", { businessId, tierSlug: t.slug, returnOrigin: window.location.origin });
       window.location.href = res.gatewayUrl;
     } catch (e) { toast.error((e as Error).message); }
   }
@@ -33,8 +44,14 @@ export default function Pricing() {
     <section className="container-tight py-16">
       <div className="text-center max-w-2xl mx-auto mb-14">
         <div className="section-eyebrow mb-3 justify-center"><Sparkles className="w-3.5 h-3.5" /> Pricing</div>
-        <h1 className="display-1 mb-4">Simple, AI-discovery-first <span className="gradient-text">pricing.</span></h1>
-        <p className="text-lg text-muted-foreground">Start free. Upgrade when AI starts driving you leads. Pay in USD or BDT via SSLCommerz.</p>
+        <h1 className="display-1 mb-4">
+          {bizParam ? <>Step 2 of 3 — <span className="gradient-text">Choose your plan</span></> : <>Simple, AI-discovery-first <span className="gradient-text">pricing.</span></>}
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          {bizParam
+            ? "All listings require a paid plan. After payment, our admin team verifies your submission and your listing goes live."
+            : "Every listing on geoListed is paid. Pay in USD or BDT via SSLCommerz."}
+        </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-5">
