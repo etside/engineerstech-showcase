@@ -72,6 +72,8 @@ Deno.serve(async (req) => {
 
     if (sub) {
       await s.from("businesses").update({ tier: sub.tier, updated_at: new Date().toISOString() }).eq("id", sub.business_id);
+      // Activate listing only if verified AND paid
+      await s.rpc("refresh_business_active", { _business_id: sub.business_id } as any).catch(() => null);
     }
 
     return status ? redirect(origin, "success", tranId) : new Response("OK", { headers: corsHeaders });
