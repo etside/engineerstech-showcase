@@ -21,6 +21,7 @@ import Dashboard from "./pages/Dashboard";
 import Submit from "./pages/Submit";
 import AiDiscover from "./pages/AiDiscover";
 import Categories from "./pages/Categories";
+import CategoryDetail from "./pages/CategoryDetail";
 import ForVendors from "./pages/ForVendors";
 import HowItWorks from "./pages/HowItWorks";
 import Leaderboards from "./pages/Leaderboards";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/ai-discover" element={<AiDiscover />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/categories/:slug" element={<CategoryDetail />} />
             <Route path="/submit" element={<Submit />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />

@@ -18,6 +18,9 @@ geoListed is a next-generation business listing and AI discovery platform. Busin
 
 ## API & Data
 - [Public LLM Feed](/functions/v1/geo-feed): JSON-LD corpus for AI ingestion.
+- [MCP Server](/functions/v1/mcp-server): ChatGPT Apps / Claude / Lovable compatible MCP endpoint. Bearer auth; tools: search_businesses, get_business, list_categories, recommend_for_intent.
+- [Sitemap](/sitemap.xml): All indexable URLs including per-category pages at /categories/{slug}.
+- [Robots](/robots.txt): Crawler policy (open to GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, DeepSeekBot, Qwen-Bot).
 
 ## Optional
 - [Privacy](/privacy)
