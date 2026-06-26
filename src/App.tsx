@@ -21,6 +21,11 @@ import Dashboard from "./pages/Dashboard";
 import Submit from "./pages/Submit";
 import AiDiscover from "./pages/AiDiscover";
 import Categories from "./pages/Categories";
+import ForVendors from "./pages/ForVendors";
+import HowItWorks from "./pages/HowItWorks";
+import Leaderboards from "./pages/Leaderboards";
+import Resources from "./pages/Resources";
+import ApiDocs from "./pages/ApiDocs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +55,11 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/mcp" element={<AdminMCP />} />
+            <Route path="/for-vendors" element={<ForVendors />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/leaderboards" element={<Leaderboards />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/api-docs" element={<ApiDocs />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
