@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    let ch: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setAuthed(false); return; }
@@ -36,7 +37,7 @@ export default function Dashboard() {
           .eq("status", "active");
         setPaidIds(new Set((subs || []).map((s: any) => s.business_id)));
         // realtime: refresh on any change to my businesses
-        const ch = supabase.channel(`biz-${user.id}`)
+        ch = supabase.channel(`biz-${user.id}-${Math.random().toString(36).slice(2,8)}`)
           .on("postgres_changes", { event: "UPDATE", schema: "public", table: "businesses" }, (payload: any) => {
             if (!ids.includes(payload.new?.id)) return;
             setItems((prev) => prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p));
@@ -46,13 +47,13 @@ export default function Dashboard() {
             setPaidIds(new Set((s2 || []).map((s: any) => s.business_id)));
           })
           .subscribe();
-        return () => { supabase.removeChannel(ch); };
       }
     })();
     const p = params.get("payment");
     if (p === "success") toast.success("Payment complete — subscription active");
     else if (p === "fail") toast.error("Payment failed");
     else if (p === "cancel") toast("Payment cancelled");
+    return () => { if (ch) supabase.removeChannel(ch); };
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   async function regen(id: string) {
