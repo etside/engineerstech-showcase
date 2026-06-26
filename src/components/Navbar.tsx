@@ -8,11 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 const links = [
   { to: "/listings", label: "Listings" },
   { to: "/categories", label: "Categories" },
+  { to: "/leaderboards", label: "Leaderboards" },
   { to: "/ai-discover", label: "AI Discover" },
-  { to: "/services", label: "Services" },
+  { to: "/for-vendors", label: "For Vendors" },
+  { to: "/resources", label: "Resources" },
   { to: "/pricing", label: "Pricing" },
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
 ];
 
 export default function Navbar() {

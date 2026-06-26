@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.refresh_business_active(uuid) TO service_role;

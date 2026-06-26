@@ -75,30 +75,99 @@ function ListingsAdmin() {
 
 function ClaimsAdmin() {
   const [rows, setRows] = useState<any[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [docsReq, setDocsReq] = useState("");
+  const [audits, setAudits] = useState<Record<string, any[]>>({});
   async function load() {
-    const { data } = await supabase.from("business_claims").select("id,evidence,status,created_at,business_id,businesses(name,slug)").order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase.from("business_claims")
+      .select("id,evidence,status,rejection_reason,additional_docs_requested,claim_type,user_id,reviewed_at,created_at,business_id,businesses(name,slug)")
+      .order("created_at", { ascending: false }).limit(100);
     setRows(data || []);
   }
   useEffect(() => { load(); }, []);
-  async function decide(id: string, status: string, bizId: string, userId?: string) {
-    const { error } = await supabase.from("business_claims").update({ status, reviewed_at: new Date().toISOString() }).eq("id", id);
+  async function loadAudit(bizId: string) {
+    const { data } = await supabase.from("claim_audit_log")
+      .select("id,action,actor_role,notes,created_at").eq("business_id", bizId)
+      .order("created_at", { ascending: false });
+    setAudits((a) => ({ ...a, [bizId]: data || [] }));
+  }
+  async function decide(
+    claim: any,
+    status: "approved" | "rejected" | "needs_more_info",
+    extra: { rejection_reason?: string; additional_docs_requested?: string; notes?: string } = {},
+  ) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const patch: any = { status, reviewed_at: new Date().toISOString(), reviewed_by: user?.id };
+    if (extra.rejection_reason) patch.rejection_reason = extra.rejection_reason;
+    if (extra.additional_docs_requested) patch.additional_docs_requested = extra.additional_docs_requested;
+    const { error } = await supabase.from("business_claims").update(patch).eq("id", claim.id);
     if (error) return toast.error(error.message);
-    if (status === "approved" && userId) await supabase.from("businesses").update({ claimed_by: userId }).eq("id", bizId);
-    toast.success("Claim " + status); load();
+    if (status === "approved") {
+      await supabase.from("businesses").update({
+        claimed_by: claim.user_id,
+        verification_status: "verified",
+        is_verified: true,
+      }).eq("id", claim.business_id);
+      // Activate if also paid (RPC checks both)
+      await (supabase.rpc as any)("refresh_business_active", { _business_id: claim.business_id });
+    } else if (status === "rejected") {
+      await supabase.from("businesses").update({ verification_status: "rejected", is_verified: false, is_active: false }).eq("id", claim.business_id);
+    } else {
+      await supabase.from("businesses").update({ verification_status: "needs_more_info" }).eq("id", claim.business_id);
+    }
+    await supabase.from("claim_audit_log").insert({
+      claim_id: claim.id, business_id: claim.business_id, actor_id: user?.id, actor_role: "admin",
+      action: status, notes: extra.notes || extra.rejection_reason || extra.additional_docs_requested || null,
+    });
+    toast.success("Claim " + status.replace(/_/g, " "));
+    setOpenId(null); setReason(""); setDocsReq("");
+    load();
   }
   return (
     <div className="space-y-2">
       {rows.map((c) => (
         <div key={c.id} className="glass-card p-4 flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1">
-            <div className="font-semibold">{c.businesses?.name}</div>
+            <div className="font-semibold flex items-center gap-2">
+              <Link to={`/business/${c.businesses?.slug}`} className="hover:text-primary-light">{c.businesses?.name}</Link>
+              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">{c.claim_type}</span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">{c.evidence}</p>
-            <div className="text-[11px] text-muted-foreground mt-1">{c.status}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              Status: <span className="font-semibold">{c.status}</span>
+              {c.reviewed_at && <> · reviewed {new Date(c.reviewed_at).toLocaleString()}</>}
+            </div>
+            {c.rejection_reason && <div className="text-[11px] text-rose-400 mt-1">Rejection: {c.rejection_reason}</div>}
+            {c.additional_docs_requested && <div className="text-[11px] text-amber-400 mt-1">Requested: {c.additional_docs_requested}</div>}
+            <button onClick={() => { loadAudit(c.business_id); setOpenId(openId === c.id ? null : c.id); }}
+              className="text-[11px] text-primary-light hover:underline mt-2">
+              {openId === c.id ? "Hide" : "View"} audit trail
+            </button>
+            {openId === c.id && (
+              <ul className="mt-2 space-y-1 border-l-2 border-border pl-3">
+                {(audits[c.business_id] || []).map((a) => (
+                  <li key={a.id} className="text-[11px]">
+                    <span className="font-semibold capitalize">{a.action.replace(/_/g," ")}</span>
+                    <span className="text-muted-foreground"> · {a.actor_role} · {new Date(a.created_at).toLocaleString()}</span>
+                    {a.notes && <div className="text-muted-foreground">— {a.notes}</div>}
+                  </li>
+                ))}
+                {!(audits[c.business_id] || []).length && <li className="text-[11px] text-muted-foreground">No audit entries yet.</li>}
+              </ul>
+            )}
           </div>
-          {c.status === "pending" && (
+          {(c.status === "pending" || c.status === "needs_more_info") && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => decide(c.id, "approved", c.business_id)}>Approve</Button>
-              <Button size="sm" variant="outline" onClick={() => decide(c.id, "rejected", c.business_id)}>Reject</Button>
+              <Button size="sm" onClick={() => decide(c, "approved", { notes: "Approved by admin" })}>Approve</Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                const r = window.prompt("Reason for rejection:");
+                if (r) decide(c, "rejected", { rejection_reason: r });
+              }}>Reject</Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                const r = window.prompt("What additional documents are required?");
+                if (r) decide(c, "needs_more_info", { additional_docs_requested: r });
+              }}>Request docs</Button>
             </div>
           )}
         </div>

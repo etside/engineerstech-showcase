@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import OnboardingStepper from "@/components/OnboardingStepper";
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -47,9 +48,16 @@ export default function Submit() {
     if (error) return toast.error(error.message);
     // Save ownership/verification evidence for admin review
     if (biz && f.evidence.trim()) {
-      await supabase.from("business_claims").insert({
+      const { data: claim } = await supabase.from("business_claims").insert({
         business_id: biz.id, user_id: user.id, evidence: f.evidence,
-      });
+        status: "pending", claim_type: "initial",
+      }).select("id").maybeSingle();
+      if (claim) {
+        await supabase.from("claim_audit_log").insert({
+          claim_id: claim.id, business_id: biz.id, actor_id: user.id, actor_role: "owner",
+          action: "submitted", notes: "Initial submission with evidence",
+        });
+      }
     }
     toast.success("Listing saved — choose a plan to continue");
     nav(`/pricing?biz=${biz?.id ?? ""}`);
@@ -62,6 +70,9 @@ export default function Submit() {
         Step 1 of 3: Fill in your business details. Next, choose a paid plan and pay via SSLCommerz.
         Listings go live only after admin verification (usually under 24h).
       </p>
+      <div className="mb-6">
+        <OnboardingStepper state={{ submitted: false, paid: false, verified: false, live: false }} />
+      </div>
       <form onSubmit={submit} className="glass-card p-6 space-y-4">
         {[
           { k: "name", l: "Business name", req: true },
