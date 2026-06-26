@@ -2,6 +2,8 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 import { createClient } from "@supabase/supabase-js";
+import { config as loadEnv } from "dotenv";
+loadEnv();
 
 const BASE_URL = process.env.SITE_URL || "";
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
