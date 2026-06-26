@@ -60,7 +60,7 @@ export default function Categories() {
               return (
                 <Link
                   key={c.slug}
-                  to={`/listings?category=${c.slug}`}
+                  to={`/categories/${c.slug}`}
                   className="glass-card p-6 group hover:border-primary/50 transition-all"
                 >
                   <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
