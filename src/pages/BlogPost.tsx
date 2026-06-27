@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 
-type Post = { title: string; excerpt: string | null; content: string | null; cover_url: string | null; published_at: string | null; tags: string[] | null };
+type Post = { title: string; excerpt: string | null; body_md: string | null; cover_url: string | null; published_at: string | null; tags: string[] | null };
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -12,7 +12,7 @@ export default function BlogPost() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase.from("blog_posts").select("title,excerpt,content,cover_url,published_at,tags").eq("slug", slug!).eq("published", true).maybeSingle();
+      const { data } = await supabase.from("blog_posts").select("title,excerpt,body_md,cover_url,published_at,tags").eq("slug", slug!).eq("published", true).maybeSingle();
       setPost((data as Post) || null);
       setLoading(false);
     })();
@@ -50,7 +50,7 @@ export default function BlogPost() {
       {post.excerpt && <p className="text-lg text-muted-foreground mt-3">{post.excerpt}</p>}
       <div className="text-xs text-muted-foreground mt-2">{post.published_at ? new Date(post.published_at).toLocaleDateString() : ""}</div>
       <div className="prose prose-invert max-w-none mt-8">
-        <ReactMarkdown>{post.content || ""}</ReactMarkdown>
+        <ReactMarkdown>{post.body_md || ""}</ReactMarkdown>
       </div>
     </article>
   );
