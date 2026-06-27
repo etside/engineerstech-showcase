@@ -82,8 +82,8 @@ function Inner() {
     load();
   }
 
-  async function revokeRole(userId: string, role: string) {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+  async function revokeRole(userId: string, role: any) {
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role as any);
     if (error) return toast.error(error.message);
     toast.success("Revoked");
     load();
