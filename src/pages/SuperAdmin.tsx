@@ -163,10 +163,10 @@ function Inner() {
             <thead className="text-xs uppercase text-muted-foreground"><tr><th className="text-left py-2">User ID</th><th className="text-left">Role</th><th></th></tr></thead>
             <tbody>
               {users.map((u, i) => (
-                <tr key={i} className="border-t border-border/60">
+              <tr key={i} className="border-t border-border/60">
                   <td className="py-2 font-mono text-xs">{u.user_id}</td>
                   <td><span className="text-[10px] uppercase px-2 py-0.5 rounded bg-primary/15 text-primary-light border border-primary/30">{u.role}</span></td>
-                  <td className="text-right"><button onClick={() => revokeRole(u.user_id, u.role)} className="btn-ghost text-xs">Revoke</button></td>
+                  <td className="text-right"><button onClick={() => revokeRole(u.user_id, u.role as any)} className="btn-ghost text-xs">Revoke</button></td>
                 </tr>
               ))}
             </tbody>
