@@ -27,6 +27,9 @@ import HowItWorks from "./pages/HowItWorks";
 import Leaderboards from "./pages/Leaderboards";
 import Resources from "./pages/Resources";
 import ApiDocs from "./pages/ApiDocs";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +65,9 @@ const App = () => (
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/api-docs" element={<ApiDocs />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/super-admin" element={<SuperAdmin />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
