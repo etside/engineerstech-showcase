@@ -2,24 +2,27 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Menu, X, Sparkles } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import LanguageToggle from "./LanguageToggle";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
-const links = [
-  { to: "/listings", label: "Listings" },
-  { to: "/categories", label: "Categories" },
-  { to: "/leaderboards", label: "Leaderboards" },
-  { to: "/ai-discover", label: "AI Discover" },
-  { to: "/for-vendors", label: "For Vendors" },
-  { to: "/resources", label: "Resources" },
-  { to: "/pricing", label: "Pricing" },
-];
-
 export default function Navbar() {
+  const { t } = useTranslation();
+  const links = [
+    { to: "/listings", label: t("nav.listings") },
+    { to: "/categories", label: t("nav.categories") },
+    { to: "/leaderboards", label: t("nav.leaderboards") },
+    { to: "/ai-discover", label: t("nav.aiDiscover") },
+    { to: "/for-vendors", label: t("nav.forVendors") },
+    { to: "/blog", label: t("nav.blog") },
+    { to: "/pricing", label: t("nav.pricing") },
+  ];
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuper, setIsSuper] = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -35,8 +38,10 @@ export default function Navbar() {
       setUser(u ? { id: u.id, email: u.email } : null);
       if (u) {
         const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.id);
-        setIsAdmin((data || []).some((r: any) => r.role === "admin"));
-      } else setIsAdmin(false);
+        const roles = (data || []).map((r: any) => r.role);
+        setIsAdmin(roles.includes("admin") || roles.includes("super_admin"));
+        setIsSuper(roles.includes("super_admin"));
+      } else { setIsAdmin(false); setIsSuper(false); }
     };
     supabase.auth.getUser().then(({ data }) => apply(data.user));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => apply(s?.user ?? null));
@@ -86,18 +91,20 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <ThemeToggle />
             {user ? (
               <>
-                <Link to="/dashboard" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Dashboard</Link>
-                {isAdmin && <Link to="/admin" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Admin</Link>}
-                <button onClick={signOut} className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Sign out</button>
-                <Link to="/submit" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">+ Add listing</Link>
+                <Link to="/dashboard" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">{t("nav.dashboard")}</Link>
+                {isAdmin && <Link to="/admin" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">{t("nav.admin")}</Link>}
+                {isSuper && <Link to="/super-admin" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4 text-primary-light">{t("nav.superAdmin")}</Link>}
+                <button onClick={signOut} className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">{t("nav.signOut")}</button>
+                <Link to="/submit" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">{t("nav.addListing")}</Link>
               </>
             ) : (
               <>
-                <Link to="/auth" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">Sign in</Link>
-                <Link to="/auth?mode=signup" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">List your business</Link>
+                <Link to="/auth" className="hidden md:inline-flex btn-ghost text-sm py-2 px-4">{t("nav.signIn")}</Link>
+                <Link to="/auth?mode=signup" className="hidden md:inline-flex btn-gradient text-sm py-2 px-4">{t("nav.listYourBusiness")}</Link>
               </>
             )}
             <button
@@ -128,15 +135,16 @@ export default function Navbar() {
             ))}
             {user ? (
               <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/60">
-                <Link to="/dashboard" className="btn-ghost text-sm py-2.5">Dashboard</Link>
-                {isAdmin && <Link to="/admin" className="btn-ghost text-sm py-2.5">Admin</Link>}
-                <Link to="/submit" className="btn-gradient text-sm py-2.5 col-span-2">+ Add listing</Link>
-                <button onClick={signOut} className="btn-ghost text-sm py-2.5 col-span-2">Sign out</button>
+                <Link to="/dashboard" className="btn-ghost text-sm py-2.5">{t("nav.dashboard")}</Link>
+                {isAdmin && <Link to="/admin" className="btn-ghost text-sm py-2.5">{t("nav.admin")}</Link>}
+                {isSuper && <Link to="/super-admin" className="btn-ghost text-sm py-2.5 col-span-2 text-primary-light">{t("nav.superAdmin")}</Link>}
+                <Link to="/submit" className="btn-gradient text-sm py-2.5 col-span-2">{t("nav.addListing")}</Link>
+                <button onClick={signOut} className="btn-ghost text-sm py-2.5 col-span-2">{t("nav.signOut")}</button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/60">
-                <Link to="/auth" className="btn-ghost text-sm py-2.5">Sign in</Link>
-                <Link to="/auth?mode=signup" className="btn-gradient text-sm py-2.5">List business</Link>
+                <Link to="/auth" className="btn-ghost text-sm py-2.5">{t("nav.signIn")}</Link>
+                <Link to="/auth?mode=signup" className="btn-gradient text-sm py-2.5">{t("nav.listYourBusiness")}</Link>
               </div>
             )}
           </div>

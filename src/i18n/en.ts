@@ -1,0 +1,48 @@
+const en = {
+  nav: {
+    listings: "Listings",
+    categories: "Categories",
+    leaderboards: "Leaderboards",
+    aiDiscover: "AI Discover",
+    forVendors: "For Vendors",
+    resources: "Resources",
+    pricing: "Pricing",
+    blog: "Blog",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    dashboard: "Dashboard",
+    admin: "Admin",
+    superAdmin: "Super Admin",
+    addListing: "+ Add listing",
+    listYourBusiness: "List your business",
+  },
+  footer: {
+    tagline:
+      "The next-generation business discovery platform optimized for Generative Engine Optimization. Structured for humans, indexed for AI.",
+    platform: "Platform",
+    aiDiscovery: "AI Discovery",
+    company: "Company",
+    rights: "All rights reserved.",
+    builtBy: "Built and maintained by",
+  },
+  newsletter: {
+    title: "Get GEO insights weekly",
+    subtitle: "AI-search trends, ranking tips, and platform updates.",
+    placeholder: "you@company.com",
+    subscribe: "Subscribe",
+    success: "Subscribed — check your inbox.",
+    error: "Couldn't subscribe. Try again.",
+  },
+  vendorGuide: {
+    title: "How to list in 4 easy steps",
+    s1: "1. Fill business details",
+    s1d: "Name, website, category, and a short description.",
+    s2: "2. Pick a paid plan",
+    s2d: "Pay securely via SSLCommerz. All listings require a plan.",
+    s3: "3. Admin verifies",
+    s3d: "We review your evidence (usually < 24h).",
+    s4: "4. Go live + AI/LLM push",
+    s4d: "Your listing is indexed by ChatGPT, Claude, Gemini & more via our MCP server.",
+  },
+};
+export default en;

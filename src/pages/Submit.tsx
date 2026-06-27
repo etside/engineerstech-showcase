@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingStepper from "@/components/OnboardingStepper";
+import { useTranslation } from "react-i18next";
+import { ClipboardList, CreditCard, ShieldCheck, Rocket } from "lucide-react";
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -10,6 +12,7 @@ function slugify(s: string) {
 
 export default function Submit() {
   const nav = useNavigate();
+  const { t } = useTranslation();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [f, setF] = useState({ name: "", tagline: "", description: "", website: "", email: "", category: "software", country: "Bangladesh", services: "", evidence: "" });
   const [loading, setLoading] = useState(false);
@@ -70,6 +73,25 @@ export default function Submit() {
         Step 1 of 3: Fill in your business details. Next, choose a paid plan and pay via SSLCommerz.
         Listings go live only after admin verification (usually under 24h).
       </p>
+      <div className="glass-card p-5 mb-6">
+        <div className="text-xs uppercase tracking-wider text-primary-light font-semibold mb-3">{t("vendorGuide.title")}</div>
+        <ol className="grid sm:grid-cols-2 gap-3 text-sm">
+          {[
+            { I: ClipboardList, t: t("vendorGuide.s1"), d: t("vendorGuide.s1d") },
+            { I: CreditCard, t: t("vendorGuide.s2"), d: t("vendorGuide.s2d") },
+            { I: ShieldCheck, t: t("vendorGuide.s3"), d: t("vendorGuide.s3d") },
+            { I: Rocket, t: t("vendorGuide.s4"), d: t("vendorGuide.s4d") },
+          ].map((s, i) => (
+            <li key={i} className="flex gap-3 rounded-lg p-3 bg-muted/30 border border-border">
+              <s.I className="w-4 h-4 text-primary-light mt-0.5 shrink-0" />
+              <div>
+                <div className="font-semibold">{s.t}</div>
+                <div className="text-muted-foreground text-xs mt-0.5">{s.d}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
       <div className="mb-6">
         <OnboardingStepper state={{ submitted: false, paid: false, verified: false, live: false }} />
       </div>

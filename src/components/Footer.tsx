@@ -1,28 +1,31 @@
 import { Link } from "react-router-dom";
 import { Sparkles, Twitter, Github, Linkedin } from "lucide-react";
-
-const sections = [
-  { title: "Platform", links: [
-    { to: "/listings", label: "Browse Listings" },
-    { to: "/services", label: "Categories" },
-    { to: "/pricing", label: "Pricing" },
-    { to: "/auth?mode=signup", label: "List Your Business" },
-  ]},
-  { title: "AI Discovery", links: [
-    { to: "/about", label: "How GEO Works" },
-    { to: "/services", label: "LLM API" },
-    { to: "/services", label: "Vendor Analytics" },
-    { to: "/faq", label: "FAQ" },
-  ]},
-  { title: "Company", links: [
-    { to: "/about", label: "About" },
-    { to: "/contact", label: "Contact" },
-    { to: "/privacy", label: "Privacy" },
-    { to: "/terms", label: "Terms" },
-  ]},
-];
+import { useTranslation } from "react-i18next";
+import NewsletterSignup from "./NewsletterSignup";
 
 export default function Footer() {
+  const { t } = useTranslation();
+  const sections = [
+    { title: t("footer.platform"), links: [
+      { to: "/listings", label: "Browse Listings" },
+      { to: "/categories", label: "Categories" },
+      { to: "/pricing", label: "Pricing" },
+      { to: "/submit", label: "List Your Business" },
+      { to: "/blog", label: "Blog" },
+    ]},
+    { title: t("footer.aiDiscovery"), links: [
+      { to: "/how-it-works", label: "How GEO Works" },
+      { to: "/api-docs", label: "LLM / MCP API" },
+      { to: "/leaderboards", label: "Leaderboards" },
+      { to: "/faq", label: "FAQ" },
+    ]},
+    { title: t("footer.company"), links: [
+      { to: "/about", label: "About" },
+      { to: "/contact", label: "Contact" },
+      { to: "/privacy", label: "Privacy" },
+      { to: "/terms", label: "Terms" },
+    ]},
+  ];
   return (
     <footer className="relative border-t border-border/60 bg-card/30 mt-24">
       <div className="container-tight py-16">
@@ -35,9 +38,9 @@ export default function Footer() {
               <div className="font-display font-bold text-base">geo<span className="gradient-text">Listed</span></div>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mb-6">
-              The next-generation business discovery platform optimized for Generative
-              Engine Optimization. Structured for humans, indexed for AI.
+              {t("footer.tagline")}
             </p>
+            <div className="mb-6"><NewsletterSignup /></div>
             <div className="flex items-center gap-2">
               {[{ Icon: Twitter, label: "Twitter" }, { Icon: Linkedin, label: "LinkedIn" }, { Icon: Github, label: "GitHub" }].map(({ Icon, label }) => (
                 <a key={label} href="#" aria-label={label} className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-primary-light hover:border-primary/50 transition-colors">
@@ -62,7 +65,18 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border/60 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} geoListed. Built for the AI-discovery era.</p>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()}{" "}
+            <a
+              href="https://engineerstechbd.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-foreground hover:text-primary-light transition-colors"
+            >
+              engineersTech
+            </a>
+            . {t("footer.rights")}
+          </p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs text-muted-foreground">LLM API operational</span>
