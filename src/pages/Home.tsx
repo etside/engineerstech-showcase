@@ -1,41 +1,176 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import * as Icons from "lucide-react";
-import { ArrowRight, Sparkles, Bot, Search, Star, ShieldCheck, Zap, BarChart3, Globe2, MessageSquare, Award, TrendingUp, LayoutGrid } from "lucide-react";
-import BusinessCard from "@/components/BusinessCard";
-import TrustMarquee from "@/components/TrustMarquee";
+import { ArrowRight, Star, TrendingUp, Clock, HeartHandshake, ShieldCheck } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
 import Reveal from "@/components/Reveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
-import AskAiHero from "@/components/AskAiHero";
 import { supabase } from "@/integrations/supabase/client";
 import { useHomepageContent } from "@/hooks/useHomepageContent";
+import { HeroSection, TrustedSection, AiDiscoverySection, StatsRibbon } from "./HomeSections1";
+import { FeaturedSection, CategoriesSection, HowItWorksSection, CommunitySection } from "./HomeSections2";
 
 interface Business {
-  id: string;
-  slug: string;
-  name: string;
-  tagline?: string | null;
-  logo_url?: string | null;
-  rating?: number | null;
-  review_count?: number | null;
-  geo_score?: number | null;
-  is_verified?: boolean | null;
-  location?: string | null;
-  services?: string[] | null;
-  category?: string | null;
+  id: string; slug: string; name: string; tagline?: string | null;
+  logo_url?: string | null; rating?: number | null; review_count?: number | null;
+  geo_score?: number | null; is_verified?: boolean | null;
+  location?: string | null; services?: string[] | null; category?: string | null;
 }
 
-const defaultFeatured: Business[] = [];
-
-function toPascal(s: string) {
-  return s.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
+// ─── Support stats section ──────────────────────────────────────────────────
+function SupportSection() {
+  const items = [
+    { icon: HeartHandshake, stat: "98%", label: "Customer satisfaction score", sub: "Verified by 2,400+ reviews" },
+    { icon: Clock, stat: "<25s", label: "Avg. first response time", sub: "Our team replies fast, always" },
+    { icon: ShieldCheck, stat: "500+", label: "Verified tech businesses", sub: "Manually reviewed & approved" },
+  ];
+  return (
+    <section className="container-tight py-24">
+      <div className="glass-card p-10 md:p-14 relative overflow-hidden">
+        <div className="absolute inset-0 hero-glow opacity-40 pointer-events-none" />
+        <div className="relative grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="section-eyebrow mb-4">
+              <HeartHandshake className="w-3.5 h-3.5" /> Support that never clocks out
+            </div>
+            <h2 className="display-2 mb-4">
+              We're here<br />
+              <span className="gradient-text">24 hours a day.</span>
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+              Our dedicated support team helps businesses get listed, verified, and discovered.
+              Whether you're a new vendor or an established firm, we're one message away.
+            </p>
+            <div className="flex gap-3">
+              <Link to="/contact" className="btn-gradient text-sm">Get Support</Link>
+              <Link to="/faq" className="btn-ghost text-sm">Read FAQs</Link>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {items.map((item) => (
+              <div key={item.label} className="flex items-center gap-5 glass-card p-5">
+                <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="font-display font-extrabold text-2xl gradient-text">{item.stat}</div>
+                  <div className="font-semibold text-sm text-foreground">{item.label}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{item.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Bot, Sparkles, MessageSquare, BarChart3, Globe2, ShieldCheck, Search, Star, Zap, Award, TrendingUp, LayoutGrid, ArrowRight,
-};
+// ─── Reviews section ─────────────────────────────────────────────────────────
+function ReviewsSection({ content }: { content: ReturnType<typeof useHomepageContent>["content"] }) {
+  return (
+    <section className="container-tight py-24">
+      <div className="glass-card p-10 md:p-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_hsl(var(--primary)/0.08),_transparent_60%)] pointer-events-none" />
+        <div className="relative grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <div className="section-eyebrow mb-4"><Star className="w-3.5 h-3.5" /> {content.reviewSection.eyebrow}</div>
+            <h2 className="display-2 mb-4">
+              {content.reviewSection.title}<br />
+              <span className="gradient-text">{content.reviewSection.highlightedTitle}</span>
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+              {content.reviewSection.subtitle}
+            </p>
+            <div className="flex gap-2">
+              <Link to="/listings" className="btn-gradient text-sm">Read reviews</Link>
+              <Link to="/auth" className="btn-ghost text-sm">Leave a review</Link>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {[
+              { tag: "Pro · 142 mentions", text: "Exceptional engineering quality, ships on time every sprint.", c: "emerald" },
+              { tag: "Pro · 98 mentions",  text: "Deep AI/LLM expertise across regulated enterprise domains.", c: "emerald" },
+              { tag: "Con · 12 mentions",  text: "Higher rate than offshore-only alternatives.", c: "amber" },
+            ].map((r) => (
+              <div key={r.text} className="glass-card p-4 flex items-start gap-3">
+                <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${r.c === "emerald" ? "bg-emerald-400" : "bg-amber-400"}`} />
+                <div>
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${r.c === "emerald" ? "text-emerald-400" : "text-amber-400"}`}>
+                    {r.tag}
+                  </div>
+                  <p className="text-sm text-foreground/90 mt-1">{r.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
+// ─── Final CTA section ────────────────────────────────────────────────────────
+function CtaSection({ content }: { content: ReturnType<typeof useHomepageContent>["content"] }) {
+  const trustStats = [
+    { value: 500, suffix: "+", label: "Verified" },
+    { value: 98, suffix: "%", label: "Satisfaction" },
+    { value: 50, suffix: "K+", label: "Users" },
+  ];
+
+  return (
+    <section className="container-tight py-24">
+      <Reveal
+        as="div"
+        className="relative overflow-hidden rounded-3xl p-12 md:p-20 text-center"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 40%, hsl(270 60% 45%) 100%)",
+        }}
+      >
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 cta-grid-pattern pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.12),_transparent_65%)]" />
+        <div className="orb orb-1 w-[350px] h-[350px] -top-24 -left-12 bg-white/15" aria-hidden />
+        <div className="orb orb-2 w-[400px] h-[400px] -bottom-24 -right-12 bg-white/10" aria-hidden />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-bold mb-6 backdrop-blur">
+            <TrendingUp className="w-3.5 h-3.5" /> {content.ctaSection.badge}
+          </div>
+          <h2 className="display-2 text-white mb-4 text-balance">{content.ctaSection.title}</h2>
+          <p className="text-white/80 text-lg max-w-xl mx-auto mb-8">{content.ctaSection.subtitle}</p>
+
+          {/* Trust stats row */}
+          <div className="flex items-center justify-center gap-8 mb-10">
+            {trustStats.map((s) => (
+              <div key={s.label} className="text-center">
+                <div className="font-display text-2xl md:text-3xl font-extrabold text-white">
+                  <AnimatedCounter value={s.value} suffix={s.suffix} />
+                </div>
+                <div className="text-xs text-white/70 uppercase tracking-wider font-semibold">{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/auth?mode=signup"
+              className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all shadow-xl shadow-black/20"
+            >
+              {content.ctaSection.ctaPrimary} <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/pricing"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm border border-white/30 text-white hover:bg-white/10 transition-all"
+            >
+              {content.ctaSection.ctaSecondary}
+            </Link>
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+// ─── Main Home component ──────────────────────────────────────────────────────
 export default function Home() {
   const { content } = useHomepageContent();
   const [featured, setFeatured] = useState<Business[]>([]);
@@ -60,225 +195,26 @@ export default function Home() {
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "geoListed",
-    url: "https://geolisted.app",
-    description: "Next-generation business listing and AI discovery platform optimized for Generative Engine Optimization (GEO).",
-    sameAs: ["https://twitter.com/geolisted", "https://linkedin.com/company/geolisted"],
+    name: "engineersTech",
+    url: "https://engineerstechbd.com",
+    description: "AI-powered business directory for engineers & tech professionals. GEO-optimized for LLM discovery.",
+    sameAs: ["https://twitter.com/engineerstech", "https://linkedin.com/company/engineerstech"],
   };
 
   return (
     <>
       <JsonLd data={orgJsonLd} />
-
-      {/* HERO */}
-      <section className="relative overflow-hidden -mt-20 pt-32 pb-24">
-        <div className="absolute inset-0 hero-glow pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(var(--primary)/0.15),_transparent_60%)]" />
-        <div className="absolute inset-0 hero-grid-overlay opacity-40 pointer-events-none" aria-hidden />
-        <div className="orb orb-1 w-[420px] h-[420px] -top-32 -left-20 bg-primary/40" aria-hidden />
-        <div className="orb orb-2 w-[520px] h-[520px] top-20 -right-32 bg-primary-glow/30" aria-hidden />
-        <div className="container-tight relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="badge-pill mb-8 animate-fade-in">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-light animate-pulse" />
-              {content.hero.badge}
-            </div>
-            <h1 className="display-1 text-balance mb-6 animate-slide-up">
-              {content.hero.title}{" "}
-              <span className="animated-gradient-text">{content.hero.highlightedTitle}</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10 animate-slide-up">
-              {content.hero.subtitle}
-            </p>
-            <div className="mb-8 animate-slide-up">
-              <AskAiHero />
-            </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 animate-slide-up">
-              <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-base">
-                {content.hero.ctaPrimary} <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link to="/listings" className="btn-ghost text-base">
-                <Search className="w-4 h-4" /> {content.hero.ctaSecondary}
-              </Link>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 max-w-4xl mx-auto">
-            {content.stats.map((s, i) => (
-              <Reveal key={s.label} delay={i * 80} className="glass-card card-lift p-6 text-center">
-                <div className="font-display text-3xl md:text-4xl font-bold gradient-text">
-                  <AnimatedCounter value={s.value} />
-                </div>
-                <div className="text-xs text-muted-foreground mt-2 uppercase tracking-wider">{s.label}</div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TRUSTED BY */}
-      <section className="container-tight">
-        <div className="text-center mb-4">
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Trusted by ambitious teams</span>
-        </div>
-        <TrustMarquee />
-      </section>
-
-      {/* AI DISCOVERY */}
-      <section className="container-tight py-24">
-        <div className="max-w-2xl mb-14">
-          <div className="section-eyebrow mb-4"><Sparkles className="w-3.5 h-3.5" /> AI Discovery</div>
-          <h2 className="display-2 mb-4">Built for the way <span className="gradient-text">people search now.</span></h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            85% of B2B buyers now start research with an LLM. Generative Engine Optimization
-            (GEO) is the discipline of being the answer — not just a link.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {content.aiFeatures.map(({ icon, title, desc }) => {
-            const Icon = iconMap[icon] || Bot;
-            return (
-              <Reveal key={title} className="glass-card card-lift p-6 group hover:border-primary/50">
-                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-500 ease-spring">
-                  <Icon className="w-5 h-5 text-primary-light" />
-                </div>
-                <h3 className="font-display font-semibold text-lg mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* FEATURED LISTINGS */}
-      <section className="container-tight py-12">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <div className="section-eyebrow mb-4"><Award className="w-3.5 h-3.5" /> {content.featuredSection.eyebrow}</div>
-            <h2 className="display-2"><span className="gradient-text">{content.featuredSection.title}</span> {content.featuredSection.highlightedTitle}</h2>
-          </div>
-          <Link to="/listings" className="btn-ghost text-sm hidden md:inline-flex">
-            See all <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {featured.map((b, i) => (
-            <Reveal key={b.id} delay={i * 80}>
-              <BusinessCard business={b} />
-            </Reveal>
-          ))}
-          {!featured.length && <div className="glass-card p-8 text-center text-muted-foreground">Loading featured vendors…</div>}
-        </div>
-      </section>
-
-      {/* CATEGORIES */}
-      {cats.length > 0 && (
-        <section className="container-tight py-24">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <div className="section-eyebrow mb-4"><LayoutGrid className="w-3.5 h-3.5" /> Browse by category</div>
-              <h2 className="display-2">Find the right <span className="gradient-text">expertise.</span></h2>
-            </div>
-            <Link to="/categories" className="btn-ghost text-sm hidden md:inline-flex">
-              All categories <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {cats.map((c, i) => {
-              const Icon = (Icons as Record<string, unknown>)[toPascal(c.icon || "folder")] as React.ComponentType<{ className?: string }> | undefined;
-              return (
-                <Reveal key={c.slug} delay={i * 40}>
-                  <Link to={`/listings?category=${c.slug}`} className="glass-card card-lift p-4 flex items-center gap-3 hover:border-primary/50 group">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-500 ease-spring">
-                      {Icon ? <Icon className="w-4 h-4 text-primary-light" /> : <Icons.Folder className="w-4 h-4 text-primary-light" />}
-                    </div>
-                    <span className="text-sm font-medium truncate">{c.name}</span>
-                  </Link>
-                </Reveal>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* HOW IT WORKS */}
-      <section className="container-tight py-24">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="section-eyebrow mb-4 justify-center"><Zap className="w-3.5 h-3.5" /> How it works</div>
-          <h2 className="display-2">From listing to <span className="gradient-text">LLM citation</span> in 24 hours.</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          {content.howItWorks.map((s, i) => (
-            <Reveal key={s.number} delay={i * 120} className="glass-card card-lift p-7 relative overflow-hidden">
-              <div className="absolute -top-4 -right-2 font-display text-7xl font-bold text-primary/10 group-hover:text-primary/20 transition-colors">{s.number}</div>
-              <h3 className="font-display font-semibold text-lg mb-2 relative">{s.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed relative">{s.desc}</p>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* REVIEW SYSTEM */}
-      <section className="container-tight py-24">
-        <div className="glass-card p-10 md:p-16 relative overflow-hidden">
-          <div className="absolute inset-0 hero-glow opacity-50 pointer-events-none" />
-          <div className="relative grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <div className="section-eyebrow mb-4"><Star className="w-3.5 h-3.5" /> {content.reviewSection.eyebrow}</div>
-              <h2 className="display-2 mb-4">{content.reviewSection.title}<br /><span className="gradient-text">{content.reviewSection.highlightedTitle}</span></h2>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                {content.reviewSection.subtitle}
-              </p>
-              <div className="flex gap-2">
-                <Link to="/listings" className="btn-gradient text-sm">Read reviews</Link>
-                <Link to="/auth" className="btn-ghost text-sm">Leave a review</Link>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {[
-                { tag: "Pro · 142 mentions", text: "Exceptional engineering quality, ships on time.", c: "emerald" },
-                { tag: "Pro · 98 mentions", text: "Deep AI/LLM expertise across regulated domains.", c: "emerald" },
-                { tag: "Con · 12 mentions", text: "Higher rate than offshore alternatives.", c: "amber" },
-              ].map((r) => (
-                <div key={r.text} className="glass-card p-4 flex items-start gap-3">
-                  <div className={`mt-1 w-2 h-2 rounded-full ${r.c === "emerald" ? "bg-emerald-400" : "bg-amber-400"}`} />
-                  <div>
-                    <div className={`text-[10px] font-semibold uppercase tracking-wider ${r.c === "emerald" ? "text-emerald-400" : "text-amber-400"}`}>{r.tag}</div>
-                    <p className="text-sm text-foreground/90 mt-1">{r.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="container-tight py-24">
-        <Reveal as="div" className="relative overflow-hidden rounded-3xl gradient-bg p-12 md:p-20 text-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.15),_transparent_70%)]" />
-          <div className="orb orb-1 w-[300px] h-[300px] -top-20 -left-10 bg-white/20" aria-hidden />
-          <div className="orb orb-2 w-[360px] h-[360px] -bottom-20 -right-10 bg-white/15" aria-hidden />
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-medium mb-6 backdrop-blur">
-              <TrendingUp className="w-3.5 h-3.5" /> {content.ctaSection.badge}
-            </div>
-            <h2 className="display-2 text-white mb-4 text-balance">{content.ctaSection.title}</h2>
-            <p className="text-white/85 text-lg max-w-xl mx-auto mb-8">
-              {content.ctaSection.subtitle}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/auth?mode=signup" className="shimmer-btn inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm bg-white text-primary hover:bg-white/90 transition-all">
-                {content.ctaSection.ctaPrimary} <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link to="/pricing" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm border border-white/30 text-white hover:bg-white/10 transition-all">
-                {content.ctaSection.ctaSecondary}
-              </Link>
-            </div>
-          </div>
-        </Reveal>
-      </section>
+      <HeroSection content={content} />
+      <TrustedSection />
+      <StatsRibbon />
+      <AiDiscoverySection content={content} />
+      <FeaturedSection content={content} featured={featured} />
+      <CategoriesSection cats={cats} />
+      <HowItWorksSection content={content} />
+      <CommunitySection />
+      <SupportSection />
+      <ReviewsSection content={content} />
+      <CtaSection content={content} />
     </>
   );
 }

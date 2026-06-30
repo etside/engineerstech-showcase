@@ -1,62 +1,65 @@
 import { useEffect, useRef, useState } from "react";
 
-type Props = { value: string; durationMs?: number };
+interface AnimatedCounterProps {
+  value: number | string;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+}
 
-/**
- * Animates the numeric portion of a value string ("12k+", "94%", "32M", "180k").
- * Preserves any prefix/suffix characters around the digits.
- */
-export default function AnimatedCounter({ value, durationMs = 1400 }: Props) {
-  const ref = useRef<HTMLSpanElement | null>(null);
-  const [display, setDisplay] = useState(value);
+export default function AnimatedCounter({ value, duration = 1800, prefix = "", suffix = "" }: AnimatedCounterProps) {
+  const [display, setDisplay] = useState("0");
+  const ref = useRef<HTMLSpanElement>(null);
+  const started = useRef(false);
+
+  // Parse numeric value, keep suffix/prefix from string if needed
+  const raw = typeof value === "string" ? value : String(value);
+  const numericMatch = raw.match(/[\d.]+/);
+  const numericValue = numericMatch ? parseFloat(numericMatch[0]) : 0;
+  const autoSuffix = raw.replace(/[\d.]/g, "").trim();
 
   useEffect(() => {
-    const match = value.match(/^(\D*)([\d.,]+)(.*)$/);
-    if (!match) {
-      setDisplay(value);
-      return;
-    }
-    const [, prefix, numStr, suffix] = match;
-    const target = parseFloat(numStr.replace(/,/g, ""));
-    if (!Number.isFinite(target)) {
-      setDisplay(value);
-      return;
-    }
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setDisplay(value);
-      return;
-    }
-
-    let rafId = 0;
-    let started = false;
-    const start = () => {
-      if (started) return;
-      started = true;
-      const t0 = performance.now();
-      const tick = (t: number) => {
-        const p = Math.min(1, (t - t0) / durationMs);
-        const eased = 1 - Math.pow(1 - p, 3);
-        const cur = target * eased;
-        const formatted = target >= 100 ? Math.round(cur).toString() : cur.toFixed(target % 1 === 0 ? 0 : 1);
-        setDisplay(`${prefix}${formatted}${suffix}`);
-        if (p < 1) rafId = requestAnimationFrame(tick);
-      };
-      rafId = requestAnimationFrame(tick);
-    };
-
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && start()),
-      { threshold: 0.4 }
+    if (started.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          animateCount();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
     );
-    io.observe(el);
-    return () => {
-      io.disconnect();
-      cancelAnimationFrame(rafId);
-    };
-  }, [value, durationMs]);
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
 
-  return <span ref={ref}>{display}</span>;
+  function animateCount() {
+    const isDecimal = numericValue % 1 !== 0;
+    const decimals = isDecimal ? 1 : 0;
+    const start = 0;
+    const end = numericValue;
+    const startTime = performance.now();
+
+    function tick(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = start + (end - start) * eased;
+      setDisplay(current.toFixed(decimals));
+      if (progress < 1) requestAnimationFrame(tick);
+      else setDisplay(end.toFixed(decimals));
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  const finalSuffix = suffix || autoSuffix;
+
+  return (
+    <span ref={ref} className="tabular-nums">
+      {prefix}{display}{finalSuffix}
+    </span>
+  );
 }
