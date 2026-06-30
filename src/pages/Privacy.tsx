@@ -9,7 +9,7 @@ export default function Privacy() {
         <h2 className="text-foreground font-display text-xl mt-8">How we use it</h2>
         <p>To operate your account, surface your listing on the directory, and emit structured data to public LLM-readable endpoints (you control what's published).</p>
         <h2 className="text-foreground font-display text-xl mt-8">Your rights</h2>
-        <p>You may export or delete your data at any time. Contact us at privacy@geolisted.example.com.</p>
+        <p>You may export or delete your data at any time. Contact us at privacy@engineerstechbd.com.</p>
       </div>
     </section>
   );

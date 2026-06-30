@@ -32,6 +32,8 @@ export default function Listings() {
   const [dbCats, setDbCats] = useState<{ slug: string; name: string }[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     supabase.from("categories").select("slug,name").order("name").then(({ data }) => {
@@ -50,6 +52,10 @@ export default function Listings() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, cat, ind, sort]);
 
   useEffect(() => {
     const next = new URLSearchParams(params);
@@ -71,6 +77,10 @@ export default function Listings() {
     return r;
   }, [query, cat, ind, sort, dbCats, businesses]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
   // JSON-LD ItemList for LLM ingestion
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -84,7 +94,7 @@ export default function Listings() {
         "@type": "LocalBusiness",
         name: b.name,
         description: b.tagline,
-        url: `https://geolisted.example.com/business/${b.slug}`,
+        url: `https://engineerstechbd.com/business/${b.slug}`,
         aggregateRating: { "@type": "AggregateRating", ratingValue: b.rating, reviewCount: b.review_count },
       },
     })),
@@ -140,12 +150,55 @@ export default function Listings() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((b) => <BusinessCard key={b.id} business={b} />)}
+          {paginated.map((b) => <BusinessCard key={b.id} business={b} />)}
         </div>
 
         {filtered.length === 0 && (
           <div className="glass-card p-16 text-center text-muted-foreground">
             No listings match your filters. Try clearing them.
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="px-4 py-2 rounded-xl text-sm font-medium border border-border bg-muted/40 hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | "ellipsis")[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("ellipsis");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === "ellipsis" ? (
+                  <span key={`e-${i}`} className="px-2 text-muted-foreground">...</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setPage(item)}
+                    className={`w-10 h-10 rounded-xl text-sm font-medium transition-colors ${
+                      item === safePage
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border bg-muted/40 hover:bg-muted"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="px-4 py-2 rounded-xl text-sm font-medium border border-border bg-muted/40 hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
           </div>
         )}
       </section>

@@ -44,7 +44,7 @@ export default function CategoryDetail() {
 
   useEffect(() => {
     if (cat) {
-      document.title = `${title} | geoListed`;
+      document.title = `${title} | engineersTech`;
       const m = document.querySelector('meta[name="description"]') || document.createElement("meta");
       m.setAttribute("name", "description");
       m.setAttribute("content", description);

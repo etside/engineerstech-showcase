@@ -14,7 +14,11 @@ export default function Submit() {
   const nav = useNavigate();
   const { t } = useTranslation();
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [f, setF] = useState({ name: "", tagline: "", description: "", website: "", email: "", category: "software", country: "Bangladesh", services: "", evidence: "" });
+  const [f, setF] = useState({
+    name: "", tagline: "", description: "", website: "", email: "", category: "software", country: "Bangladesh", services: "", evidence: "",
+    phone: "", location: "", industry: "", founded_year: "", employee_count: "", hourly_rate: "", min_project_size: "",
+    social_linkedin: "", social_twitter: "", social_github: "",
+  });
   const [loading, setLoading] = useState(false);
   const [cats, setCats] = useState<Array<{ slug: string; name: string }>>([]);
 
@@ -41,9 +45,21 @@ export default function Submit() {
       description: f.description,
       website: f.website,
       email: f.email,
+      phone: f.phone || null,
       category: f.category,
       country: f.country,
+      location: f.location || null,
+      industry: f.industry || null,
+      founded_year: f.founded_year ? parseInt(f.founded_year, 10) : null,
+      employee_count: f.employee_count || null,
+      hourly_rate: f.hourly_rate || null,
+      min_project_size: f.min_project_size || null,
       services: f.services.split(",").map((s) => s.trim()).filter(Boolean),
+      social_links: {
+        linkedin: f.social_linkedin || null,
+        twitter: f.social_twitter || null,
+        github: f.social_github || null,
+      },
       is_active: false,
       verification_status: "pending",
     }).select("id").maybeSingle();
@@ -96,13 +112,11 @@ export default function Submit() {
         <OnboardingStepper state={{ submitted: false, paid: false, verified: false, live: false }} />
       </div>
       <form onSubmit={submit} className="glass-card p-6 space-y-4">
+        {/* Basic Info */}
         {[
           { k: "name", l: "Business name", req: true },
           { k: "tagline", l: "Tagline" },
           { k: "website", l: "Website" },
-          { k: "email", l: "Contact email" },
-          { k: "country", l: "Country" },
-          { k: "services", l: "Services (comma-separated)" },
         ].map((field) => (
           <div key={field.k}>
             <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{field.l}</label>
@@ -114,6 +128,39 @@ export default function Submit() {
             />
           </div>
         ))}
+
+        {/* Contact Info */}
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Contact email</label>
+          <input
+            type="email"
+            required
+            value={f.email}
+            onChange={(e) => setF({ ...f, email: e.target.value })}
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Phone</label>
+          <input
+            type="tel"
+            value={f.phone}
+            onChange={(e) => setF({ ...f, phone: e.target.value })}
+            placeholder="+880-1XXXXXXXXX"
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Location (city / address)</label>
+          <input
+            value={f.location}
+            onChange={(e) => setF({ ...f, location: e.target.value })}
+            placeholder="e.g. Dhaka, Bangladesh"
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        {/* Business Details */}
         <div>
           <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
           <select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm">
@@ -121,9 +168,106 @@ export default function Submit() {
           </select>
         </div>
         <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Industry</label>
+          <input
+            value={f.industry}
+            onChange={(e) => setF({ ...f, industry: e.target.value })}
+            placeholder="e.g. FinTech, HealthTech, E-commerce"
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Services (comma-separated)</label>
+          <input
+            value={f.services}
+            onChange={(e) => setF({ ...f, services: e.target.value })}
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
           <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Description</label>
           <textarea required value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} rows={5} className="mt-1 w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm" />
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Founded year</label>
+            <input
+              type="number"
+              min={1900}
+              max={2026}
+              value={f.founded_year}
+              onChange={(e) => setF({ ...f, founded_year: e.target.value })}
+              placeholder="e.g. 2020"
+              className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Employee count</label>
+            <select value={f.employee_count} onChange={(e) => setF({ ...f, employee_count: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm">
+              <option value="">Select…</option>
+              <option value="1-10">1–10</option>
+              <option value="11-50">11–50</option>
+              <option value="51-200">51–200</option>
+              <option value="201-500">201–500</option>
+              <option value="500+">500+</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Hourly rate</label>
+            <input
+              value={f.hourly_rate}
+              onChange={(e) => setF({ ...f, hourly_rate: e.target.value })}
+              placeholder="e.g. $50-100/hr"
+              className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Minimum project size</label>
+            <input
+              value={f.min_project_size}
+              onChange={(e) => setF({ ...f, min_project_size: e.target.value })}
+              placeholder="e.g. $1,000"
+              className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Social Links */}
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">LinkedIn URL</label>
+          <input
+            type="url"
+            value={f.social_linkedin}
+            onChange={(e) => setF({ ...f, social_linkedin: e.target.value })}
+            placeholder="https://linkedin.com/company/..."
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Twitter URL</label>
+          <input
+            type="url"
+            value={f.social_twitter}
+            onChange={(e) => setF({ ...f, social_twitter: e.target.value })}
+            placeholder="https://twitter.com/..."
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">GitHub URL</label>
+          <input
+            type="url"
+            value={f.social_github}
+            onChange={(e) => setF({ ...f, social_github: e.target.value })}
+            placeholder="https://github.com/..."
+            className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        {/* Evidence */}
         <div>
           <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
             Ownership / verification evidence <span className="text-primary-light">*</span>

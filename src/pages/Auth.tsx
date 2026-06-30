@@ -22,7 +22,7 @@ export default function Auth() {
           options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
-        toast.success("Account created. Welcome to geoListed!");
+        toast.success("Account created. Welcome to engineersTech!");
         navigate("/");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -85,7 +85,7 @@ export default function Auth() {
           </form>
 
           <div className="mt-5 text-center text-sm text-muted-foreground">
-            {mode === "signup" ? "Already have an account?" : "New to geoListed?"}{" "}
+            {mode === "signup" ? "Already have an account?" : "New to engineersTech?"}{" "}
             <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-primary-light hover:underline font-medium">
               {mode === "signup" ? "Sign in" : "Create one"}
             </button>

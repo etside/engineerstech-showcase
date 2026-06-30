@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { BrandSettings } from "@/components/BrandingEditor";
 
 const defaultBrand: BrandSettings = {
-  siteName: "geoListed",
-  tagline: "AI Discovery",
+  siteName: "engineersTech",
+  tagline: "AI Discovery Platform",
   description: "The business directory built for the LLM era. Get discovered by AI, not just search.",
   logo_url: null,
   favicon_url: null,
@@ -12,8 +12,8 @@ const defaultBrand: BrandSettings = {
   primary_color: "#6366f1",
   font_display: "DM Sans",
   font_body: "Inter",
-  twitter_handle: "@geoListed",
-  company_url: "https://geolisted.app",
+  twitter_handle: "@engineerstech",
+  company_url: "https://engineerstechbd.com",
 };
 
 export function useBrandSettings() {

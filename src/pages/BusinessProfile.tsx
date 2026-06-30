@@ -3,10 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { Star, MapPin, Globe, Mail, Phone, ShieldCheck, Sparkles, Users, Calendar, DollarSign, ArrowLeft, Check, ChevronRight } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
 import ReviewList from "@/components/ReviewList";
+import ClaimButton from "@/components/ClaimButton";
+import WriteReviewDialog from "@/components/WriteReviewDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 type Business = {
   id: string;
+  owner_id?: string | null;
   slug: string;
   name: string;
   tagline?: string | null;
@@ -35,6 +38,13 @@ export default function BusinessProfile() {
   const { slug = "" } = useParams();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setCurrentUserId(data.user.id);
+    });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -42,7 +52,7 @@ export default function BusinessProfile() {
       const { data, error } = await supabase
         .from("businesses_public" as any)
         .select(
-          "id,slug,name,tagline,description,logo_url,category,industry,services,website,email,phone,location,country,founded_year,employee_count,min_project_size,hourly_rate,rating,review_count,geo_score,is_verified,ai_summary"
+          "id,owner_id,slug,name,tagline,description,logo_url,category,industry,services,website,email,phone,location,country,founded_year,employee_count,min_project_size,hourly_rate,rating,review_count,geo_score,is_verified,ai_summary"
         )
         .eq("slug", slug)
         .maybeSingle();
@@ -76,7 +86,7 @@ export default function BusinessProfile() {
     "@type": "ProfessionalService",
     name: business.name,
     description: business.description ?? business.tagline ?? "Verified AI-ready business listing.",
-    url: `https://geolisted.example.com/business/${business.slug}`,
+    url: `https://engineerstechbd.com/business/${business.slug}`,
     telephone: business.phone ?? undefined,
     email: business.email ?? undefined,
     address: business.location ? { "@type": "PostalAddress", addressLocality: business.location, addressCountry: business.country ?? undefined } : undefined,
@@ -143,6 +153,12 @@ export default function BusinessProfile() {
           </div>
         </div>
 
+        {currentUserId && currentUserId !== business.owner_id && (
+          <div className="mt-4">
+            <ClaimButton businessId={business.id} />
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
             {business.description && (
@@ -176,7 +192,10 @@ export default function BusinessProfile() {
             </div>
 
             <div className="glass-card p-7">
-              <h2 className="font-display text-xl font-semibold mb-4">Reviews</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-xl font-semibold">Reviews</h2>
+                <WriteReviewDialog businessId={business.id} />
+              </div>
               <ReviewList businessId={business.id} />
             </div>
           </div>

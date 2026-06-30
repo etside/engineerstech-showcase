@@ -405,6 +405,102 @@ function ContentAdmin() {
   );
 }
 
+function CategoryAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [draft, setDraft] = useState({ id: "", name: "", slug: "", icon: "" });
+
+  async function load() {
+    const { data } = await supabase.from("categories").select("id,name,slug,icon").order("name");
+    setRows(data || []);
+  }
+  useEffect(() => { load(); }, []);
+
+  function startNew() {
+    setDraft({ id: "", name: "", slug: "", icon: "" });
+  }
+
+  function editRow(row: any) {
+    setDraft({ id: row.id, name: row.name || "", slug: row.slug || "", icon: row.icon || "" });
+  }
+
+  async function save() {
+    if (!draft.name.trim()) return toast.error("Name is required");
+    if (!draft.slug.trim()) return toast.error("Slug is required");
+    let error;
+    if (draft.id) {
+      ({ error } = await supabase.from("categories").update({ name: draft.name, slug: draft.slug, icon: draft.icon }).eq("id", draft.id));
+    } else {
+      ({ error } = await supabase.from("categories").insert({ name: draft.name, slug: draft.slug, icon: draft.icon }));
+    }
+    if (error) return toast.error(error.message);
+    toast.success(draft.id ? "Category updated" : "Category created");
+    load();
+    startNew();
+  }
+
+  async function removeCategory(id: string) {
+    if (!window.confirm("Delete this category?")) return;
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    load();
+    if (draft.id === id) startNew();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-semibold text-lg">Category management</h2>
+          <p className="text-sm text-muted-foreground">Add, edit, or remove business categories.</p>
+        </div>
+        <Button size="sm" onClick={startNew}>New category</Button>
+      </div>
+      <div className="grid lg:grid-cols-[1fr_320px] gap-4">
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.id} className="glass-card p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{r.icon || "\u{1F4C1}"}</span>
+                <div>
+                  <div className="font-semibold">{r.name}</div>
+                  <div className="text-xs text-muted-foreground">{r.slug}</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => editRow(r)}>Edit</Button>
+                <Button size="sm" variant="destructive" onClick={() => removeCategory(r.id)}>Delete</Button>
+              </div>
+            </div>
+          ))}
+          {!rows.length && <p className="text-muted-foreground text-sm">No categories yet.</p>}
+        </div>
+        <div className="glass-card p-6 space-y-3">
+          <div className="text-sm font-semibold">{draft.id ? "Edit category" : "New category"}</div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Name</label>
+              <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Restaurants" />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Slug</label>
+              <Input value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="restaurants" />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Icon (emoji)</label>
+              <Input value={draft.icon} onChange={(e) => setDraft({ ...draft, icon: e.target.value })} placeholder="e.g. \u{1F37D}\u{FE0F}" />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={save}>Save</Button>
+              {draft.id && <Button size="sm" variant="outline" onClick={startNew}>Cancel</Button>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsAdmin() {
   const [rows, setRows] = useState<any[]>([]);
   async function load() { const { data } = await supabase.from("platform_settings").select("*").order("key"); setRows(data || []); }
@@ -456,6 +552,9 @@ export default function Admin() {
             <TabsTrigger value="listings">Listings</TabsTrigger>
             <TabsTrigger value="claims">Claims</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -463,6 +562,9 @@ export default function Admin() {
           <TabsContent value="listings" className="pt-5"><ListingsAdmin /></TabsContent>
           <TabsContent value="claims" className="pt-5"><ClaimsAdmin /></TabsContent>
           <TabsContent value="reviews" className="pt-5"><ReviewsAdmin /></TabsContent>
+          <TabsContent value="blog" className="pt-5"><BlogAdmin /></TabsContent>
+          <TabsContent value="content" className="pt-5"><ContentAdmin /></TabsContent>
+          <TabsContent value="categories" className="pt-5"><CategoryAdmin /></TabsContent>
           <TabsContent value="pricing" className="pt-5"><PricingAdmin /></TabsContent>
           <TabsContent value="settings" className="pt-5"><SettingsAdmin /></TabsContent>
         </Tabs>

@@ -50,7 +50,7 @@ export default function Pricing() {
         <p className="text-lg text-muted-foreground">
           {bizParam
             ? "All listings require a paid plan. After payment, our admin team verifies your submission and your listing goes live."
-            : "Every listing on geoListed is paid. Pay in USD or BDT via SSLCommerz."}
+            : "Every listing on engineersTech is paid. Pay in USD or BDT via SSLCommerz."}
         </p>
       </div>
 

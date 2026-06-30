@@ -71,9 +71,9 @@ export default function ApiDocs() {
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebAPI",
-    name: "geoListed Public API",
+    name: "engineersTech Public API",
     description: "Read-only endpoints serving the verified business directory to humans, MCP clients, and LLMs.",
-    documentation: "https://geolisted.app/api-docs",
+    documentation: "https://engineerstechbd.com/api-docs",
   };
 
   return (
