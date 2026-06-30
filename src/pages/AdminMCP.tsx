@@ -15,6 +15,7 @@ type McpConfig = {
   enabled: boolean;
   allow_write: boolean;
   updated_at: string;
+  expires_at?: string | null;
 };
 
 function randomToken(bytes = 32) {
@@ -89,7 +90,7 @@ export default function AdminMCP() {
     if (!cfg) return;
     const token = randomToken(32);
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("mcp_config")
       .update({ api_token: token, expires_at: expires, token_last_rotated_at: new Date().toISOString() })
       .eq("id", cfg.id);

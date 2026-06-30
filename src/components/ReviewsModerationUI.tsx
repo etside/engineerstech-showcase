@@ -33,7 +33,7 @@ export default function ReviewsModerationUI() {
 
   async function loadReviews() {
     setLoading(true);
-    let q = supabase
+    let q = (supabase as any)
       .from("reviews")
       .select("id,rating,title,body,status,flagged_reason,reviewer_id,business_id,created_at,businesses(name,slug)")
       .order("created_at", { ascending: false });
@@ -49,13 +49,13 @@ export default function ReviewsModerationUI() {
       toast.error("Failed to load reviews");
       console.error(error);
     } else {
-      setReviews((data || []) as Review[]);
+      setReviews(((data || []) as unknown) as Review[]);
     }
     setLoading(false);
   }
 
   async function approveReview(id: string) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("reviews")
       .update({ status: "approved", flagged_reason: null })
       .eq("id", id);
@@ -70,7 +70,7 @@ export default function ReviewsModerationUI() {
 
   async function rejectReview(id: string) {
     const reason = rejectionReason[id] || "Violates community guidelines";
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("reviews")
       .update({ status: "rejected", flagged_reason: reason })
       .eq("id", id);
@@ -85,7 +85,7 @@ export default function ReviewsModerationUI() {
   }
 
   async function flagReview(id: string, reason: string) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("reviews")
       .update({ flagged_reason: reason })
       .eq("id", id);
