@@ -31,7 +31,7 @@ export default function CategoryDetail() {
           .or(`category.eq.${(c as Category).name},category.eq.${slug}`)
           .order("geo_score", { ascending: false })
           .limit(50);
-        if (active) setItems((b as Business[]) ?? []);
+        if (active) setItems((b as unknown as Business[]) ?? []);
       }
       if (active) setLoading(false);
     })();

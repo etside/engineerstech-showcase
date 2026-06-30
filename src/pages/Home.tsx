@@ -5,6 +5,9 @@ import { ArrowRight, Sparkles, Bot, Search, Star, ShieldCheck, Zap, BarChart3, G
 import BusinessCard from "@/components/BusinessCard";
 import TrustMarquee from "@/components/TrustMarquee";
 import JsonLd from "@/components/JsonLd";
+import Reveal from "@/components/Reveal";
+import AnimatedCounter from "@/components/AnimatedCounter";
+import AskAiHero from "@/components/AskAiHero";
 import { supabase } from "@/integrations/supabase/client";
 import { useHomepageContent } from "@/hooks/useHomepageContent";
 
@@ -71,6 +74,9 @@ export default function Home() {
       <section className="relative overflow-hidden -mt-20 pt-32 pb-24">
         <div className="absolute inset-0 hero-glow pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(var(--primary)/0.15),_transparent_60%)]" />
+        <div className="absolute inset-0 hero-grid-overlay opacity-40 pointer-events-none" aria-hidden />
+        <div className="orb orb-1 w-[420px] h-[420px] -top-32 -left-20 bg-primary/40" aria-hidden />
+        <div className="orb orb-2 w-[520px] h-[520px] top-20 -right-32 bg-primary-glow/30" aria-hidden />
         <div className="container-tight relative">
           <div className="max-w-3xl mx-auto text-center">
             <div className="badge-pill mb-8 animate-fade-in">
@@ -79,13 +85,16 @@ export default function Home() {
             </div>
             <h1 className="display-1 text-balance mb-6 animate-slide-up">
               {content.hero.title}{" "}
-              <span className="gradient-text">{content.hero.highlightedTitle}</span>
+              <span className="animated-gradient-text">{content.hero.highlightedTitle}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10 animate-slide-up">
               {content.hero.subtitle}
             </p>
+            <div className="mb-8 animate-slide-up">
+              <AskAiHero />
+            </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 animate-slide-up">
-              <Link to="/auth?mode=signup" className="btn-gradient text-base">
+              <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-base">
                 {content.hero.ctaPrimary} <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/listings" className="btn-ghost text-base">
@@ -96,11 +105,13 @@ export default function Home() {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 max-w-4xl mx-auto">
-            {content.stats.map((s) => (
-              <div key={s.label} className="glass-card p-6 text-center">
-                <div className="font-display text-3xl md:text-4xl font-bold gradient-text">{s.value}</div>
+            {content.stats.map((s, i) => (
+              <Reveal key={s.label} delay={i * 80} className="glass-card card-lift p-6 text-center">
+                <div className="font-display text-3xl md:text-4xl font-bold gradient-text">
+                  <AnimatedCounter value={s.value} />
+                </div>
                 <div className="text-xs text-muted-foreground mt-2 uppercase tracking-wider">{s.label}</div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -128,13 +139,13 @@ export default function Home() {
           {content.aiFeatures.map(({ icon, title, desc }) => {
             const Icon = iconMap[icon] || Bot;
             return (
-              <div key={title} className="glass-card p-6 group hover:border-primary/50 transition-all duration-500 ease-spring">
-                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+              <Reveal key={title} className="glass-card card-lift p-6 group hover:border-primary/50">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-500 ease-spring">
                   <Icon className="w-5 h-5 text-primary-light" />
                 </div>
                 <h3 className="font-display font-semibold text-lg mb-2">{title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </div>
+              </Reveal>
             );
           })}
         </div>
@@ -152,7 +163,11 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {featured.map((b) => <BusinessCard key={b.id} business={b} />)}
+          {featured.map((b, i) => (
+            <Reveal key={b.id} delay={i * 80}>
+              <BusinessCard business={b} />
+            </Reveal>
+          ))}
           {!featured.length && <div className="glass-card p-8 text-center text-muted-foreground">Loading featured vendors…</div>}
         </div>
       </section>
@@ -170,15 +185,17 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {cats.map((c) => {
+            {cats.map((c, i) => {
               const Icon = (Icons as Record<string, unknown>)[toPascal(c.icon || "folder")] as React.ComponentType<{ className?: string }> | undefined;
               return (
-                <Link key={c.slug} to={`/listings?category=${c.slug}`} className="glass-card p-4 flex items-center gap-3 hover:border-primary/50 transition-all group">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20">
-                    {Icon ? <Icon className="w-4 h-4 text-primary-light" /> : <Icons.Folder className="w-4 h-4 text-primary-light" />}
-                  </div>
-                  <span className="text-sm font-medium truncate">{c.name}</span>
-                </Link>
+                <Reveal key={c.slug} delay={i * 40}>
+                  <Link to={`/listings?category=${c.slug}`} className="glass-card card-lift p-4 flex items-center gap-3 hover:border-primary/50 group">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-500 ease-spring">
+                      {Icon ? <Icon className="w-4 h-4 text-primary-light" /> : <Icons.Folder className="w-4 h-4 text-primary-light" />}
+                    </div>
+                    <span className="text-sm font-medium truncate">{c.name}</span>
+                  </Link>
+                </Reveal>
               );
             })}
           </div>
@@ -192,12 +209,12 @@ export default function Home() {
           <h2 className="display-2">From listing to <span className="gradient-text">LLM citation</span> in 24 hours.</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
-          {content.howItWorks.map((s) => (
-            <div key={s.number} className="glass-card p-7 relative overflow-hidden">
-              <div className="absolute -top-4 -right-2 font-display text-7xl font-bold text-primary/10">{s.number}</div>
+          {content.howItWorks.map((s, i) => (
+            <Reveal key={s.number} delay={i * 120} className="glass-card card-lift p-7 relative overflow-hidden">
+              <div className="absolute -top-4 -right-2 font-display text-7xl font-bold text-primary/10 group-hover:text-primary/20 transition-colors">{s.number}</div>
               <h3 className="font-display font-semibold text-lg mb-2 relative">{s.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed relative">{s.desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -239,8 +256,10 @@ export default function Home() {
 
       {/* CTA */}
       <section className="container-tight py-24">
-        <div className="relative overflow-hidden rounded-3xl gradient-bg p-12 md:p-20 text-center">
+        <Reveal as="div" className="relative overflow-hidden rounded-3xl gradient-bg p-12 md:p-20 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.15),_transparent_70%)]" />
+          <div className="orb orb-1 w-[300px] h-[300px] -top-20 -left-10 bg-white/20" aria-hidden />
+          <div className="orb orb-2 w-[360px] h-[360px] -bottom-20 -right-10 bg-white/15" aria-hidden />
           <div className="relative">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-medium mb-6 backdrop-blur">
               <TrendingUp className="w-3.5 h-3.5" /> {content.ctaSection.badge}
@@ -250,7 +269,7 @@ export default function Home() {
               {content.ctaSection.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/auth?mode=signup" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm bg-white text-primary hover:bg-white/90 transition-all">
+              <Link to="/auth?mode=signup" className="shimmer-btn inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm bg-white text-primary hover:bg-white/90 transition-all">
                 {content.ctaSection.ctaPrimary} <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/pricing" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm border border-white/30 text-white hover:bg-white/10 transition-all">
@@ -258,7 +277,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );

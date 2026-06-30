@@ -51,7 +51,7 @@ export default function BusinessProfile() {
         console.error(error);
         setBusiness(null);
       } else {
-        setBusiness(data as Business | null);
+        setBusiness(data as unknown as Business | null);
       }
       setLoading(false);
     })();
