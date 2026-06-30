@@ -38,8 +38,30 @@ Deno.serve(async (req) => {
   const s = supaService();
 
   try {
-    // Validate with SSLCommerz if we have a val_id
-    if (valId) {
+    // Validate with SSLCommerz if we have a val_id OR verify HMAC via verify_sign header
+    const verifySignHeader = (req.headers.get("verify_sign") || req.headers.get("verify-sign") || "").trim();
+    async function computeHmacSha256Hex(key: string, data: string) {
+      const enc = new TextEncoder();
+      const keyData = enc.encode(key);
+      const algoKey = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      const sig = await crypto.subtle.sign("HMAC", algoKey, enc.encode(data));
+      return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    // compute rawBody for HMAC verification when POST
+    let rawBody = "";
+    if (req.method === "POST") {
+      try { rawBody = await req.text(); } catch { rawBody = ""; }
+    }
+
+    if (verifySignHeader) {
+      const storePw = await getSetting<string>("sslcz_store_password", "");
+      const computed = await computeHmacSha256Hex(storePw, rawBody);
+      if (computed !== verifySignHeader.toLowerCase()) {
+        return new Response("invalid verify_sign", { status: 400, headers: corsHeaders });
+      }
+      // HMAC valid — proceed without val_id validation
+    } else if (valId) {
       const storeId = await getSetting<string>("sslcz_store_id", "");
       const storePw = await getSetting<string>("sslcz_store_password", "");
       const sandbox = await getSetting<boolean>("sslcz_sandbox", true);
@@ -53,6 +75,9 @@ Deno.serve(async (req) => {
         await s.from("subscriptions").update({ status: "inactive", raw_payload: vd, updated_at: new Date().toISOString() }).eq("sslcz_tran_id", tranId);
         return status ? redirect(origin, "fail", tranId) : new Response("invalid", { status: 400, headers: corsHeaders });
       }
+    } else {
+      // No val_id and no verify_sign header — refuse to trust the IPN.
+      return new Response("missing validation (val_id or verify_sign) required", { status: 400, headers: corsHeaders });
     }
 
     const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();

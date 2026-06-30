@@ -88,9 +88,10 @@ export default function AdminMCP() {
   async function rotateToken() {
     if (!cfg) return;
     const token = randomToken(32);
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const { error } = await supabase
       .from("mcp_config")
-      .update({ api_token: token })
+      .update({ api_token: token, expires_at: expires, token_last_rotated_at: new Date().toISOString() })
       .eq("id", cfg.id);
     if (error) return toast.error(error.message);
     toast.success("API token rotated. Update your ChatGPT connector.");
@@ -180,6 +181,9 @@ export default function AdminMCP() {
             <p className="text-xs text-muted-foreground">
               Send as <code>Authorization: Bearer &lt;token&gt;</code> or <code>?token=…</code> query param.
             </p>
+            {cfg?.expires_at && (
+              <p className="text-xs text-muted-foreground">Token expires: {new Date(cfg.expires_at).toLocaleString()}</p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Button variant="secondary" onClick={testConnection}>Test connection</Button>

@@ -1,6 +1,7 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supaService, getSetting } from "../_shared/supa.ts";
 import { aiChat } from "../_shared/ai.ts";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -9,6 +10,11 @@ Deno.serve(async (req) => {
   try {
     const { intent, category, limit = 6 } = await req.json();
     if (!intent || typeof intent !== "string") return json({ error: "intent required" }, 400);
+
+    // Rate-limit per-IP or client identifier
+    const clientId = req.headers.get("x-client-info") || req.headers.get("x-forwarded-for") || "anon";
+    const rl = await checkRateLimit(`geo-recommend:${clientId}`, 60, 60);
+    if (!rl.allowed) return json({ error: "Rate limit exceeded" }, 429);
 
     const s = supaService();
     // Candidate pool: FTS + category filter, top by geo_score

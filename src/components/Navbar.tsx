@@ -6,9 +6,11 @@ import LanguageToggle from "./LanguageToggle";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useBrandSettings } from "@/hooks/useBrandSettings";
 
 export default function Navbar() {
   const { t } = useTranslation();
+  const { brand } = useBrandSettings();
   const links = [
     { to: "/listings", label: t("nav.listings") },
     { to: "/categories", label: t("nav.categories") },

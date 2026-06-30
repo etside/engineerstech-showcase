@@ -1,6 +1,7 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supaService, getSetting, getUserFromAuthHeader } from "../_shared/supa.ts";
 import { aiChat } from "../_shared/ai.ts";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -9,6 +10,10 @@ Deno.serve(async (req) => {
   try {
     const user = await getUserFromAuthHeader(req.headers.get("Authorization"));
     if (!user) return json({ error: "Auth required" }, 401);
+
+    // Rate-limit per-user to protect AI costs
+    const rl = await checkRateLimit(`geo-summarize:user:${user.id}`, 10, 60);
+    if (!rl.allowed) return json({ error: "Rate limit exceeded" }, 429);
 
     const { businessId } = await req.json();
     if (!businessId) return json({ error: "businessId required" }, 400);

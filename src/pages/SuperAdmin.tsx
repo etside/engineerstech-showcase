@@ -3,7 +3,9 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import RequireAdmin from "@/components/RequireAdmin";
-import { ShieldCheck, KeyRound, Wallet, Users, Sparkles, ServerCog, BadgeCheck } from "lucide-react";
+import HomepageEditor from "@/components/HomepageEditor";
+import BrandingEditor from "@/components/BrandingEditor";
+import { ShieldCheck, KeyRound, Wallet, Users, Sparkles, ServerCog, BadgeCheck, Layout, Palette } from "lucide-react";
 
 type Setting = { key: string; value: any; description?: string | null; is_secret?: boolean };
 
@@ -24,6 +26,16 @@ const SETTING_GROUPS: Array<{ title: string; icon: any; keys: Array<{ key: strin
     ],
   },
   {
+    title: "SMTP / Email",
+    icon: ServerCog,
+    keys: [
+      { key: "smtp_provider", label: "SMTP provider", type: "text", help: "Supported: sendgrid" },
+      { key: "smtp_api_key", label: "SMTP API key", type: "secret", help: "SendGrid API key or provider secret" },
+      { key: "smtp_from", label: "From email", type: "text", help: "From address for outgoing emails" },
+      { key: "smtp_from_name", label: "From name", type: "text", help: "Display name for outgoing emails" },
+    ],
+  },
+  {
     title: "SSLCommerz payment gateway",
     icon: KeyRound,
     keys: [
@@ -35,6 +47,7 @@ const SETTING_GROUPS: Array<{ title: string; icon: any; keys: Array<{ key: strin
 ];
 
 function Inner() {
+  const [activeTab, setActiveTab] = useState<"settings" | "homepage" | "branding">("settings");
   const [settings, setSettings] = useState<Record<string, Setting>>({});
   const [users, setUsers] = useState<Array<{ user_id: string; role: string; email?: string }>>([]);
   const [grantEmail, setGrantEmail] = useState("");
@@ -68,7 +81,10 @@ function Inner() {
     const { data: biz } = await supabase.from("businesses").select("id").eq("slug", bizSlug.trim()).maybeSingle();
     if (!biz) return toast.error("Business slug not found");
     const { error } = await supabase.from("businesses").update({
-      verification_status: "verified", is_active: true,
+      verification_status: "verified",
+      is_verified: true,
+      is_active: true,
+      tier: "free",
     }).eq("id", biz.id);
     if (error) return toast.error(error.message);
     toast.success("Business marked live (free grant)");
@@ -96,92 +112,140 @@ function Inner() {
           <ShieldCheck className="w-4 h-4" /> Super Admin CMS
         </div>
         <h1 className="display-2 mt-1">Platform controls</h1>
-        <p className="text-muted-foreground">Manage payment gateway keys, billing visibility, AI models, roles, and free MCP grants.</p>
+        <p className="text-muted-foreground">Manage platform settings, homepage content, roles, and MCP grants.</p>
       </header>
 
-      {SETTING_GROUPS.map((g) => (
-        <div key={g.title} className="glass-card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <g.icon className="w-4 h-4 text-primary-light" />
-            <h2 className="font-display font-semibold">{g.title}</h2>
+      {/* Tab navigation */}
+      <div className="flex gap-1 border-b border-border pb-0">
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            activeTab === "settings"
+              ? "border-primary-light text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 inline mr-1.5" />
+          Platform Settings
+        </button>
+        <button
+          onClick={() => setActiveTab("homepage")}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            activeTab === "homepage"
+              ? "border-primary-light text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Layout className="w-3.5 h-3.5 inline mr-1.5" />
+          Homepage CMS
+        </button>
+        <button
+          onClick={() => setActiveTab("branding")}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            activeTab === "branding"
+              ? "border-primary-light text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Palette className="w-3.5 h-3.5 inline mr-1.5" />
+          Branding & Logo
+        </button>
+      </div>
+
+      {activeTab === "settings" && (
+        <>
+          {SETTING_GROUPS.map((g) => (
+            <div key={g.title} className="glass-card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <g.icon className="w-4 h-4 text-primary-light" />
+                <h2 className="font-display font-semibold">{g.title}</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                {g.keys.map((k) => {
+                  const cur = settings[k.key]?.value;
+                  return (
+                    <SettingRow
+                      key={k.key}
+                      label={k.label}
+                      type={k.type}
+                      help={k.help}
+                      value={cur}
+                      onSave={(v) => saveSetting(k.key, v, k.type)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BadgeCheck className="w-4 h-4 text-primary-light" />
+              <h2 className="font-display font-semibold">Grant business live access (free / waived payment)</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Use this to push a vetted business to live + MCP indexing without a paid subscription.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <input value={bizSlug} onChange={(e) => setBizSlug(e.target.value)} placeholder="business-slug"
+                className="flex-1 min-w-[260px] h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm" />
+              <button onClick={grantBizFree} className="btn-gradient text-sm">Mark verified + live</button>
+            </div>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {g.keys.map((k) => {
-              const cur = settings[k.key]?.value;
-              return (
-                <SettingRow
-                  key={k.key}
-                  label={k.label}
-                  type={k.type}
-                  help={k.help}
-                  value={cur}
-                  onSave={(v) => saveSetting(k.key, v, k.type)}
-                />
-              );
-            })}
+
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-4 h-4 text-primary-light" />
+              <h2 className="font-display font-semibold">Role management</h2>
+            </div>
+            <div className="grid md:grid-cols-[1fr_180px_140px] gap-2 mb-4">
+              <input value={grantEmail} onChange={(e) => setGrantEmail(e.target.value)} placeholder="user id (UUID)"
+                className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm" />
+              <select value={grantRole} onChange={(e) => setGrantRole(e.target.value as any)}
+                className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm">
+                <option value="user">user</option>
+                <option value="business_owner">business_owner</option>
+                <option value="admin">admin</option>
+                <option value="super_admin">super_admin</option>
+              </select>
+              <button onClick={() => grantEmail && grantRoleByUserId(grantEmail.trim(), grantRole)} className="btn-gradient text-sm">Grant</button>
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-3">
+              Tip: ask the user to sign in once; their UUID appears in Backend → Users. Paste it here.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground"><tr><th className="text-left py-2">User ID</th><th className="text-left">Role</th><th></th></tr></thead>
+                <tbody>
+                  {users.map((u, i) => (
+                  <tr key={i} className="border-t border-border/60">
+                      <td className="py-2 font-mono text-xs">{u.user_id}</td>
+                      <td><span className="text-[10px] uppercase px-2 py-0.5 rounded bg-primary/15 text-primary-light border border-primary/30">{u.role}</span></td>
+                      <td className="text-right"><button onClick={() => revokeRole(u.user_id, u.role as any)} className="btn-ghost text-xs">Revoke</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ))}
 
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <BadgeCheck className="w-4 h-4 text-primary-light" />
-          <h2 className="font-display font-semibold">Grant business live access (free / waived payment)</h2>
-        </div>
-        <p className="text-sm text-muted-foreground mb-3">
-          Use this to push a vetted business to live + MCP indexing without a paid subscription.
-        </p>
-        <div className="flex gap-2 flex-wrap">
-          <input value={bizSlug} onChange={(e) => setBizSlug(e.target.value)} placeholder="business-slug"
-            className="flex-1 min-w-[260px] h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm" />
-          <button onClick={grantBizFree} className="btn-gradient text-sm">Mark verified + live</button>
-        </div>
-      </div>
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <ServerCog className="w-4 h-4 text-primary-light" />
+              <h2 className="font-display font-semibold">MCP server connection</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">Manage the ChatGPT Apps / Claude / Lovable MCP bearer token and connection.</p>
+            <Link to="/admin/mcp" className="btn-gradient text-sm">Open MCP admin</Link>
+          </div>
+        </>
+      )}
 
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-4 h-4 text-primary-light" />
-          <h2 className="font-display font-semibold">Role management</h2>
-        </div>
-        <div className="grid md:grid-cols-[1fr_180px_140px] gap-2 mb-4">
-          <input value={grantEmail} onChange={(e) => setGrantEmail(e.target.value)} placeholder="user id (UUID)"
-            className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm" />
-          <select value={grantRole} onChange={(e) => setGrantRole(e.target.value as any)}
-            className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm">
-            <option value="user">user</option>
-            <option value="business_owner">business_owner</option>
-            <option value="admin">admin</option>
-            <option value="super_admin">super_admin</option>
-          </select>
-          <button onClick={() => grantEmail && grantRoleByUserId(grantEmail.trim(), grantRole)} className="btn-gradient text-sm">Grant</button>
-        </div>
-        <p className="text-[11px] text-muted-foreground mb-3">
-          Tip: ask the user to sign in once; their UUID appears in Backend → Users. Paste it here.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase text-muted-foreground"><tr><th className="text-left py-2">User ID</th><th className="text-left">Role</th><th></th></tr></thead>
-            <tbody>
-              {users.map((u, i) => (
-              <tr key={i} className="border-t border-border/60">
-                  <td className="py-2 font-mono text-xs">{u.user_id}</td>
-                  <td><span className="text-[10px] uppercase px-2 py-0.5 rounded bg-primary/15 text-primary-light border border-primary/30">{u.role}</span></td>
-                  <td className="text-right"><button onClick={() => revokeRole(u.user_id, u.role as any)} className="btn-ghost text-xs">Revoke</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <ServerCog className="w-4 h-4 text-primary-light" />
-          <h2 className="font-display font-semibold">MCP server connection</h2>
-        </div>
-        <p className="text-sm text-muted-foreground mb-3">Manage the ChatGPT Apps / Claude / Lovable MCP bearer token and connection.</p>
-        <Link to="/admin/mcp" className="btn-gradient text-sm">Open MCP admin</Link>
-      </div>
+      {activeTab === "homepage" && (
+        <HomepageEditor />
+      )}
+      {activeTab === "branding" && (
+        <BrandingEditor />
+      )}
     </section>
   );
 }

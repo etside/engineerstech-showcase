@@ -25,8 +25,8 @@ export default function CategoryDetail() {
       setCat(c as Category | null);
       if (c) {
         const { data: b } = await supabase
-          .from("businesses")
-          .select("id,slug,name,tagline,logo_url,rating,review_count,geo_score,is_verified,location,services")
+          .from("businesses_public" as any)
+          .select("id,slug,name,tagline,logo_url,rating,review_count,geo_score,is_verified,location,services,is_active")
           .eq("is_active", true)
           .or(`category.eq.${(c as Category).name},category.eq.${slug}`)
           .order("geo_score", { ascending: false })

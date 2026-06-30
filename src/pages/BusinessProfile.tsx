@@ -1,13 +1,68 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Star, MapPin, Globe, Mail, Phone, ShieldCheck, Sparkles, Users, Calendar, DollarSign, ArrowLeft, Check, ChevronRight } from "lucide-react";
-import { findBusiness } from "@/data/mockBusinesses";
 import JsonLd from "@/components/JsonLd";
+import ReviewList from "@/components/ReviewList";
+import { supabase } from "@/integrations/supabase/client";
+
+type Business = {
+  id: string;
+  slug: string;
+  name: string;
+  tagline?: string | null;
+  description?: string | null;
+  logo_url?: string | null;
+  category?: string | null;
+  industry?: string | null;
+  services?: string[] | null;
+  website?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  country?: string | null;
+  founded_year?: number | null;
+  employee_count?: string | null;
+  min_project_size?: string | null;
+  hourly_rate?: string | null;
+  rating?: number | null;
+  review_count?: number | null;
+  geo_score?: number | null;
+  is_verified?: boolean | null;
+  ai_summary?: string | null;
+};
 
 export default function BusinessProfile() {
   const { slug = "" } = useParams();
-  const b = findBusiness(slug);
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!b) {
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("businesses_public" as any)
+        .select(
+          "id,slug,name,tagline,description,logo_url,category,industry,services,website,email,phone,location,country,founded_year,employee_count,min_project_size,hourly_rate,rating,review_count,geo_score,is_verified,ai_summary"
+        )
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!active) return;
+      if (error) {
+        console.error(error);
+        setBusiness(null);
+      } else {
+        setBusiness(data as Business | null);
+      }
+      setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [slug]);
+
+  if (loading) {
+    return <div className="container-tight py-32 text-center">Loading listing…</div>;
+  }
+
+  if (!business) {
     return (
       <div className="container-tight py-32 text-center">
         <h1 className="display-2 mb-4">Listing not found</h1>
@@ -19,23 +74,24 @@ export default function BusinessProfile() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
-    name: b.name,
-    description: b.description,
-    url: `https://geolisted.example.com/business/${b.slug}`,
-    telephone: b.phone,
-    email: b.email,
-    address: { "@type": "PostalAddress", addressLocality: b.location, addressCountry: b.country },
-    foundingDate: String(b.founded_year),
-    priceRange: b.hourly_rate,
-    aggregateRating: { "@type": "AggregateRating", ratingValue: b.rating, reviewCount: b.review_count, bestRating: 5 },
-    review: b.testimonials.map((t) => ({
-      "@type": "Review",
-      author: { "@type": "Person", name: t.author },
-      reviewRating: { "@type": "Rating", ratingValue: t.rating, bestRating: 5 },
-      reviewBody: t.quote,
-    })),
-    makesOffer: b.services.map((s) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name: s } })),
+    name: business.name,
+    description: business.description ?? business.tagline ?? "Verified AI-ready business listing.",
+    url: `https://geolisted.example.com/business/${business.slug}`,
+    telephone: business.phone ?? undefined,
+    email: business.email ?? undefined,
+    address: business.location ? { "@type": "PostalAddress", addressLocality: business.location, addressCountry: business.country ?? undefined } : undefined,
+    foundingDate: business.founded_year ? String(business.founded_year) : undefined,
+    priceRange: business.hourly_rate ?? undefined,
+    aggregateRating: business.rating != null && business.review_count != null ? { "@type": "AggregateRating", ratingValue: business.rating, reviewCount: business.review_count, bestRating: 5 } : undefined,
+    makesOffer: business.services?.map((s) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name: s } })),
   };
+
+  const serviceItems = business.services ?? [];
+  const displayRating = business.rating != null ? business.rating.toFixed(1) : "—";
+  const displayReviews = business.review_count ?? 0;
+  const displayLocation = business.location ? `${business.location}${business.country ? `, ${business.country}` : ""}` : business.category ?? "Remote";
+  const hasWebsite = Boolean(business.website);
+  const hasContact = Boolean(business.email);
 
   return (
     <>
@@ -46,162 +102,123 @@ export default function BusinessProfile() {
           <ArrowLeft className="w-4 h-4" /> Back to directory
         </Link>
 
-        {/* Header */}
         <div className="glass-card p-8 md:p-10 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ background: `radial-gradient(circle at 80% 20%, ${b.color2}40, transparent 50%)` }} />
+          <div className="absolute inset-0 opacity-30 pointer-events-none bg-[radial-gradient(circle_at_80%_20%,_rgba(59,130,246,0.15),_transparent_50%)]" />
           <div className="relative flex flex-col md:flex-row gap-6 md:items-start">
-            <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center font-display font-bold text-3xl text-white shadow-2xl shrink-0"
-              style={{ background: `linear-gradient(135deg, ${b.color1}, ${b.color2})` }}
-            >
-              {b.name.slice(0, 1)}
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center font-display font-bold text-3xl text-white shadow-2xl shrink-0 bg-gradient-to-br from-primary to-indigo-500">
+              {business.name.slice(0, 1)}
             </div>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h1 className="display-3 font-bold">{b.name}</h1>
-                {b.is_verified && (
+                <h1 className="display-3 font-bold">{business.name}</h1>
+                {business.is_verified && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                     <ShieldCheck className="w-3 h-3" /> Verified
                   </span>
                 )}
-                {b.geo_score >= 80 && (
+                {business.geo_score != null && business.geo_score >= 80 && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-primary/15 text-primary-light border border-primary/30">
-                    <Sparkles className="w-3 h-3" /> AI Discovery · {b.geo_score}
+                    <Sparkles className="w-3 h-3" /> AI Discovery · {business.geo_score}
                   </span>
                 )}
               </div>
-              <p className="text-muted-foreground text-lg">{b.tagline}</p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="font-semibold">{b.rating.toFixed(1)}</span>
-                  <span className="text-muted-foreground">({b.review_count} reviews)</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground"><MapPin className="w-4 h-4" /> {b.location}, {b.country}</div>
-                <div className="flex items-center gap-1.5 text-muted-foreground"><Users className="w-4 h-4" /> {b.employee_count} people</div>
-                <div className="flex items-center gap-1.5 text-muted-foreground"><Calendar className="w-4 h-4" /> Est. {b.founded_year}</div>
+              <p className="text-muted-foreground text-lg">{business.tagline ?? "Verified business optimized for AI and marketplace discovery."}</p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5"><Star className="w-4 h-4 fill-amber-400 text-amber-400" /><span className="font-semibold">{displayRating}</span><span className="text-muted-foreground">({displayReviews} reviews)</span></div>
+                {displayLocation && <div className="flex items-center gap-1.5 text-muted-foreground"><MapPin className="w-4 h-4" /> {displayLocation}</div>}
+                {business.employee_count && <div className="flex items-center gap-1.5 text-muted-foreground"><Users className="w-4 h-4" /> {business.employee_count} people</div>}
+                {business.founded_year && <div className="flex items-center gap-1.5 text-muted-foreground"><Calendar className="w-4 h-4" /> Est. {business.founded_year}</div>}
               </div>
             </div>
             <div className="flex md:flex-col gap-2 md:w-48">
-              <a href={`mailto:${b.email}`} className="btn-gradient text-sm flex-1 justify-center">Contact</a>
-              <a href={b.website} target="_blank" rel="noreferrer" className="btn-ghost text-sm flex-1 justify-center">
-                <Globe className="w-4 h-4" /> Visit
-              </a>
+              {hasContact && (
+                <a href={`mailto:${business.email}`} className="btn-gradient text-sm flex-1 justify-center">Contact</a>
+              )}
+              {hasWebsite && (
+                <a href={business.website} target="_blank" rel="noreferrer" className="btn-ghost text-sm flex-1 justify-center">
+                  <Globe className="w-4 h-4" /> Visit
+                </a>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Body */}
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="glass-card p-7">
-              <h2 className="font-display text-xl font-semibold mb-3">About</h2>
-              <p className="text-muted-foreground leading-relaxed">{b.description}</p>
-            </div>
-
-            <div className="glass-card p-7">
-              <h2 className="font-display text-xl font-semibold mb-4">Services</h2>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {b.services.map((s) => (
-                  <div key={s} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
-                    <Check className="w-4 h-4 text-primary-light shrink-0" />
-                    <span className="text-sm">{s}</span>
-                  </div>
-                ))}
+            {business.description && (
+              <div className="glass-card p-7">
+                <h2 className="font-display text-xl font-semibold mb-3">About</h2>
+                <p className="text-muted-foreground leading-relaxed">{business.description}</p>
               </div>
-            </div>
+            )}
 
-            <div className="glass-card p-7">
-              <h2 className="font-display text-xl font-semibold mb-4">Selected work</h2>
-              <div className="space-y-3">
-                {b.portfolio.map((p) => (
-                  <div key={p.title} className="p-4 rounded-xl border border-border/60 bg-muted/20 hover:border-primary/40 transition-colors group cursor-pointer">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-display font-semibold">{p.title}</div>
-                        <p className="text-sm text-muted-foreground mt-1">{p.description}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary-light group-hover:translate-x-1 transition-all shrink-0 mt-1" />
+            {serviceItems.length > 0 && (
+              <div className="glass-card p-7">
+                <h2 className="font-display text-xl font-semibold mb-4">Services</h2>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {serviceItems.map((service) => (
+                    <div key={service} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <span className="text-sm">{service}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* AI Summary */}
             <div className="glass-card p-7 border-primary/30">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg gradient-bg flex items-center justify-center"><Sparkles className="w-3.5 h-3.5 text-white" /></div>
-                <h2 className="font-display text-lg font-semibold">AI Review Summary</h2>
+                <h2 className="font-display text-lg font-semibold">AI Summary</h2>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">Auto-generated from {b.review_count} verified reviews.</p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">Pros</div>
-                  <ul className="space-y-1.5 text-sm">
-                    <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />Ships on time, every time</li>
-                    <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />Senior team — no juniors hidden in invoices</li>
-                    <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />Strong communication & async docs</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Watch-outs</div>
-                  <ul className="space-y-1.5 text-sm">
-                    <li className="flex gap-2"><span className="w-4 h-4 mt-0.5 shrink-0">•</span>Premium pricing vs. offshore</li>
-                    <li className="flex gap-2"><span className="w-4 h-4 mt-0.5 shrink-0">•</span>Booked 4–6 weeks in advance</li>
-                  </ul>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                {business.ai_summary || "This listing is optimized for AI discovery and structured recommendation."}
+              </p>
             </div>
 
-            {/* Reviews */}
             <div className="glass-card p-7">
-              <h2 className="font-display text-xl font-semibold mb-4">Client testimonials</h2>
-              <div className="space-y-4">
-                {b.testimonials.map((t) => (
-                  <div key={t.author} className="p-4 rounded-xl bg-muted/20 border border-border/60">
-                    <div className="flex items-center gap-1 mb-2">
-                      {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
-                    </div>
-                    <p className="text-sm text-foreground/90 leading-relaxed mb-3">"{t.quote}"</p>
-                    <div className="text-xs text-muted-foreground">— {t.author}, {t.role}</div>
-                  </div>
-                ))}
-              </div>
+              <h2 className="font-display text-xl font-semibold mb-4">Reviews</h2>
+              <ReviewList businessId={business.id} />
             </div>
           </div>
 
-          {/* Sidebar */}
           <aside className="space-y-4">
             <div className="glass-card p-6">
               <div className="text-xs uppercase tracking-wider text-muted-foreground mb-4 font-semibold">At a glance</div>
               <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2"><Users className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Team:</span><span className="ml-auto font-medium">{b.employee_count}</span></div>
-                <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Min project:</span><span className="ml-auto font-medium">{b.min_project_size}</span></div>
-                <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Hourly:</span><span className="ml-auto font-medium">{b.hourly_rate}</span></div>
-                <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Founded:</span><span className="ml-auto font-medium">{b.founded_year}</span></div>
+                {business.employee_count && <div className="flex items-center gap-2"><Users className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Team:</span><span className="ml-auto font-medium">{business.employee_count}</span></div>}
+                {business.min_project_size && <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Min project:</span><span className="ml-auto font-medium">{business.min_project_size}</span></div>}
+                {business.hourly_rate && <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Hourly:</span><span className="ml-auto font-medium">{business.hourly_rate}</span></div>}
+                {business.founded_year && <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="text-muted-foreground">Founded:</span><span className="ml-auto font-medium">{business.founded_year}</span></div>}
               </div>
             </div>
 
             <div className="glass-card p-6">
               <div className="text-xs uppercase tracking-wider text-muted-foreground mb-4 font-semibold">Contact</div>
               <div className="space-y-3 text-sm">
-                <a href={b.website} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary-light transition-colors break-all"><Globe className="w-4 h-4 shrink-0" /> {b.website.replace("https://","")}</a>
-                <a href={`mailto:${b.email}`} className="flex items-center gap-2 hover:text-primary-light transition-colors break-all"><Mail className="w-4 h-4 shrink-0" /> {b.email}</a>
-                <a href={`tel:${b.phone}`} className="flex items-center gap-2 hover:text-primary-light transition-colors"><Phone className="w-4 h-4 shrink-0" /> {b.phone}</a>
+                {business.website && (
+                  <a href={business.website} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary-light transition-colors break-all"><Globe className="w-4 h-4 shrink-0" /> {business.website.replace(/^https?:\/\//, "")}</a>
+                )}
+                {business.email && (
+                  <a href={`mailto:${business.email}`} className="flex items-center gap-2 hover:text-primary-light transition-colors break-all"><Mail className="w-4 h-4 shrink-0" /> {business.email}</a>
+                )}
+                {business.phone && (
+                  <a href={`tel:${business.phone}`} className="flex items-center gap-2 hover:text-primary-light transition-colors"><Phone className="w-4 h-4 shrink-0" /> {business.phone}</a>
+                )}
               </div>
             </div>
 
-            <div className="glass-card p-6 border-primary/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-primary-light" />
-                <span className="text-xs uppercase tracking-wider font-semibold text-primary-light">GEO Score · {b.geo_score}/100</span>
+            {business.geo_score != null && (
+              <div className="glass-card p-6 border-primary/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-primary-light" />
+                  <span className="text-xs uppercase tracking-wider font-semibold text-primary-light">GEO Score · {business.geo_score}/100</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-muted/40 overflow-hidden">
+                  <div className="h-full gradient-bg" style={{ width: `${business.geo_score}%` }} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">Optimized for ChatGPT, Claude, DeepSeek, and Qwen recommendation queries.</p>
               </div>
-              <div className="w-full h-2 rounded-full bg-muted/40 overflow-hidden">
-                <div className="h-full gradient-bg" style={{ width: `${b.geo_score}%` }} />
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">Optimized for ChatGPT, Claude, DeepSeek, and Qwen recommendation queries.</p>
-            </div>
+            )}
           </aside>
         </div>
       </section>

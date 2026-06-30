@@ -28,12 +28,19 @@ const corsHeaders = {
 async function loadActiveConfig() {
   const { data, error } = await adminDb
     .from("mcp_config")
-    .select("api_token, enabled, allow_write, server_name")
+    .select("api_token, enabled, allow_write, server_name, expires_at")
     .eq("enabled", true)
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
+  if (data && data.expires_at) {
+    const expiry = new Date(data.expires_at);
+    if (expiry < new Date()) {
+      await adminDb.from("mcp_config").update({ enabled: false }).eq("api_token", data.api_token);
+      throw new Error("MCP token expired");
+    }
+  }
   return data;
 }
 
@@ -65,8 +72,10 @@ mcp.tool("search_businesses", {
   },
   handler: async (input: any) => {
     const limit = Math.min(Math.max(input?.limit ?? 10, 1), 50);
-    let q = adminDb.from("businesses").select("*").eq("verified", true);
-    if (input?.query) q = q.ilike("name", `%${input.query}%`);
+    let q = adminDb.from("businesses_public").select(
+      "id,slug,name,tagline,description,category,industry,services,website,location,country,rating,review_count,geo_score,tier,is_verified,logo_url,is_active",
+    ).eq("is_verified", true).eq("is_active", true);
+    if (input?.query) q = q.or(`name.ilike.%${input.query}%,description.ilike.%${input.query}%`);
     if (input?.category) q = q.eq("category", input.category);
     if (input?.industry) q = q.eq("industry", input.industry);
     const { data, error } = await q
@@ -90,7 +99,9 @@ mcp.tool("get_business", {
   },
   handler: async (input: any) => {
     if (!input?.id && !input?.slug) throw new Error("Provide id or slug");
-    const q = adminDb.from("businesses").select("*");
+    const q = adminDb.from("businesses_public").select(
+      "id,slug,name,tagline,description,category,industry,services,website,location,country,rating,review_count,geo_score,tier,is_verified,logo_url,is_active",
+    );
     const { data, error } = input.id
       ? await q.eq("id", input.id).maybeSingle()
       : await q.eq("slug", input.slug).maybeSingle();
@@ -104,7 +115,7 @@ mcp.tool("list_categories", {
   inputSchema: { type: "object", properties: {} },
   handler: async () => {
     const { data, error } = await adminDb
-      .from("businesses")
+      .from("businesses_public")
       .select("category")
       .not("category", "is", null);
     if (error) throw new Error(error.message);
@@ -127,18 +138,24 @@ mcp.tool("recommend_for_intent", {
   handler: async (input: any) => {
     const limit = Math.min(Math.max(input?.limit ?? 5, 1), 10);
     const { data, error } = await adminDb
-      .from("businesses")
-      .select("*")
-      .eq("verified", true)
+      .from("businesses_public")
+      .select(
+        "id,slug,name,tagline,description,category,industry,services,website,location,country,rating,review_count,geo_score,tier,is_verified,logo_url,is_active",
+      )
+      .eq("is_verified", true)
+      .eq("is_active", true)
       .textSearch("name", input.intent, { type: "websearch", config: "english" })
       .order("geo_score", { ascending: false })
       .limit(limit);
     // textSearch may not match — fall back to keyword ilike on description.
     if (error || !data || data.length === 0) {
       const { data: fb } = await adminDb
-        .from("businesses")
-        .select("*")
-        .eq("verified", true)
+        .from("businesses_public")
+        .select(
+          "id,slug,name,tagline,description,category,industry,services,website,location,country,rating,review_count,geo_score,tier,is_verified,logo_url,is_active",
+        )
+        .eq("is_verified", true)
+        .eq("is_active", true)
         .or(
           `name.ilike.%${input.intent}%,description.ilike.%${input.intent}%`,
         )
@@ -180,6 +197,10 @@ app.all("/*", async (c) => {
     return c.json({ error: "MCP server not configured" }, 503);
   }
   const token = extractToken(c.req.raw);
+  // Enforce expiry if configured
+  if (cfg.expires_at && new Date(cfg.expires_at) <= new Date()) {
+    return c.json({ error: "MCP token expired" }, 401);
+  }
   if (!token || token !== cfg.api_token) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),

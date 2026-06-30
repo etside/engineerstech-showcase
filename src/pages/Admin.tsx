@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import RequireAdmin from "@/components/RequireAdmin";
+import ReviewsModerationUI from "@/components/ReviewsModerationUI";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,10 +48,17 @@ function ListingsAdmin() {
     setRows(data || []);
   }
   useEffect(() => { load(); }, []);
-  async function upd(id: string, patch: any) {
+  async function updateBusiness(id: string, patch: any) {
     const { error } = await supabase.from("businesses").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated"); load();
+  }
+  async function verifyBusiness(id: string) {
+    const { error } = await supabase.from("businesses").update({ verification_status: "verified", is_verified: true }).eq("id", id);
+    if (error) return toast.error(error.message);
+    await (supabase.rpc as any)("refresh_business_active", { _business_id: id }).catch(() => null);
+    toast.success("Verified. Listing will go live once payment is active.");
+    load();
   }
   return (
     <div className="space-y-2">
@@ -61,9 +69,9 @@ function ListingsAdmin() {
             <div className="text-xs text-muted-foreground">{b.tier} · {b.verification_status} · ★{Number(b.rating).toFixed(1)} ({b.review_count})</div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => upd(b.id, { is_active: !b.is_active })}>{b.is_active ? "Hide" : "Activate"}</Button>
-            <Button size="sm" variant="outline" onClick={() => upd(b.id, { verification_status: "verified", is_verified: true, is_active: true })}>Verify</Button>
-            <select value={b.tier} onChange={(e) => upd(b.id, { tier: e.target.value })} className="text-xs rounded border px-2 bg-background">
+            <Button size="sm" variant="outline" onClick={() => updateBusiness(b.id, { is_active: !b.is_active })}>{b.is_active ? "Hide" : "Activate"}</Button>
+            <Button size="sm" variant="outline" onClick={() => verifyBusiness(b.id)}>Verify</Button>
+            <select value={b.tier} onChange={(e) => updateBusiness(b.id, { tier: e.target.value })} className="text-xs rounded border px-2 bg-background">
               {["free","pro","featured","enterprise"].map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>
@@ -178,35 +186,7 @@ function ClaimsAdmin() {
 }
 
 function ReviewsAdmin() {
-  const [rows, setRows] = useState<any[]>([]);
-  async function load() {
-    const { data } = await supabase.from("reviews").select("id,rating,title,body,status,created_at,business_id,businesses(name,slug)").order("created_at", { ascending: false }).limit(100);
-    setRows(data || []);
-  }
-  useEffect(() => { load(); }, []);
-  async function setStatus(id: string, status: string) {
-    const { error } = await supabase.from("reviews").update({ status }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Updated"); load();
-  }
-  return (
-    <div className="space-y-2">
-      {rows.map((r) => (
-        <div key={r.id} className="glass-card p-4 flex justify-between gap-3 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <div className="text-xs text-muted-foreground">{r.businesses?.name} · ★{r.rating} · {r.status}</div>
-            <div className="font-semibold text-sm">{r.title}</div>
-            <p className="text-sm text-muted-foreground">{r.body}</p>
-          </div>
-          <div className="flex gap-2">
-            {r.status !== "approved" && <Button size="sm" onClick={() => setStatus(r.id, "approved")}>Approve</Button>}
-            {r.status !== "hidden" && <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "hidden")}>Hide</Button>}
-          </div>
-        </div>
-      ))}
-      {!rows.length && <p className="text-muted-foreground">No reviews.</p>}
-    </div>
-  );
+  return <ReviewsModerationUI />;
 }
 
 function PricingAdmin() {
@@ -228,6 +208,199 @@ function PricingAdmin() {
           <Button size="sm" onClick={() => save(t)}>Save</Button>
         </div>
       ))}
+    </div>
+  );
+}
+
+function BlogAdmin() {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [draft, setDraft] = useState({ id: "", title: "", slug: "", excerpt: "", cover_url: "", tags: "", body_md: "", published: false });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  async function load() {
+    const { data } = await supabase.from("blog_posts").select("id,slug,title,excerpt,cover_url,tags,body_md,published,published_at").order("created_at", { ascending: false }).limit(100);
+    setPosts(data || []);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  function startNew() {
+    setDraft({ id: "", title: "", slug: "", excerpt: "", cover_url: "", tags: "", body_md: "", published: false });
+    setSelectedId(null);
+  }
+
+  function editPost(post: any) {
+    setDraft({
+      id: post.id,
+      title: post.title || "",
+      slug: post.slug || "",
+      excerpt: post.excerpt || "",
+      cover_url: post.cover_url || "",
+      tags: (post.tags || []).join(", "),
+      body_md: post.body_md || "",
+      published: post.published || false,
+    });
+    setSelectedId(post.id);
+  }
+
+  async function save() {
+    const payload = {
+      title: draft.title.trim(),
+      slug: draft.slug.trim(),
+      excerpt: draft.excerpt.trim() || null,
+      cover_url: draft.cover_url.trim() || null,
+      tags: draft.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      body_md: draft.body_md,
+      published: draft.published,
+      published_at: draft.published ? new Date().toISOString() : null,
+    };
+    let error;
+    if (draft.id) {
+      ({ error } = await supabase.from("blog_posts").update(payload).eq("id", draft.id));
+    } else {
+      ({ error } = await supabase.from("blog_posts").insert(payload));
+    }
+    if (error) return toast.error(error.message);
+    toast.success("Blog post saved");
+    load();
+    startNew();
+  }
+
+  async function removePost() {
+    if (!draft.id) return;
+    if (!window.confirm("Delete this blog post?")) return;
+    const { error } = await supabase.from("blog_posts").delete().eq("id", draft.id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    load();
+    startNew();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-semibold text-lg">Blog management</h2>
+          <p className="text-sm text-muted-foreground">Create, edit, publish, and remove blog posts right from the admin dashboard.</p>
+        </div>
+        <Button size="sm" onClick={startNew}>New post</Button>
+      </div>
+      <div className="grid lg:grid-cols-[320px_1fr] gap-4">
+        <div className="space-y-2">
+          {posts.map((post) => (
+            <button key={post.id} onClick={() => editPost(post)} className={`w-full text-left rounded-xl border p-4 ${selectedId === post.id ? "border-primary" : "border-border"}`}>
+              <div className="font-semibold">{post.title || post.slug}</div>
+              <div className="text-xs text-muted-foreground">{post.slug} · {post.published ? "Published" : "Draft"}</div>
+            </button>
+          ))}
+        </div>
+        <div className="glass-card p-6 space-y-4">
+          <div className="grid gap-3">
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Title</label>
+            <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Slug</label>
+            <Input value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} />
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Excerpt</label>
+            <textarea value={draft.excerpt} onChange={(e) => setDraft({ ...draft, excerpt: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm" />
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Cover URL</label>
+            <Input value={draft.cover_url} onChange={(e) => setDraft({ ...draft, cover_url: e.target.value })} />
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Tags</label>
+            <Input value={draft.tags} onChange={(e) => setDraft({ ...draft, tags: e.target.value })} placeholder="ai, geo, mcp" />
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Markdown body</label>
+            <textarea value={draft.body_md} onChange={(e) => setDraft({ ...draft, body_md: e.target.value })} rows={8} className="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm font-mono" />
+            <div className="flex flex-wrap gap-2 items-center">
+              <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} /> Publish</label>
+              <Button size="sm" onClick={save}>Save</Button>
+              {draft.id && <Button size="sm" variant="outline" onClick={removePost}>Delete</Button>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContentAdmin() {
+  const PAGES = ["home", "contact"];
+  const [page, setPage] = useState("home");
+  const [rows, setRows] = useState<any[]>([]);
+  const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
+
+  async function load() {
+    const { data } = await supabase.from("page_contents" as any).select("id,page,key,value,updated_at").order("page").order("key");
+    setRows((data || []).map((row: any) => ({ ...row, editValue: typeof row.value === "object" ? JSON.stringify(row.value, null, 2) : String(row.value) })));
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function saveRow(row: any) {
+    let parsedValue: any = row.editValue;
+    if (parsedValue.trim().startsWith("[") || parsedValue.trim().startsWith("{")) {
+      try { parsedValue = JSON.parse(parsedValue); } catch { return toast.error("Invalid JSON"); }
+    }
+    const { error } = await supabase.from("page_contents" as any).update({ value: parsedValue, updated_at: new Date().toISOString() }).eq("id", row.id);
+    if (error) return toast.error(error.message);
+    toast.success("Saved");
+    load();
+  }
+
+  async function createRow() {
+    if (!newKey.trim()) return toast.error("Enter a key");
+    let parsedValue: any = newValue;
+    if (newValue.trim().startsWith("[") || newValue.trim().startsWith("{")) {
+      try { parsedValue = JSON.parse(newValue); } catch { return toast.error("Invalid JSON"); }
+    }
+    const { error } = await supabase.from("page_contents" as any).insert({ page, key: newKey.trim(), value: parsedValue });
+    if (error) return toast.error(error.message);
+    toast.success("Created");
+    setNewKey("");
+    setNewValue("");
+    load();
+  }
+
+  const filteredRows = rows.filter((row) => row.page === page);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-2 items-center">
+        {PAGES.map((p) => (
+          <button key={p} onClick={() => setPage(p)} className={`px-4 py-2 rounded-full text-sm ${page === p ? "bg-primary text-white" : "border border-border bg-background"}`}>
+            {p === "home" ? "Homepage" : "Contact page"}
+          </button>
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-[1fr_360px] gap-4">
+        <div className="space-y-4">
+          {filteredRows.map((row) => (
+            <div key={row.id} className="glass-card p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-semibold">{row.key}</div>
+                  <div className="text-[11px] text-muted-foreground">Updated {new Date(row.updated_at).toLocaleString()}</div>
+                </div>
+                <button className="text-xs text-primary-light" onClick={() => saveRow(row)}>Save</button>
+              </div>
+              <textarea value={row.editValue} onChange={(e) => setRows(rows.map((r) => r.id === row.id ? { ...r, editValue: e.target.value } : r))} rows={5} className="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm font-mono" />
+            </div>
+          ))}
+          {!filteredRows.length && <div className="glass-card p-4 text-sm text-muted-foreground">No content entries yet for this page.</div>}
+        </div>
+        <div className="glass-card p-6 space-y-3">
+          <div className="text-sm font-semibold">Add a new content entry</div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Key</label>
+              <Input value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="hero_headline" />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Value</label>
+              <textarea value={newValue} onChange={(e) => setNewValue(e.target.value)} rows={6} className="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm font-mono" placeholder='Use JSON for arrays/objects, plain text otherwise.' />
+            </div>
+            <Button size="sm" onClick={createRow}>Create entry</Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

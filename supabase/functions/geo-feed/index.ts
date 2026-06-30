@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   if (url.pathname.endsWith("/llms.txt") || format === "llms") {
     const s = supaService();
     const { data } = await s
-      .from("businesses")
+      .from("businesses_public" as any)
       .select("slug,name,tagline,category")
       .eq("is_active", true)
       .order("geo_score", { ascending: false })
@@ -29,9 +29,9 @@ Deno.serve(async (req) => {
   try {
     const s = supaService();
     let q = s
-      .from("businesses")
+      .from("businesses_public" as any)
       .select(
-        "id,slug,name,tagline,description,services,category,industry,website,email,phone,location,country,rating,review_count,geo_score,tier,is_verified,ai_summary,logo_url",
+        "id,slug,name,tagline,description,services,category,industry,website,location,country,rating,review_count,geo_score,tier,is_verified,logo_url,is_active",
       )
       .eq("is_active", true)
       .gte("rating", minRating)

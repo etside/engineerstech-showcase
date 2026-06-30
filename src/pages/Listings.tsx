@@ -3,8 +3,25 @@ import { useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import BusinessCard from "@/components/BusinessCard";
 import JsonLd from "@/components/JsonLd";
-import { businesses, categories, industries } from "@/data/mockBusinesses";
+import { categories, industries } from "@/data/mockBusinesses";
 import { supabase } from "@/integrations/supabase/client";
+
+interface Business {
+  id: string;
+  slug: string;
+  name: string;
+  tagline?: string | null;
+  category: string;
+  industry?: string | null;
+  services?: string[] | null;
+  website?: string | null;
+  rating?: number | null;
+  review_count?: number | null;
+  geo_score?: number | null;
+  is_verified?: boolean | null;
+  logo_url?: string | null;
+  location?: string | null;
+}
 
 export default function Listings() {
   const [params, setParams] = useSearchParams();
@@ -13,11 +30,25 @@ export default function Listings() {
   const [ind, setInd] = useState<string>("All");
   const [sort, setSort] = useState<"geo" | "rating" | "reviews">("geo");
   const [dbCats, setDbCats] = useState<{ slug: string; name: string }[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.from("categories").select("slug,name").order("name").then(({ data }) => {
       if (data) setDbCats(data as { slug: string; name: string }[]);
     });
+    supabase
+      .from("businesses_public" as any)
+      .select(
+        "id,slug,name,tagline,logo_url,category,industry,services,website,rating,review_count,geo_score,is_verified,location",
+      )
+      .eq("is_active", true)
+      .order("geo_score", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (data) setBusinesses(data as unknown as Business[]);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -30,14 +61,15 @@ export default function Listings() {
   const filtered = useMemo(() => {
     const catName = dbCats.find((c) => c.slug === cat)?.name;
     let r = businesses.filter((b) => {
-      const matchQ = !query || (b.name + " " + b.tagline + " " + b.services.join(" ")).toLowerCase().includes(query.toLowerCase());
+      const text = `${b.name} ${b.tagline ?? ""} ${(b.services || []).join(" ")}`;
+      const matchQ = !query || text.toLowerCase().includes(query.toLowerCase());
       const matchC = cat === "All" || b.category === cat || b.category === catName;
       const matchI = ind === "All" || b.industry === ind;
       return matchQ && matchC && matchI;
     });
-    r = r.sort((a, b) => sort === "rating" ? b.rating - a.rating : sort === "reviews" ? b.review_count - a.review_count : b.geo_score - a.geo_score);
+    r = r.sort((a, b) => sort === "rating" ? (b.rating || 0) - (a.rating || 0) : sort === "reviews" ? (b.review_count || 0) - (a.review_count || 0) : (b.geo_score || 0) - (a.geo_score || 0));
     return r;
-  }, [query, cat, ind, sort, dbCats]);
+  }, [query, cat, ind, sort, dbCats, businesses]);
 
   // JSON-LD ItemList for LLM ingestion
   const itemListJsonLd = {
