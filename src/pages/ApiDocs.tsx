@@ -269,7 +269,7 @@ export default function ApiDocs() {
               <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">MCP Configuration</div>
               <pre className="text-xs font-mono whitespace-pre-wrap">{`{
   "mcpServers": {
-    "geolisted": {
+    "engineerstech": {
       "url": "https://[project-ref].supabase.co/functions/v1/mcp-server",
       "headers": {
         "Authorization": "Bearer YOUR_MCP_TOKEN"

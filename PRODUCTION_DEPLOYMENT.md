@@ -39,7 +39,7 @@ POSTHOG_API_KEY=your_posthog_key
 - `smtp_provider`: sendgrid
 - `smtp_api_key`: <SendGrid API key>
 - `smtp_from`: noreply@yourdomain.com
-- `smtp_from_name`: geoListed
+- `smtp_from_name`: engineersTech
 
 ### Payment Gateway
 - `sslcz_store_id`: <SSLCommerz Store ID>
