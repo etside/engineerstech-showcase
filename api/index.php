@@ -12,67 +12,67 @@ $uri = rtrim($uri, '/');
 // Route table
 $routes = [
     // Auth
-    'POST /auth/login'          => 'auth.php@login',
-    'POST /auth/register'       => 'auth.php@register',
-    'POST /auth/logout'         => 'auth.php@logout',
-    'GET /auth/me'              => 'auth.php@me',
+    'POST /auth/login'          => 'auth.php@auth_login',
+    'POST /auth/register'       => 'auth.php@auth_register',
+    'POST /auth/logout'         => 'auth.php@auth_logout',
+    'GET /auth/me'              => 'auth.php@auth_me',
 
     // Businesses
-    'GET /businesses'           => 'businesses.php@list',
-    'GET /businesses/featured'  => 'businesses.php@featured',
-    'GET /businesses/search'    => 'businesses.php@search',
-    'GET /businesses/stats'     => 'businesses.php@stats',
-    'GET /businesses/(.+)'      => 'businesses.php@get',
-    'POST /businesses'          => 'businesses.php@create',
-    'PUT /businesses/(.+)'      => 'businesses.php@update',
-    'DELETE /businesses/(.+)'   => 'businesses.php@delete',
+    'GET /businesses'           => 'businesses.php@businesses_list',
+    'GET /businesses/featured'  => 'businesses.php@businesses_featured',
+    'GET /businesses/search'    => 'businesses.php@businesses_search',
+    'GET /businesses/stats'     => 'businesses.php@businesses_stats',
+    'GET /businesses/(.+)'      => 'businesses.php@businesses_get',
+    'POST /businesses'          => 'businesses.php@businesses_create',
+    'PUT /businesses/(.+)'      => 'businesses.php@businesses_update',
+    'DELETE /businesses/(.+)'   => 'businesses.php@businesses_delete',
 
     // Categories
-    'GET /categories'           => 'categories.php@list',
-    'GET /categories/(.+)'      => 'categories.php@get',
+    'GET /categories'           => 'categories.php@categories_list',
+    'GET /categories/(.+)'      => 'categories.php@categories_get',
 
     // Reviews
-    'GET /reviews'              => 'reviews.php@list',
-    'POST /reviews'             => 'reviews.php@create',
-    'PUT /reviews/(.+)'         => 'reviews.php@update',
-    'DELETE /reviews/(.+)'      => 'reviews.php@delete',
+    'GET /reviews'              => 'reviews.php@reviews_list',
+    'POST /reviews'             => 'reviews.php@reviews_create',
+    'PUT /reviews/(.+)'         => 'reviews.php@reviews_update',
+    'DELETE /reviews/(.+)'      => 'reviews.php@reviews_delete',
 
     // Admin
-    'GET /admin/dashboard'      => 'admin.php@dashboard',
-    'GET /admin/users'          => 'admin.php@users',
-    'PUT /admin/users/(.+)/role' => 'admin.php@set_role',
-    'GET /admin/settings'       => 'admin.php@get_settings',
-    'PUT /admin/settings'       => 'admin.php@update_settings',
-    'GET /admin/claims'         => 'admin.php@claims',
-    'PUT /admin/claims/(.+)'    => 'admin.php@review_claim',
-    'GET /admin/mcp'            => 'admin.php@mcp_config',
-    'PUT /admin/mcp'            => 'admin.php@update_mcp',
+    'GET /admin/dashboard'      => 'admin.php@admin_dashboard',
+    'GET /admin/users'          => 'admin.php@admin_users',
+    'PUT /admin/users/(.+)/role' => 'admin.php@admin_set_role',
+    'GET /admin/settings'       => 'admin.php@admin_get_settings',
+    'PUT /admin/settings'       => 'admin.php@admin_update_settings',
+    'GET /admin/claims'         => 'admin.php@admin_claims',
+    'PUT /admin/claims/(.+)'    => 'admin.php@admin_review_claim',
+    'GET /admin/mcp'            => 'admin.php@admin_mcp_config',
+    'PUT /admin/mcp'            => 'admin.php@admin_update_mcp',
 
     // Claims
-    'GET /claims'               => 'claims.php@list',
-    'GET /claims/audit'         => 'claims.php@audit_log',
-    'POST /claims'              => 'claims.php@create',
+    'GET /claims'               => 'claims.php@claims_list',
+    'GET /claims/audit'         => 'claims.php@claims_audit_log',
+    'POST /claims'              => 'claims.php@claims_create',
 
     // Pricing
-    'GET /pricing'              => 'pricing.php@list',
+    'GET /pricing'              => 'pricing.php@pricing_list',
 
     // Blog
-    'GET /blog'                 => 'blog.php@list',
-    'GET /blog/(.+)'            => 'blog.php@get',
+    'GET /blog'                 => 'blog.php@blog_list',
+    'GET /blog/(.+)'            => 'blog.php@blog_get',
 
     // Contact
-    'POST /contact'             => 'contact.php@submit',
+    'POST /contact'             => 'contact.php@contact_submit',
 
     // Newsletter
-    'POST /newsletter'          => 'newsletter.php@subscribe',
-    'DELETE /newsletter/(.+)'   => 'newsletter.php@unsubscribe',
+    'POST /newsletter'          => 'newsletter.php@newsletter_subscribe',
+    'DELETE /newsletter/(.+)'   => 'newsletter.php@newsletter_unsubscribe',
 
     // Feed (public)
-    'GET /feed'                 => 'feed.php@index',
-    'GET /feed/llms'            => 'feed.php@llms',
+    'GET /feed'                 => 'feed.php@feed_index',
+    'GET /feed/llms'            => 'feed.php@feed_llms',
 
     // Upload
-    'POST /upload'              => 'upload.php@upload',
+    'POST /upload'              => 'upload.php@upload_upload',
 ];
 
 // Find matching route
