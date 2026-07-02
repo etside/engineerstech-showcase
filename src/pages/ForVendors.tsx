@@ -37,20 +37,20 @@ const benefits = [
 
 const plans = [
   {
-    name: "Free",
-    price: "৳0",
-    period: "forever",
+    name: "Starter",
+    price: "৳999",
+    period: "per month",
     highlight: false,
     features: [
-      "Basic company profile",
+      "Verified company profile",
       "1 service category",
       "Up to 3 portfolio items",
       "GEO score (read-only)",
       "Public LLM API listing",
-      "Community support",
+      "Guided onboarding support",
     ],
-    cta: "Get started free",
-    href: "/auth?mode=signup",
+    cta: "Start listing",
+    href: "/submit",
   },
   {
     name: "Growth",
@@ -69,8 +69,8 @@ const plans = [
       "Verified badge (after review)",
       "Priority support",
     ],
-    cta: "Start 14-day free trial",
-    href: "/auth?mode=signup&plan=growth",
+    cta: "Choose Growth",
+    href: "/submit",
   },
   {
     name: "Enterprise",
@@ -128,7 +128,7 @@ export default function ForVendors() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-base px-7 py-3.5">
-                List your business free <ArrowRight className="w-4 h-4" />
+                List your business <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/how-it-works" className="btn-ghost text-base px-7 py-3.5">
                 How it works
@@ -181,7 +181,7 @@ export default function ForVendors() {
         <div className="text-center max-w-xl mx-auto mb-14">
           <div className="section-eyebrow mb-4 justify-center"><TrendingUp className="w-3.5 h-3.5" /> Pricing</div>
           <h2 className="display-2">Simple, transparent <span className="gradient-text">pricing.</span></h2>
-          <p className="text-muted-foreground text-lg mt-4">Start free. Scale when you're ready.</p>
+          <p className="text-muted-foreground text-lg mt-4">Every listing includes verification, AI indexing, and vendor guidance.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
           {plans.map((p, i) => (
@@ -255,11 +255,11 @@ export default function ForVendors() {
           <div className="relative">
             <h2 className="display-2 text-white mb-4">Join 500+ businesses getting found by AI.</h2>
             <p className="text-white/80 text-lg max-w-md mx-auto mb-8">
-              Free listing. No credit card. Live within 24 hours.
+              Guided listing, payment, verification, and AI indexing in one flow.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/auth?mode=signup" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
-                List your business free <ArrowRight className="w-4 h-4" />
+                List your business <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm border border-white/30 text-white hover:bg-white/10 transition-all">
                 Talk to sales

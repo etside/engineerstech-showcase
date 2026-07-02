@@ -103,9 +103,9 @@ function PromoCarousel() {
 
 function TrustPills() {
   const pills = [
-    { icon: Star, label: "4.8 Trustpilot", color: "text-emerald-400" },
-    { icon: ThumbsUp, label: "4.9 PropFirmMatch", color: "text-blue-400" },
-    { icon: CircleCheckBig, label: "2,400+ Reviews", color: "text-amber-400" },
+    { icon: Star, label: "Verified vendors", color: "text-emerald-400" },
+    { icon: ThumbsUp, label: "Buyer-ready profiles", color: "text-blue-400" },
+    { icon: CircleCheckBig, label: "Moderated reviews", color: "text-amber-400" },
   ];
 
   return (

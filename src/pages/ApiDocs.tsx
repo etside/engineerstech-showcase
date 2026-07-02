@@ -25,7 +25,7 @@ const endpoints = [
     description: "Natural language business matching. Describe a need, get AI-ranked vendor recommendations. Powered by Lovable AI Gateway.",
     requestBody: `{ "intent": "string (required)", "category": "string (optional)", "limit": 6 }`,
     response: `{ "recommendations": [{ "businessId": "uuid", "score": 1-10, "reason": "string", "position": 1, "business": { ... } }] }`,
-    auth: "Supabase session token (Bearer) or anon with rate limiting",
+    auth: "Signed-in session token for personalized recommendations; public discovery uses safe directory data only",
   },
   {
     icon: Server,
@@ -56,13 +56,12 @@ const endpoints = [
     title: "Security & Compliance",
     method: "—",
     path: "—",
-    description: "All endpoints are protected by rate limiting, token validation, and row-level security. Public data is isolated via the businesses_public view.",
+    description: "Endpoints use token validation, input validation, and row-level access controls. Public data is isolated through the safe business profile projection.",
     features: [
-      "Rate limiting via Upstash Redis (in-memory fallback)",
       "HIBP password breach checking on signup",
       "HMAC-SHA256 payment IPN verification",
       "MCP token expiry validation",
-      "RLS on all database tables",
+      "Access policies on all database tables",
     ],
   },
 ];

@@ -1,18 +1,3 @@
-/*
-SQL to run in your Supabase SQL Editor before this form will work:
-
-CREATE TABLE IF NOT EXISTS public.contact_messages (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL,
-  email text NOT NULL,
-  subject text,
-  message text NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
-ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can insert contact messages" ON public.contact_messages FOR INSERT WITH CHECK (true);
-*/
-
 import { useState } from "react";
 import { Mail, MessageSquare, MapPin, Send } from "lucide-react";
 import { toast } from "sonner";
