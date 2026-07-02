@@ -45,7 +45,6 @@ export default function Footer() {
         { to: "/about", label: "About engineersTech" },
         { to: "/for-vendors", label: "For Vendors" },
         { to: "/contact", label: "Contact Us" },
-        { to: "/blog", label: "Blog & News" },
         { to: "/services", label: "Services" },
       ],
     },
@@ -54,16 +53,14 @@ export default function Footer() {
       links: [
         { to: "/privacy", label: "Privacy Policy" },
         { to: "/terms", label: "Terms of Service" },
-        { to: "/faq", label: "Cookie Policy" },
-        { to: "/faq", label: "Disclaimer" },
       ],
     },
   ];
 
   const socials = [
-    { Icon: Twitter, label: "Twitter / X", href: "#" },
-    { Icon: Linkedin, label: "LinkedIn", href: "#" },
-    { Icon: Github, label: "GitHub", href: "#" },
+    { Icon: Twitter, label: "Twitter / X", href: "https://twitter.com/engineerstech" },
+    { Icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com/company/engineerstech" },
+    { Icon: Github, label: "GitHub", href: "https://github.com/etside" },
     { Icon: MessageCircle, label: "Discord", href: "#" },
   ];
 
@@ -89,10 +86,10 @@ export default function Footer() {
           <Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { icon: Users, value: 6000, suffix: "+", label: "Team Members", desc: "Worldwide talent" },
-                { icon: Globe2, value: 50, suffix: "+", label: "Global Offices", desc: "Across continents" },
+                { icon: Users, value: 500, suffix: "+", label: "Verified Listings", desc: "Trusted businesses" },
+                { icon: Globe2, value: 12, suffix: "+", label: "Categories", desc: "Across industries" },
                 { icon: MapPin, value: 17, suffix: "+", label: "Countries Served", desc: "Global reach" },
-                { icon: Clock, value: 24, suffix: "/7", label: "Operations", desc: "Never stops" },
+                { icon: Clock, value: 24, suffix: "/7", label: "AI Discovery", desc: "Always indexed" },
               ].map((s, i) => (
                 <Reveal key={s.label} delay={i * 80} className="text-center group">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-500 ease-spring">
