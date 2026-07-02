@@ -1,8 +1,5 @@
 -- engineersTech MySQL Schema
--- Run this in phpMyAdmin or MySQL CLI
-
-CREATE DATABASE IF NOT EXISTS engineerstech CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE engineerstech;
+-- Run this in phpMyAdmin (select your database first)
 
 -- ============================================================
 -- USERS (replaces Supabase auth.users)
