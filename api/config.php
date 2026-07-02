@@ -2,6 +2,22 @@
 // PHP API config — MySQL + JWT + CORS
 // For cPanel shared hosting deployment
 
+// --- Error handling: always return JSON ---
+ini_set('display_errors', '0');
+error_reporting(E_ERROR | E_PARSE);
+set_error_handler(function($errno, $errstr) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => $errstr]);
+    exit;
+});
+set_exception_handler(function($e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => $e->getMessage()]);
+    exit;
+});
+
 // --- CORS ---
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -18,10 +34,12 @@ session_start();
 
 // --- Database (edit config.env on cPanel) ---
 $configFile = __DIR__ . '/config.env';
+$cfg = [];
 if (file_exists($configFile)) {
-    $cfg = parse_ini_file($configFile);
-} else {
-    $cfg = [];
+    $parsed = parse_ini_file($configFile);
+    if ($parsed !== false) {
+        $cfg = $parsed;
+    }
 }
 
 define('DB_HOST', $cfg['DB_HOST'] ?? 'localhost');
