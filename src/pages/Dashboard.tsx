@@ -22,18 +22,16 @@ export default function Dashboard() {
       const { user } = await authApi.me();
       if (!user) { setAuthed(false); return; }
       setAuthed(true);
-      const res = await businessApi.list({ limit: 100 });
+      const res = await businessApi.list({ limit: 100, status: "" });
       const allBiz = (res.data || []) as any[];
-      const myBiz = allBiz.filter((b: any) => b.owner_id === user.id || b.claimed_by === user.id);
+      const myBiz = allBiz.filter((b: any) => b.owner_id === user.id);
       setItems(myBiz as Biz[]);
-      const ids = myBiz.map((d: any) => d.id);
-      if (ids.length) {
-        // Poll subscription status periodically (replaces Supabase realtime)
+      if (myBiz.length) {
         pollTimer = setInterval(async () => {
           try {
-            const refreshed = await businessApi.list({ limit: 100 });
+            const refreshed = await businessApi.list({ limit: 100, status: "" });
             const refreshedBiz = (refreshed.data || []) as any[];
-            const refreshedMy = refreshedBiz.filter((b: any) => b.owner_id === user.id || b.claimed_by === user.id);
+            const refreshedMy = refreshedBiz.filter((b: any) => b.owner_id === user.id);
             setItems(refreshedMy as Biz[]);
           } catch { /* silent */ }
         }, 30000);

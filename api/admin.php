@@ -7,9 +7,7 @@ function admin_dashboard() {
 
     $stats = [
         'total_businesses' => (int)$db->query("SELECT COUNT(*) FROM businesses")->fetchColumn(),
-        'pending_businesses' => (int)$db->query("SELECT COUNT(*) FROM businesses WHERE status = 'pending'")->fetchColumn(),
-        'total_users' => (int)$db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
-        'total_reviews' => (int)$db->query("SELECT COUNT(*) FROM reviews")->fetchColumn(),
+        'pending_claims' => (int)$db->query("SELECT COUNT(*) FROM business_claims WHERE status = 'pending'")->fetchColumn(),
         'pending_reviews' => (int)$db->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")->fetchColumn(),
         'total_subscribers' => (int)$db->query("SELECT COUNT(*) FROM newsletter_subscribers WHERE is_active = 1")->fetchColumn(),
         'total_messages' => (int)$db->query("SELECT COUNT(*) FROM contact_messages")->fetchColumn(),
@@ -40,19 +38,34 @@ function admin_users() {
     json_response($users);
 }
 
-function admin_set_role(string $user_id) {
+function admin_set_role(string $user_id_or_email) {
     require_super_admin();
     $input = get_json_input();
     $role = $input['role'] ?? '';
+    $action = $input['action'] ?? 'grant'; // 'grant' or 'revoke'
     $db = getDB();
 
-    $validRoles = ['admin', 'super_admin', 'vendor'];
-    if (!in_array($role, $validRoles)) {
-        json_error('Invalid role');
+    // Resolve user_id from email if needed
+    $user_id = $user_id_or_email;
+    if (strpos($user_id_or_email, '@') !== false) {
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$user_id_or_email]);
+        $found = $stmt->fetch();
+        if (!$found) json_error('User not found');
+        $user_id = $found['id'];
     }
 
-    $stmt = $db->prepare("INSERT INTO user_roles (id, user_id, role) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE role = VALUES(role)");
-    $stmt->execute([uuid(), $user_id, $role]);
+    if ($action === 'revoke') {
+        $stmt = $db->prepare("DELETE FROM user_roles WHERE user_id = ? AND role = ?");
+        $stmt->execute([$user_id, $role]);
+    } else {
+        $validRoles = ['admin', 'super_admin', 'vendor'];
+        if (!in_array($role, $validRoles)) {
+            json_error('Invalid role');
+        }
+        $stmt = $db->prepare("INSERT INTO user_roles (id, user_id, role) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE role = VALUES(role)");
+        $stmt->execute([uuid(), $user_id, $role]);
+    }
 
     json_response(['message' => 'Role assigned']);
 }

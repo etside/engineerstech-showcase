@@ -92,13 +92,13 @@ function Inner() {
   async function grantBizFree() {
     if (!bizSlug.trim()) return;
     try {
-      const res = await businessApi.list({ limit: 100 });
+      const res = await businessApi.list({ limit: 100, status: "" });
       const biz = (res.data || []).find((b: any) => b.slug === bizSlug.trim());
       if (!biz) return toast.error("Business slug not found");
       await businessApi.update(biz.id, {
-        status: "active",
+        status: "approved",
         is_verified: true,
-      } as any);
+      });
       toast.success("Business marked live (free grant)");
       setBizSlug("");
     } catch (err) { toast.error((err as Error).message); }
@@ -114,7 +114,7 @@ function Inner() {
 
   async function revokeRole(userId: string, role: any) {
     try {
-      await adminApi.setRole(userId, "user");
+      await adminApi.setRole(userId, role, "revoke");
       toast.success("Revoked");
       load();
     } catch (err) { toast.error((err as Error).message); }
@@ -214,19 +214,18 @@ function Inner() {
               <h2 className="font-display font-semibold">Role management</h2>
             </div>
             <div className="grid md:grid-cols-[1fr_180px_140px] gap-2 mb-4">
-              <input value={grantEmail} onChange={(e) => setGrantEmail(e.target.value)} placeholder="user id (UUID)"
+              <input value={grantEmail} onChange={(e) => setGrantEmail(e.target.value)} placeholder="user email or UUID"
                 className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm" />
               <select value={grantRole} onChange={(e) => setGrantRole(e.target.value as any)}
                 className="h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm">
-                <option value="user">user</option>
-                <option value="business_owner">business_owner</option>
+                <option value="vendor">vendor</option>
                 <option value="admin">admin</option>
                 <option value="super_admin">super_admin</option>
               </select>
               <button onClick={() => grantEmail && grantRoleByUserId(grantEmail.trim(), grantRole)} className="btn-gradient text-sm">Grant</button>
             </div>
             <p className="text-[11px] text-muted-foreground mb-3">
-              Tip: ask the user to sign in once; their UUID appears in Backend - Users. Paste it here.
+              Enter user email or UUID. Email is easier — just ask them to sign in first.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

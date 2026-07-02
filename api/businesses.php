@@ -7,14 +7,40 @@ function businesses_list() {
     $limit = min(100, max(1, (int)($_GET['limit'] ?? 20)));
     $offset = ($page - 1) * $limit;
     $category = $_GET['category'] ?? '';
-    $status = $_GET['status'] ?? 'approved';
+    $status = $_GET['status'] ?? '';
+    $owner_id = $_GET['owner_id'] ?? '';
 
-    $where = "b.status = ?";
-    $params = [$status];
+    // Admin/super_admin can see all statuses; others see only approved
+    $user = null;
+    $isPrivileged = false;
+    $uid = get_user_id();
+    if ($uid) {
+        $stmt = $db->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+        $stmt->execute([$uid]);
+        $roles = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $isPrivileged = in_array('admin', $roles) || in_array('super_admin', $roles);
+    }
+
+    if (!$status) {
+        $status = $isPrivileged ? '' : 'approved';
+    }
+
+    $where = "1=1";
+    $params = [];
+
+    if ($status) {
+        $where .= " AND b.status = ?";
+        $params[] = $status;
+    }
 
     if ($category) {
         $where .= " AND c.slug = ?";
         $params[] = $category;
+    }
+
+    if ($owner_id) {
+        $where .= " AND b.owner_id = ?";
+        $params[] = $owner_id;
     }
 
     $sql = "SELECT b.*, c.name AS category_name, c.slug AS category_slug

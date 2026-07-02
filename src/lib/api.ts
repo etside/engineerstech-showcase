@@ -219,8 +219,8 @@ export const adminApi = {
 
   users: () => request<(User & { roles: string[] })[]>('/admin/users'),
 
-  setRole: (userId: string, role: string) =>
-    request(`/admin/users/${userId}/role`, { method: 'PUT', body: { role } }),
+  setRole: (userId: string, role: string, action: string = 'grant') =>
+    request(`/admin/users/${userId}/role`, { method: 'PUT', body: { role, action } }),
 
   getSettings: () => request<Record<string, unknown>>('/admin/settings'),
 

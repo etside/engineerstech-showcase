@@ -47,7 +47,7 @@ function ListingsAdmin() {
   const [rows, setRows] = useState<any[]>([]);
   async function load() {
     try {
-      const res = await businessApi.list({ limit: 100 });
+      const res = await businessApi.list({ limit: 100, status: "" });
       setRows(res.data || []);
     } catch { /* silent */ }
   }
@@ -60,8 +60,8 @@ function ListingsAdmin() {
   }
   async function verifyBusiness(id: string) {
     try {
-      await businessApi.update(id, { status: "verified", is_verified: true } as any);
-      toast.success("Verified. Listing will go live once payment is active.");
+      await businessApi.update(id, { status: "approved", is_verified: true });
+      toast.success("Verified. Listing is now live.");
       load();
     } catch (err) { toast.error((err as Error).message); }
   }
@@ -74,7 +74,7 @@ function ListingsAdmin() {
             <div className="text-xs text-muted-foreground">{b.tier || b.status} · {b.verification_status || b.status} · ★{Number(b.rating).toFixed(1)} ({b.review_count})</div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => updateBusiness(b.id, { status: b.status === "active" ? "draft" : "active" })}>{b.status === "active" ? "Hide" : "Activate"}</Button>
+            <Button size="sm" variant="outline" onClick={() => updateBusiness(b.id, { status: b.status === "approved" ? "pending" : "approved" })}>{b.status === "approved" ? "Hide" : "Approve"}</Button>
             <Button size="sm" variant="outline" onClick={() => verifyBusiness(b.id)}>Verify</Button>
             <select value={b.tier || b.status} onChange={(e) => updateBusiness(b.id, { tier: e.target.value })} className="text-xs rounded border px-2 bg-background">
               {["free","pro","featured","enterprise"].map((t) => <option key={t}>{t}</option>)}
