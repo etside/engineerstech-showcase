@@ -1,10 +1,10 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu, X, Zap, ChevronDown } from "lucide-react";
+import { Menu, X, Zap } from "lucide-react";
 import LanguageToggle from "./LanguageToggle";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/use-auth";
 
 function AnnouncementBanner({ onClose }: { onClose: () => void }) {
   return (
@@ -31,6 +31,7 @@ function AnnouncementBanner({ onClose }: { onClose: () => void }) {
 
 export default function Navbar() {
   const { t } = useTranslation();
+  const { user, isAdmin, isSuperAdmin, logout } = useAuth();
   const [showBanner, setShowBanner] = useState(true);
   const links = [
     { to: "/listings", label: t("nav.listings") },
@@ -43,9 +44,6 @@ export default function Navbar() {
   ];
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuper, setIsSuper] = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -56,24 +54,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apply = async (u: { id: string; email?: string } | null) => {
-      setUser(u ? { id: u.id, email: u.email ?? "" } : null);
-      if (u) {
-        const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.id);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const roles = (data || []).map((r: Record<string, any>) => r.role as string);
-        setIsAdmin(roles.includes("admin") || roles.includes("super_admin"));
-        setIsSuper(roles.includes("super_admin"));
-      } else { setIsAdmin(false); setIsSuper(false); }
-    };
-    supabase.auth.getUser().then(({ data }) => apply(data.user));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => apply(s?.user ?? null));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  async function signOut() { await supabase.auth.signOut(); window.location.href = "/"; }
+  async function signOut() { await logout(); window.location.href = "/"; }
 
   return (
     <div className="fixed top-0 inset-x-0 z-50">
@@ -137,7 +118,7 @@ export default function Navbar() {
                       {t("nav.admin")}
                     </Link>
                   )}
-                  {isSuper && (
+                  {isSuperAdmin && (
                     <Link to="/super-admin" className="hidden md:inline-flex btn-ghost text-sm py-2 px-3.5 text-primary-light">
                       {t("nav.superAdmin")}
                     </Link>
@@ -196,7 +177,7 @@ export default function Navbar() {
                   <>
                     <Link to="/dashboard" className="btn-ghost text-sm py-2.5">{t("nav.dashboard")}</Link>
                     {isAdmin && <Link to="/admin" className="btn-ghost text-sm py-2.5">{t("nav.admin")}</Link>}
-                    {isSuper && (
+                    {isSuperAdmin && (
                       <Link to="/super-admin" className="btn-ghost text-sm py-2.5 col-span-2 text-primary-light">
                         {t("nav.superAdmin")}
                       </Link>

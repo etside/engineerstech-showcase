@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApi } from "@/lib/api";
 import { HomepageContent, defaultHomepageContent } from "@/hooks/useHomepageContent";
 
 export default function HomepageEditor() {
@@ -10,14 +10,15 @@ export default function HomepageEditor() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("platform_settings")
-        .select("value")
-        .eq("key", "homepage_content")
-        .maybeSingle();
-      if (!error && data?.value) {
-        const merged = deepMerge(defaultHomepageContent, data.value as Partial<HomepageContent>);
-        setContent(merged);
+      try {
+        const settings = await adminApi.getSettings();
+        const homepage = settings.homepage_content as Partial<HomepageContent> | undefined;
+        if (homepage) {
+          const merged = deepMerge(defaultHomepageContent, homepage);
+          setContent(merged);
+        }
+      } catch {
+        // Settings unavailable — keep defaults
       }
     })();
   }, []);
@@ -52,14 +53,11 @@ export default function HomepageEditor() {
 
   async function save() {
     setSaving(true);
-    const { error } = await supabase.from("platform_settings").upsert(
-      { key: "homepage_content", value: content as Record<string, unknown> },
-      { onConflict: "key" }
-    );
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await adminApi.updateSettings({ homepage_content: content });
       toast.success("Homepage content saved!");
+    } catch (err) {
+      toast.error((err as Error).message);
     }
     setSaving(false);
   }

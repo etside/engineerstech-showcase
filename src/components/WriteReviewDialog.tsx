@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { reviewApi, authApi } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -14,19 +14,22 @@ export default function WriteReviewDialog({ businessId, onDone }: { businessId: 
 
   async function submit() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Sign in to leave a review");
-      setLoading(false);
-      return;
+    try {
+      const { user } = await authApi.me();
+      if (!user) {
+        toast.error("Sign in to leave a review");
+        setLoading(false);
+        return;
+      }
+      await reviewApi.create({ business_id: businessId, rating, title, body });
+      toast.success("Review posted");
+      setOpen(false);
+      setTitle(""); setBody(""); setRating(5);
+      onDone?.();
+    } catch (err) {
+      toast.error((err as Error).message);
     }
-    const { error } = await supabase.from("reviews").insert({ business_id: businessId, author_id: user.id, rating, title, body });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Review posted");
-    setOpen(false);
-    setTitle(""); setBody(""); setRating(5);
-    onDone?.();
   }
 
   return (

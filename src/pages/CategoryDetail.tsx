@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Sparkles, ChevronRight, Star, ShieldCheck } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { businessApi, categoryApi } from "@/lib/api";
 import JsonLd from "@/components/JsonLd";
 
 interface Category { slug: string; name: string; description: string | null; icon: string | null; }
@@ -20,18 +20,17 @@ export default function CategoryDetail() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data: c } = await supabase.from("categories").select("slug,name,description,icon").eq("slug", slug).maybeSingle();
-      if (!active) return;
-      setCat(c as Category | null);
-      if (c) {
-        const { data: b } = await supabase
-          .from("businesses_public" as any)
-          .select("id,slug,name,tagline,logo_url,rating,review_count,geo_score,is_verified,location,services,is_active")
-          .eq("is_active", true)
-          .or(`category.eq.${(c as Category).name},category.eq.${slug}`)
-          .order("geo_score", { ascending: false })
-          .limit(50);
-        if (active) setItems((b as unknown as Business[]) ?? []);
+      try {
+        const c = await categoryApi.get(slug);
+        if (!active) return;
+        setCat(c as Category | null);
+        if (c) {
+          const { data: b } = await businessApi.list({ category: slug, limit: 50 });
+          if (active) setItems((b as unknown as Business[]) ?? []);
+        }
+      } catch {
+        if (!active) return;
+        setCat(null);
       }
       if (active) setLoading(false);
     })();

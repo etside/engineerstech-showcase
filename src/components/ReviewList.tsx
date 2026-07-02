@@ -1,19 +1,13 @@
 import { useEffect, useState } from "react";
 import { Star } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
-type Review = { id: string; rating: number; title: string | null; body: string | null; created_at: string };
+import { reviewApi, type Review } from "@/lib/api";
 
 export default function ReviewList({ businessId }: { businessId: string }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   useEffect(() => {
-    supabase
-      .from("reviews")
-      .select("id,rating,title,body,created_at")
-      .eq("business_id", businessId)
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setReviews((data as Review[]) || []));
+    reviewApi.list({ business_id: businessId, status: "approved", limit: 50 })
+      .then((data) => setReviews(data || []))
+      .catch(() => {});
   }, [businessId]);
 
   if (!reviews.length) return <p className="text-sm text-muted-foreground">No reviews yet. Be the first to write one.</p>;

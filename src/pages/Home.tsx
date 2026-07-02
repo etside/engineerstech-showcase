@@ -4,7 +4,7 @@ import { ArrowRight, Star, TrendingUp, Clock, HeartHandshake, ShieldCheck } from
 import JsonLd from "@/components/JsonLd";
 import Reveal from "@/components/Reveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
-import { supabase } from "@/integrations/supabase/client";
+import { businessApi, categoryApi } from "@/lib/api";
 import { useHomepageContent } from "@/hooks/useHomepageContent";
 import { HeroSection, TrustedSection, AiDiscoverySection, StatsRibbon } from "./HomeSections1";
 import { FeaturedSection, CategoriesSection, HowItWorksSection, CommunitySection } from "./HomeSections2";
@@ -177,19 +177,12 @@ export default function Home() {
   const [cats, setCats] = useState<{ slug: string; name: string; icon: string | null }[]>([]);
 
   useEffect(() => {
-    supabase.from("categories").select("slug,name,icon").order("name").limit(12).then(({ data }) => {
-      if (data) setCats(data as never);
+    categoryApi.list().then((data) => {
+      setCats(data.slice(0, 12) as never);
     });
-    supabase
-      .from("businesses_public" as any)
-      .select("id,slug,name,tagline,logo_url,rating,review_count,geo_score,is_verified,location,services,category")
-      .eq("is_featured", true)
-      .eq("is_active", true)
-      .order("geo_score", { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        if (data) setFeatured(data as unknown as Business[]);
-      });
+    businessApi.featured(3).then((data) => {
+      setFeatured(data as unknown as Business[]);
+    });
   }, []);
 
   const orgJsonLd = {

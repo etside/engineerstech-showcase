@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApi, businessApi, categoryApi, reviewApi, contactApi } from "@/lib/api";
 import RequireAdmin from "@/components/RequireAdmin";
 import ReviewsModerationUI from "@/components/ReviewsModerationUI";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,13 +15,15 @@ function Overview() {
   const [stats, setStats] = useState({ businesses: 0, pendingClaims: 0, pendingReviews: 0, subs: 0 });
   useEffect(() => {
     (async () => {
-      const [b, c, r, s] = await Promise.all([
-        supabase.from("businesses").select("id", { count: "exact", head: true }),
-        supabase.from("business_claims").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
-      ]);
-      setStats({ businesses: b.count || 0, pendingClaims: c.count || 0, pendingReviews: r.count || 0, subs: s.count || 0 });
+      try {
+        const d = await adminApi.dashboard();
+        setStats({
+          businesses: d.total_businesses || 0,
+          pendingClaims: (d as any).pending_claims || 0,
+          pendingReviews: d.pending_reviews || 0,
+          subs: d.total_subscribers || 0,
+        });
+      } catch { /* silent */ }
     })();
   }, []);
   const tiles = [
@@ -35,7 +37,7 @@ function Overview() {
       ))}
       <Card className="sm:col-span-2 lg:col-span-4"><CardHeader><CardTitle>Quick links</CardTitle></CardHeader><CardContent className="flex gap-2 flex-wrap">
         <Link to="/admin/mcp" className="btn-ghost text-xs">MCP server config</Link>
-        <a href="/functions/v1/geo-feed" target="_blank" className="btn-ghost text-xs">Public LLM feed</a>
+        <a href="/api/feed" target="_blank" className="btn-ghost text-xs">Public LLM feed</a>
       </CardContent></Card>
     </div>
   );
@@ -44,21 +46,24 @@ function Overview() {
 function ListingsAdmin() {
   const [rows, setRows] = useState<any[]>([]);
   async function load() {
-    const { data } = await supabase.from("businesses").select("id,name,slug,tier,verification_status,is_active,rating,review_count").order("created_at", { ascending: false }).limit(100);
-    setRows(data || []);
+    try {
+      const res = await businessApi.list({ limit: 100 });
+      setRows(res.data || []);
+    } catch { /* silent */ }
   }
   useEffect(() => { load(); }, []);
   async function updateBusiness(id: string, patch: any) {
-    const { error } = await supabase.from("businesses").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Updated"); load();
+    try {
+      await businessApi.update(id, patch);
+      toast.success("Updated"); load();
+    } catch (err) { toast.error((err as Error).message); }
   }
   async function verifyBusiness(id: string) {
-    const { error } = await supabase.from("businesses").update({ verification_status: "verified", is_verified: true }).eq("id", id);
-    if (error) return toast.error(error.message);
-    await (supabase.rpc as any)("refresh_business_active", { _business_id: id }).catch(() => null);
-    toast.success("Verified. Listing will go live once payment is active.");
-    load();
+    try {
+      await businessApi.update(id, { status: "verified", is_verified: true } as any);
+      toast.success("Verified. Listing will go live once payment is active.");
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
   return (
     <div className="space-y-2">
@@ -66,12 +71,12 @@ function ListingsAdmin() {
         <div key={b.id} className="glass-card p-4 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <Link to={`/business/${b.slug}`} className="font-semibold hover:text-primary-light">{b.name}</Link>
-            <div className="text-xs text-muted-foreground">{b.tier} · {b.verification_status} · ★{Number(b.rating).toFixed(1)} ({b.review_count})</div>
+            <div className="text-xs text-muted-foreground">{b.tier || b.status} · {b.verification_status || b.status} · ★{Number(b.rating).toFixed(1)} ({b.review_count})</div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => updateBusiness(b.id, { is_active: !b.is_active })}>{b.is_active ? "Hide" : "Activate"}</Button>
+            <Button size="sm" variant="outline" onClick={() => updateBusiness(b.id, { status: b.status === "active" ? "draft" : "active" })}>{b.status === "active" ? "Hide" : "Activate"}</Button>
             <Button size="sm" variant="outline" onClick={() => verifyBusiness(b.id)}>Verify</Button>
-            <select value={b.tier} onChange={(e) => updateBusiness(b.id, { tier: e.target.value })} className="text-xs rounded border px-2 bg-background">
+            <select value={b.tier || b.status} onChange={(e) => updateBusiness(b.id, { tier: e.target.value })} className="text-xs rounded border px-2 bg-background">
               {["free","pro","featured","enterprise"].map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>
@@ -84,62 +89,32 @@ function ListingsAdmin() {
 function ClaimsAdmin() {
   const [rows, setRows] = useState<any[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
-  const [docsReq, setDocsReq] = useState("");
-  const [audits, setAudits] = useState<Record<string, any[]>>({});
+
   async function load() {
-    const { data } = await supabase.from("business_claims")
-      .select("id,evidence,status,rejection_reason,additional_docs_requested,claim_type,user_id,reviewed_at,created_at,business_id,businesses(name,slug)")
-      .order("created_at", { ascending: false }).limit(100);
-    setRows(data || []);
+    try {
+      const data = await adminApi.claims();
+      setRows((data as any) || []);
+    } catch { /* silent */ }
   }
   useEffect(() => { load(); }, []);
-  async function loadAudit(bizId: string) {
-    const { data } = await supabase.from("claim_audit_log")
-      .select("id,action,actor_role,notes,created_at").eq("business_id", bizId)
-      .order("created_at", { ascending: false });
-    setAudits((a) => ({ ...a, [bizId]: data || [] }));
+
+  async function decide(claim: any, status: string) {
+    try {
+      await adminApi.reviewClaim(claim.id, status);
+      toast.success("Claim " + status.replace(/_/g, " "));
+      setOpenId(null);
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
-  async function decide(
-    claim: any,
-    status: "approved" | "rejected" | "needs_more_info",
-    extra: { rejection_reason?: string; additional_docs_requested?: string; notes?: string } = {},
-  ) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const patch: any = { status, reviewed_at: new Date().toISOString(), reviewed_by: user?.id };
-    if (extra.rejection_reason) patch.rejection_reason = extra.rejection_reason;
-    if (extra.additional_docs_requested) patch.additional_docs_requested = extra.additional_docs_requested;
-    const { error } = await supabase.from("business_claims").update(patch).eq("id", claim.id);
-    if (error) return toast.error(error.message);
-    if (status === "approved") {
-      await supabase.from("businesses").update({
-        claimed_by: claim.user_id,
-        verification_status: "verified",
-        is_verified: true,
-      }).eq("id", claim.business_id);
-      // Activate if also paid (RPC checks both)
-      await (supabase.rpc as any)("refresh_business_active", { _business_id: claim.business_id });
-    } else if (status === "rejected") {
-      await supabase.from("businesses").update({ verification_status: "rejected", is_verified: false, is_active: false }).eq("id", claim.business_id);
-    } else {
-      await supabase.from("businesses").update({ verification_status: "needs_more_info" }).eq("id", claim.business_id);
-    }
-    await supabase.from("claim_audit_log").insert({
-      claim_id: claim.id, business_id: claim.business_id, actor_id: user?.id, actor_role: "admin",
-      action: status, notes: extra.notes || extra.rejection_reason || extra.additional_docs_requested || null,
-    });
-    toast.success("Claim " + status.replace(/_/g, " "));
-    setOpenId(null); setReason(""); setDocsReq("");
-    load();
-  }
+
   return (
     <div className="space-y-2">
-      {rows.map((c) => (
+      {rows.map((c: any) => (
         <div key={c.id} className="glass-card p-4 flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1">
             <div className="font-semibold flex items-center gap-2">
-              <Link to={`/business/${c.businesses?.slug}`} className="hover:text-primary-light">{c.businesses?.name}</Link>
-              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">{c.claim_type}</span>
+              <span className="hover:text-primary-light">{c.business_name || c.business_id}</span>
+              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">{c.claim_type || "initial"}</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">{c.evidence}</p>
             <div className="text-[11px] text-muted-foreground mt-1">
@@ -148,34 +123,12 @@ function ClaimsAdmin() {
             </div>
             {c.rejection_reason && <div className="text-[11px] text-rose-400 mt-1">Rejection: {c.rejection_reason}</div>}
             {c.additional_docs_requested && <div className="text-[11px] text-amber-400 mt-1">Requested: {c.additional_docs_requested}</div>}
-            <button onClick={() => { loadAudit(c.business_id); setOpenId(openId === c.id ? null : c.id); }}
-              className="text-[11px] text-primary-light hover:underline mt-2">
-              {openId === c.id ? "Hide" : "View"} audit trail
-            </button>
-            {openId === c.id && (
-              <ul className="mt-2 space-y-1 border-l-2 border-border pl-3">
-                {(audits[c.business_id] || []).map((a) => (
-                  <li key={a.id} className="text-[11px]">
-                    <span className="font-semibold capitalize">{a.action.replace(/_/g," ")}</span>
-                    <span className="text-muted-foreground"> · {a.actor_role} · {new Date(a.created_at).toLocaleString()}</span>
-                    {a.notes && <div className="text-muted-foreground">— {a.notes}</div>}
-                  </li>
-                ))}
-                {!(audits[c.business_id] || []).length && <li className="text-[11px] text-muted-foreground">No audit entries yet.</li>}
-              </ul>
-            )}
           </div>
           {(c.status === "pending" || c.status === "needs_more_info") && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => decide(c, "approved", { notes: "Approved by admin" })}>Approve</Button>
-              <Button size="sm" variant="outline" onClick={() => {
-                const r = window.prompt("Reason for rejection:");
-                if (r) decide(c, "rejected", { rejection_reason: r });
-              }}>Reject</Button>
-              <Button size="sm" variant="outline" onClick={() => {
-                const r = window.prompt("What additional documents are required?");
-                if (r) decide(c, "needs_more_info", { additional_docs_requested: r });
-              }}>Request docs</Button>
+              <Button size="sm" onClick={() => decide(c, "approved")}>Approve</Button>
+              <Button size="sm" variant="outline" onClick={() => decide(c, "rejected")}>Reject</Button>
+              <Button size="sm" variant="outline" onClick={() => decide(c, "needs_more_info")}>Request docs</Button>
             </div>
           )}
         </div>
@@ -191,11 +144,21 @@ function ReviewsAdmin() {
 
 function PricingAdmin() {
   const [rows, setRows] = useState<any[]>([]);
-  async function load() { const { data } = await supabase.from("pricing_tiers").select("*").order("display_order"); setRows(data || []); }
+  async function load() {
+    try {
+      const d = await adminApi.getSettings();
+      const tiers = (d as any)?.pricing_tiers || [];
+      setRows(tiers);
+    } catch { /* silent */ }
+  }
   useEffect(() => { load(); }, []);
   async function save(t: any) {
-    const { error } = await supabase.from("pricing_tiers").update({ name: t.name, price_usd: t.price_usd, price_bdt: t.price_bdt, is_active: t.is_active }).eq("id", t.id);
-    if (error) toast.error(error.message); else { toast.success("Saved"); load(); }
+    try {
+      const settings = await adminApi.getSettings();
+      const tiers = ((settings as any)?.pricing_tiers || []).map((row: any) => row.id === t.id ? { ...row, ...t } : row);
+      await adminApi.updateSettings({ pricing_tiers: tiers });
+      toast.success("Saved"); load();
+    } catch (err) { toast.error((err as Error).message); }
   }
   return (
     <div className="space-y-3">
@@ -218,8 +181,11 @@ function BlogAdmin() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("blog_posts").select("id,slug,title,excerpt,cover_url,tags,body_md,published,published_at").order("created_at", { ascending: false }).limit(100);
-    setPosts(data || []);
+    try {
+      const d = await adminApi.getSettings();
+      const blogPosts = (d as any)?.blog_posts || [];
+      setPosts(blogPosts);
+    } catch { /* silent */ }
   }
 
   useEffect(() => { load(); }, []);
@@ -254,26 +220,32 @@ function BlogAdmin() {
       published: draft.published,
       published_at: draft.published ? new Date().toISOString() : null,
     };
-    let error;
-    if (draft.id) {
-      ({ error } = await supabase.from("blog_posts").update(payload).eq("id", draft.id));
-    } else {
-      ({ error } = await supabase.from("blog_posts").insert(payload));
-    }
-    if (error) return toast.error(error.message);
-    toast.success("Blog post saved");
-    load();
-    startNew();
+    try {
+      const settings = await adminApi.getSettings();
+      let blogPosts = (settings as any)?.blog_posts || [];
+      if (draft.id) {
+        blogPosts = blogPosts.map((p: any) => p.id === draft.id ? { ...p, ...payload } : p);
+      } else {
+        blogPosts = [{ ...payload, id: crypto.randomUUID() }, ...blogPosts];
+      }
+      await adminApi.updateSettings({ blog_posts: blogPosts });
+      toast.success("Blog post saved");
+      load();
+      startNew();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function removePost() {
     if (!draft.id) return;
     if (!window.confirm("Delete this blog post?")) return;
-    const { error } = await supabase.from("blog_posts").delete().eq("id", draft.id);
-    if (error) return toast.error(error.message);
-    toast.success("Deleted");
-    load();
-    startNew();
+    try {
+      const settings = await adminApi.getSettings();
+      const blogPosts = ((settings as any)?.blog_posts || []).filter((p: any) => p.id !== draft.id);
+      await adminApi.updateSettings({ blog_posts: blogPosts });
+      toast.success("Deleted");
+      load();
+      startNew();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   return (
@@ -328,8 +300,11 @@ function ContentAdmin() {
   const [newValue, setNewValue] = useState("");
 
   async function load() {
-    const { data } = await supabase.from("page_contents" as any).select("id,page,key,value,updated_at").order("page").order("key");
-    setRows((data || []).map((row: any) => ({ ...row, editValue: typeof row.value === "object" ? JSON.stringify(row.value, null, 2) : String(row.value) })));
+    try {
+      const d = await adminApi.getSettings();
+      const contents = (d as any)?.page_contents || [];
+      setRows(contents.map((row: any) => ({ ...row, editValue: typeof row.value === "object" ? JSON.stringify(row.value, null, 2) : String(row.value) })));
+    } catch { /* silent */ }
   }
 
   useEffect(() => { load(); }, []);
@@ -339,10 +314,15 @@ function ContentAdmin() {
     if (parsedValue.trim().startsWith("[") || parsedValue.trim().startsWith("{")) {
       try { parsedValue = JSON.parse(parsedValue); } catch { return toast.error("Invalid JSON"); }
     }
-    const { error } = await supabase.from("page_contents" as any).update({ value: parsedValue, updated_at: new Date().toISOString() }).eq("id", row.id);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    load();
+    try {
+      const settings = await adminApi.getSettings();
+      const contents = ((settings as any)?.page_contents || []).map((r: any) =>
+        r.id === row.id ? { ...r, value: parsedValue, updated_at: new Date().toISOString() } : r
+      );
+      await adminApi.updateSettings({ page_contents: contents });
+      toast.success("Saved");
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function createRow() {
@@ -351,12 +331,15 @@ function ContentAdmin() {
     if (newValue.trim().startsWith("[") || newValue.trim().startsWith("{")) {
       try { parsedValue = JSON.parse(newValue); } catch { return toast.error("Invalid JSON"); }
     }
-    const { error } = await supabase.from("page_contents" as any).insert({ page, key: newKey.trim(), value: parsedValue });
-    if (error) return toast.error(error.message);
-    toast.success("Created");
-    setNewKey("");
-    setNewValue("");
-    load();
+    try {
+      const settings = await adminApi.getSettings();
+      const contents = [...((settings as any)?.page_contents || []), { id: crypto.randomUUID(), page, key: newKey.trim(), value: parsedValue, updated_at: new Date().toISOString() }];
+      await adminApi.updateSettings({ page_contents: contents });
+      toast.success("Created");
+      setNewKey("");
+      setNewValue("");
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   const filteredRows = rows.filter((row) => row.page === page);
@@ -410,8 +393,10 @@ function CategoryAdmin() {
   const [draft, setDraft] = useState({ id: "", name: "", slug: "", icon: "" });
 
   async function load() {
-    const { data } = await supabase.from("categories").select("id,name,slug,icon").order("name");
-    setRows(data || []);
+    try {
+      const data = await categoryApi.list();
+      setRows(data || []);
+    } catch { /* silent */ }
   }
   useEffect(() => { load(); }, []);
 
@@ -426,25 +411,33 @@ function CategoryAdmin() {
   async function save() {
     if (!draft.name.trim()) return toast.error("Name is required");
     if (!draft.slug.trim()) return toast.error("Slug is required");
-    let error;
-    if (draft.id) {
-      ({ error } = await supabase.from("categories").update({ name: draft.name, slug: draft.slug, icon: draft.icon }).eq("id", draft.id));
-    } else {
-      ({ error } = await supabase.from("categories").insert({ name: draft.name, slug: draft.slug, icon: draft.icon }));
-    }
-    if (error) return toast.error(error.message);
-    toast.success(draft.id ? "Category updated" : "Category created");
-    load();
-    startNew();
+    // Categories are managed through the admin settings endpoint
+    try {
+      const settings = await adminApi.getSettings();
+      const categories = (settings as any)?.categories || [];
+      if (draft.id) {
+        const updated = categories.map((c: any) => c.id === draft.id ? { ...c, name: draft.name, slug: draft.slug, icon: draft.icon } : c);
+        await adminApi.updateSettings({ categories: updated });
+      } else {
+        const newCat = { id: crypto.randomUUID(), name: draft.name, slug: draft.slug, icon: draft.icon };
+        await adminApi.updateSettings({ categories: [...categories, newCat] });
+      }
+      toast.success(draft.id ? "Category updated" : "Category created");
+      load();
+      startNew();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function removeCategory(id: string) {
     if (!window.confirm("Delete this category?")) return;
-    const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Deleted");
-    load();
-    if (draft.id === id) startNew();
+    try {
+      const settings = await adminApi.getSettings();
+      const categories = ((settings as any)?.categories || []).filter((c: any) => c.id !== id);
+      await adminApi.updateSettings({ categories });
+      toast.success("Deleted");
+      load();
+      if (draft.id === id) startNew();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   return (
@@ -507,12 +500,11 @@ function ContactMessagesAdmin() {
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase
-      .from("contact_messages")
-      .select("id,name,email,subject,message,created_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    setRows(data || []);
+    try {
+      const settings = await adminApi.getSettings();
+      const messages = (settings as any)?.contact_messages || [];
+      setRows(messages);
+    } catch { /* silent */ }
     setLoading(false);
   }
 
@@ -520,13 +512,16 @@ function ContactMessagesAdmin() {
 
   async function remove(id: string) {
     if (!window.confirm("Delete this message?")) return;
-    const { error } = await supabase.from("contact_messages").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Deleted");
-    load();
+    try {
+      const settings = await adminApi.getSettings();
+      const messages = ((settings as any)?.contact_messages || []).filter((m: any) => m.id !== id);
+      await adminApi.updateSettings({ contact_messages: messages });
+      toast.success("Deleted");
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
-  if (loading) return <div className="text-muted-foreground text-sm py-8 text-center">Loading messages…</div>;
+  if (loading) return <div className="text-muted-foreground text-sm py-8 text-center">Loading messages...</div>;
 
   return (
     <div className="space-y-3">
@@ -556,25 +551,38 @@ function ContactMessagesAdmin() {
 }
 
 function SettingsAdmin() {
-  const [rows, setRows] = useState<any[]>([]);
-  async function load() { const { data } = await supabase.from("platform_settings").select("*").order("key"); setRows(data || []); }
-  useEffect(() => { load(); }, []);
-  async function save(key: string, value: any) {
-    const { error } = await supabase.from("platform_settings").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
-    if (error) toast.error(error.message); else toast.success(`${key} saved`);
+  const [settings, setSettings] = useState<Record<string, any>>({});
+
+  async function load() {
+    try {
+      const data = await adminApi.getSettings();
+      setSettings((data as Record<string, any>) || {});
+    } catch { /* silent */ }
   }
+  useEffect(() => { load(); }, []);
+
+  async function save(key: string, value: any) {
+    try {
+      await adminApi.updateSettings({ [key]: value });
+      toast.success(`${key} saved`);
+      load();
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  const rows = Object.entries(settings).filter(([k]) => !["pricing_tiers", "blog_posts", "page_contents", "categories", "contact_messages"].includes(k));
+
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">Includes SSLCommerz credentials, AI defaults, GEO weights, MCP global config.</p>
-      {rows.map((s) => {
+      {rows.map(([key, val]) => {
+        const s = { key, value: val, is_secret: key.includes("passwd") || key.includes("secret") || key.includes("api_key"), description: "" };
         const isBool = typeof s.value === "boolean";
         const isObj = typeof s.value === "object" && s.value !== null;
         return (
           <div key={s.key} className="glass-card p-4 space-y-2">
             <Label className="font-mono text-xs">{s.key}{s.is_secret && <span className="ml-2 text-[10px] uppercase text-amber-400">secret</span>}</Label>
-            <p className="text-xs text-muted-foreground">{s.description}</p>
             {isBool ? (
-              <div className="flex items-center gap-2"><Switch checked={s.value} onCheckedChange={(v) => { save(s.key, v); load(); }} /></div>
+              <div className="flex items-center gap-2"><Switch checked={s.value} onCheckedChange={(v) => { save(s.key, v); }} /></div>
             ) : isObj ? (
               <textarea defaultValue={JSON.stringify(s.value, null, 2)} rows={4} className="w-full px-3 py-2 rounded-lg bg-muted/40 border border-border text-xs font-mono" onBlur={(e) => { try { save(s.key, JSON.parse(e.target.value)); } catch { toast.error("Invalid JSON"); } }} />
             ) : (
@@ -598,7 +606,7 @@ export default function Admin() {
             <h1 className="display-3">Admin</h1>
             <p className="text-muted-foreground">Full CMS for listings, reviews, billing, pricing, and platform config.</p>
           </div>
-          <Link to="/admin/mcp" className="btn-ghost text-sm">MCP server →</Link>
+          <Link to="/admin/mcp" className="btn-ghost text-sm">MCP server</Link>
         </div>
         <Tabs defaultValue="overview">
           <TabsList className="flex-wrap h-auto">

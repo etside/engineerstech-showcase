@@ -5,7 +5,7 @@ import JsonLd from "@/components/JsonLd";
 import ReviewList from "@/components/ReviewList";
 import ClaimButton from "@/components/ClaimButton";
 import WriteReviewDialog from "@/components/WriteReviewDialog";
-import { supabase } from "@/integrations/supabase/client";
+import { businessApi, authApi } from "@/lib/api";
 
 type SocialLinks = {
   twitter?: string;
@@ -61,30 +61,25 @@ export default function BusinessProfile() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setCurrentUserId(data.user.id);
-    });
+    authApi.me().then(({ user }) => {
+      if (user) setCurrentUserId(user.id);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
     let active = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("businesses_public" as any)
-        .select(
-          "id,owner_id,slug,name,tagline,description,logo_url,category,industry,services,website,email,phone,location,country,founded_year,employee_count,min_project_size,hourly_rate,rating,review_count,geo_score,is_verified,ai_summary,social_links"
-        )
-        .eq("slug", slug)
-        .maybeSingle();
-      if (!active) return;
-      if (error) {
+    businessApi.get(slug)
+      .then((data) => {
+        if (!active) return;
+        setBusiness(data as unknown as Business | null);
+        setLoading(false);
+      })
+      .catch((error) => {
+        if (!active) return;
         console.error(error);
         setBusiness(null);
-      } else {
-        setBusiness(data as unknown as Business | null);
-      }
-      setLoading(false);
-    })();
+        setLoading(false);
+      });
     return () => { active = false; };
   }, [slug]);
 

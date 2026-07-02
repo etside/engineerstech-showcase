@@ -14,7 +14,7 @@ import JsonLd from "@/components/JsonLd";
 import Reveal from "@/components/Reveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import AskAiHero from "@/components/AskAiHero";
-import { supabase } from "@/integrations/supabase/client";
+// supabase removed
 import { useHomepageContent } from "@/hooks/useHomepageContent";
 
 interface Business {

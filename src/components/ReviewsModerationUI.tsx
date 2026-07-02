@@ -1,27 +1,18 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Star, CheckCircle, XCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { reviewApi, Review } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
-interface Review {
-  id: string;
-  rating: number;
-  title: string;
-  body: string;
-  status: "pending" | "approved" | "rejected";
-  author_id: string;
-  business_id: string;
-  created_at: string;
+interface ReviewWithBusiness extends Review {
   businesses?: { name: string; slug: string };
-  reviewer_name?: string;
 }
 
 export default function ReviewsModerationUI() {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ReviewWithBusiness[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "rejected">("pending");
   const [rejectionReason, setRejectionReason] = useState<Record<string, string>>({});
@@ -33,57 +24,36 @@ export default function ReviewsModerationUI() {
 
   async function loadReviews() {
     setLoading(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q = (supabase as any)
-      .from("reviews")
-      .select("id,rating,title,body,status,author_id,business_id,created_at,businesses(name,slug)")
-      .order("created_at", { ascending: false });
-
-    if (filter === "pending") {
-      q = q.eq("status", "pending");
-    } else if (filter === "rejected") {
-      q = q.eq("status", "rejected");
-    }
-
-    const { data, error } = await q.limit(50);
-    if (error) {
+    try {
+      const params: { status?: string; limit: number } = { limit: 50 };
+      if (filter === "pending") params.status = "pending";
+      else if (filter === "rejected") params.status = "rejected";
+      const data = await reviewApi.list(params);
+      setReviews((data || []) as ReviewWithBusiness[]);
+    } catch {
       toast.error("Failed to load reviews");
-      console.error(error);
-    } else {
-      setReviews(((data || []) as unknown) as Review[]);
     }
     setLoading(false);
   }
 
   async function approveReview(id: string) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("reviews")
-      .update({ status: "approved" })
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Failed to approve review");
-    } else {
+    try {
+      await reviewApi.update(id, { status: "approved" });
       toast.success("Review approved");
       setReviews(reviews.filter((r) => r.id !== id));
+    } catch {
+      toast.error("Failed to approve review");
     }
   }
 
   async function rejectReview(id: string) {
-    const reason = rejectionReason[id] || "Violates community guidelines";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("reviews")
-      .update({ status: "rejected" })
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Failed to reject review");
-    } else {
+    try {
+      await reviewApi.update(id, { status: "rejected" });
       toast.success("Review rejected");
       setReviews(reviews.filter((r) => r.id !== id));
       setRejectionReason({ ...rejectionReason, [id]: "" });
+    } catch {
+      toast.error("Failed to reject review");
     }
   }
 

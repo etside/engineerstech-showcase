@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApi } from "@/lib/api";
 
 export interface HomepageContent {
   hero: {
@@ -105,15 +105,15 @@ export function useHomepageContent() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("platform_settings")
-        .select("value")
-        .eq("key", "homepage_content")
-        .maybeSingle();
-
-      if (!error && data?.value) {
-        const merged = deepMerge(defaultHomepageContent, data.value as Partial<HomepageContent>);
-        setContent(merged);
+      try {
+        const settings = await adminApi.getSettings();
+        const homepage = settings.homepage_content as Partial<HomepageContent> | undefined;
+        if (homepage) {
+          const merged = deepMerge(defaultHomepageContent, homepage);
+          setContent(merged);
+        }
+      } catch {
+        // Settings unavailable — keep defaults
       }
       setLoading(false);
     })();

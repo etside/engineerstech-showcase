@@ -1,61 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ShieldCheck, ShieldAlert, RefreshCw, FileText, History } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-type Claim = {
-  id: string;
-  business_id: string;
-  status: string;
-  evidence: string;
-  rejection_reason: string | null;
-  additional_docs_requested: string | null;
-  claim_type: string;
-  created_at: string;
-  reviewed_at: string | null;
-};
-
-type Audit = {
-  id: string;
-  action: string;
-  actor_role: string;
-  notes: string | null;
-  created_at: string;
-};
+import { claimApi, businessApi, Claim, AuditLog } from "@/lib/api";
 
 export default function VerificationPanel({ businessId }: { businessId: string }) {
   const [claims, setClaims] = useState<Claim[]>([]);
-  const [audits, setAudits] = useState<Audit[]>([]);
+  const [audits, setAudits] = useState<AuditLog[]>([]);
   const [evidence, setEvidence] = useState("");
   const [busy, setBusy] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function load() {
-    const { data: c } = await supabase
-      .from("business_claims")
-      .select("id,business_id,status,evidence,rejection_reason,additional_docs_requested,claim_type,created_at,reviewed_at")
-      .eq("business_id", businessId)
-      .order("created_at", { ascending: false });
-    setClaims((c as Claim[]) || []);
-    const { data: a } = await supabase
-      .from("claim_audit_log")
-      .select("id,action,actor_role,notes,created_at")
-      .eq("business_id", businessId)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    setAudits((a as Audit[]) || []);
+    try {
+      const [c, a] = await Promise.all([
+        claimApi.listByBusiness(businessId),
+        claimApi.auditLog(businessId),
+      ]);
+      setClaims(c || []);
+      setAudits(a || []);
+    } catch {
+      // Silently handle — claims may not be available
+    }
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [businessId]);
 
-  // realtime: claim updates
+  // Poll for updates every 30s (replaces Supabase realtime)
   useEffect(() => {
-    const ch = supabase.channel(`claims-${businessId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "business_claims", filter: `business_id=eq.${businessId}` }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "claim_audit_log", filter: `business_id=eq.${businessId}` }, load)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [businessId]);
+    pollRef.current = setInterval(load, 30000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [businessId, load]);
 
   const latest = claims[0];
   const canResubmit = !latest || latest.status === "rejected" || latest.status === "needs_more_info";
@@ -64,29 +39,21 @@ export default function VerificationPanel({ businessId }: { businessId: string }
     e.preventDefault();
     if (!evidence.trim()) return toast.error("Add some evidence");
     setBusy(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setBusy(false); return; }
-    const { data: ins, error } = await supabase.from("business_claims").insert({
-      business_id: businessId,
-      user_id: user.id,
-      evidence,
-      status: "pending",
-      claim_type: latest ? "resubmission" : "initial",
-    }).select("id").maybeSingle();
-    if (error) { setBusy(false); return toast.error(error.message); }
-    if (ins) {
-      await supabase.from("claim_audit_log").insert({
-        claim_id: ins.id, business_id: businessId, actor_id: user.id, actor_role: "owner",
-        action: latest ? "resubmitted" : "submitted",
-        notes: "Owner submitted verification evidence",
+    try {
+      await claimApi.submit({
+        business_id: businessId,
+        evidence,
+        claim_type: latest ? "resubmission" : "initial",
       });
       // Reset listing back to pending review
-      await supabase.from("businesses").update({ verification_status: "pending" }).eq("id", businessId);
+      await businessApi.update(businessId, { status: "pending" } as Record<string, unknown>);
+      setEvidence("");
+      toast.success("Evidence submitted — admin will review shortly");
+      load();
+    } catch (err) {
+      toast.error((err as Error).message);
     }
-    setEvidence("");
     setBusy(false);
-    toast.success("Evidence submitted — admin will review shortly");
-    load();
   }
 
   return (

@@ -2,39 +2,38 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { pricingApi, authApi, businessApi, PricingTier } from "@/lib/api";
 import { invokeFn } from "@/lib/fn";
 
-type Tier = { id: string; slug: string; name: string; price_usd: number; price_bdt: number | null; billing_period: string; features: string[]; display_order: number; is_active: boolean };
-
 export default function Pricing() {
-  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [tiers, setTiers] = useState<PricingTier[]>([]);
   const nav = useNavigate();
   const [params] = useSearchParams();
   const bizParam = params.get("biz");
 
   useEffect(() => {
-    supabase.from("pricing_tiers").select("*").eq("is_active", true).order("display_order")
-      .then(({ data }) => {
-        let rows = ((data as unknown) as Tier[]) || [];
+    pricingApi.list()
+      .then((data) => {
+        let rows = (data || []) as PricingTier[];
         // Payment is mandatory for every new listing — hide free tier in submission flow
         if (bizParam) rows = rows.filter((t) => t.price_usd > 0);
         setTiers(rows);
-      });
-  }, []);
+      })
+      .catch(() => {});
+  }, [bizParam]);
 
-  async function choose(t: Tier) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { nav(`/auth?mode=signup&next=/pricing`); return; }
-    if (t.slug === "enterprise") { nav("/contact"); return; }
-    if (t.price_usd === 0) { nav("/submit"); return; }
-    let businessId = bizParam;
-    if (!businessId) {
-      const { data: bizes } = await supabase.from("businesses").select("id,name").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).limit(1);
-      if (!bizes?.length) { toast("Create a listing first"); nav("/submit"); return; }
-      businessId = bizes[0].id;
-    }
+  async function choose(t: PricingTier) {
     try {
+      const { user } = await authApi.me();
+      if (!user) { nav(`/auth?mode=signup&next=/pricing`); return; }
+      if (t.slug === "enterprise") { nav("/contact"); return; }
+      if (t.price_usd === 0) { nav("/submit"); return; }
+      let businessId = bizParam;
+      if (!businessId) {
+        const { data: bizes } = await businessApi.list({ limit: 1 });
+        if (!bizes?.length) { toast("Create a listing first"); nav("/submit"); return; }
+        businessId = bizes[0].id;
+      }
       const res = await invokeFn<{ gatewayUrl: string }>("sslcz-init", { businessId, tierSlug: t.slug, returnOrigin: window.location.origin });
       window.location.href = res.gatewayUrl;
     } catch (e) { toast.error((e as Error).message); }

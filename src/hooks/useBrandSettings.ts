@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApi } from "@/lib/api";
 import type { BrandSettings } from "@/components/BrandingEditor";
 
 const defaultBrand: BrandSettings = {
@@ -22,13 +22,14 @@ export function useBrandSettings() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("platform_settings")
-        .select("value")
-        .eq("key", "brand_settings")
-        .maybeSingle();
-      if (!error && data?.value) {
-        setBrand({ ...defaultBrand, ...(data.value as Partial<BrandSettings>) });
+      try {
+        const settings = await adminApi.getSettings();
+        const brandData = settings.brand as Partial<BrandSettings> | undefined;
+        if (brandData) {
+          setBrand({ ...defaultBrand, ...brandData });
+        }
+      } catch {
+        // Settings unavailable — keep defaults
       }
       setLoading(false);
     })();

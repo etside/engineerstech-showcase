@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, setAuthToken } from "@/lib/api";
 
 export default function Auth() {
   const [params] = useSearchParams();
@@ -17,16 +17,13 @@ export default function Auth() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
-        });
-        if (error) throw error;
+        const { token } = await authApi.register(email, password);
+        setAuthToken(token);
         toast.success("Account created. Welcome to engineersTech!");
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { token } = await authApi.login(email, password);
+        setAuthToken(token);
         toast.success("Welcome back.");
         navigate("/");
       }
@@ -39,14 +36,8 @@ export default function Auth() {
   };
 
   const signInGoogle = async () => {
-    setLoading(true);
-    try {
-      await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Google sign-in failed";
-      toast.error(message);
-      setLoading(false);
-    }
+    // TODO: Implement Google OAuth via PHP backend
+    toast.error("Google sign-in is not yet available. Please use email.");
   };
 
   return (

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Rss } from "lucide-react";
 
 type Post = { id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; published_at: string | null; tags: string[] | null };
@@ -17,10 +16,14 @@ const FALLBACK: Post[] = [
 export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("blog_posts").select("id,slug,title,excerpt,cover_url,published_at,tags").eq("published", true).order("published_at", { ascending: false }).limit(48);
-      setPosts((data && data.length ? data : FALLBACK) as Post[]);
-    })();
+    // Blog posts are served from the PHP API
+    fetch("/api/blog")
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.data || [];
+        setPosts((list.length ? list : FALLBACK) as Post[]);
+      })
+      .catch(() => setPosts(FALLBACK));
   }, []);
   return (
     <section className="container-tight py-12">

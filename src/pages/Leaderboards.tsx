@@ -1,18 +1,38 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Sparkles, Star } from "lucide-react";
-import { businesses as mock } from "@/data/mockBusinesses";
+import { businessApi } from "@/lib/api";
+
+interface LeaderboardBusiness {
+  slug: string;
+  name: string;
+  category?: string;
+  rating: number;
+  review_count: number;
+  geo_score: number;
+}
 
 export default function Leaderboards() {
   const [tab, setTab] = useState<"geo" | "rated" | "reviewed">("geo");
-  const [list, setList] = useState(mock);
+  const [list, setList] = useState<LeaderboardBusiness[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const arr = [...mock].sort((a, b) =>
-      tab === "rated" ? b.rating - a.rating
-      : tab === "reviewed" ? b.review_count - a.review_count
-      : b.geo_score - a.geo_score
-    );
-    setList(arr);
+    businessApi.list({ limit: 200 }).then(({ data }) => {
+      setList(data as unknown as LeaderboardBusiness[]);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setList((prev) => {
+      const arr = [...prev].sort((a, b) =>
+        tab === "rated" ? b.rating - a.rating
+        : tab === "reviewed" ? b.review_count - a.review_count
+        : b.geo_score - a.geo_score
+      );
+      return arr;
+    });
   }, [tab]);
 
   return (

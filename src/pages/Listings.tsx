@@ -4,7 +4,7 @@ import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import BusinessCard from "@/components/BusinessCard";
 import JsonLd from "@/components/JsonLd";
 import { categories, industries } from "@/data/mockBusinesses";
-import { supabase } from "@/integrations/supabase/client";
+import { businessApi, categoryApi } from "@/lib/api";
 
 interface Business {
   id: string;
@@ -36,21 +36,13 @@ export default function Listings() {
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
-    supabase.from("categories").select("slug,name").order("name").then(({ data }) => {
-      if (data) setDbCats(data as { slug: string; name: string }[]);
+    categoryApi.list().then((data) => {
+      setDbCats(data as { slug: string; name: string }[]);
     });
-    supabase
-      .from("businesses_public" as any)
-      .select(
-        "id,slug,name,tagline,logo_url,category,industry,services,website,rating,review_count,geo_score,is_verified,location",
-      )
-      .eq("is_active", true)
-      .order("geo_score", { ascending: false })
-      .limit(200)
-      .then(({ data }) => {
-        if (data) setBusinesses(data as unknown as Business[]);
-        setLoading(false);
-      });
+    businessApi.list({ limit: 200 }).then(({ data }) => {
+      setBusinesses(data as unknown as Business[]);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {

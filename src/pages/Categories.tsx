@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as Icons from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { categoryApi } from "@/lib/api";
 import JsonLd from "@/components/JsonLd";
 
 interface Category {
@@ -20,11 +20,8 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("categories")
-      .select("slug,name,icon,description")
-      .order("name")
-      .then(({ data }) => {
+    categoryApi.list()
+      .then((data) => {
         setCats((data as Category[]) ?? []);
         setLoading(false);
       });

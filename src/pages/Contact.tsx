@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Mail, MessageSquare, MapPin, Send } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { contactApi } from "@/lib/api";
 
 export default function Contact() {
   const [loading, setLoading] = useState(false);
@@ -26,11 +26,7 @@ export default function Contact() {
                 const subject = (formData.get("subject") as string || "").trim();
                 const message = (formData.get("message") as string || "").trim();
 
-                const { error } = await supabase
-                  .from("contact_messages")
-                  .insert({ name, email, subject, message });
-
-                if (error) throw error;
+                await contactApi.submit({ name, email, subject, message });
 
                 toast.success("Message sent — we'll get back to you within a business day.");
                 form.reset();

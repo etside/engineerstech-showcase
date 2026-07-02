@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, adminApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,25 +34,20 @@ export default function AdminMCP() {
   const [showToken, setShowToken] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
 
-  const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
   const mcpUrl = useMemo(
-    () => `https://${projectRef}.functions.supabase.co/mcp-server`,
-    [projectRef],
+    () => `${window.location.origin}/api/mcp-server`,
+    [],
   );
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await authApi.me();
       if (!user) {
         setAuthorized(false);
         setLoading(false);
         return;
       }
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-      const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+      const isAdmin = (user.roles ?? []).some((r) => r === "admin" || r === "super_admin");
       setAuthorized(isAdmin);
       if (isAdmin) await refresh();
       setLoading(false);
@@ -60,51 +55,49 @@ export default function AdminMCP() {
   }, []);
 
   async function refresh() {
-    const { data, error } = await supabase
-      .from("mcp_config")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) return toast.error(error.message);
-    if (data) {
-      setCfg(data as McpConfig);
-      setServerName(data.server_name);
-      setEnabled(data.enabled);
-      setAllowWrite(data.allow_write);
+    try {
+      const data = await adminApi.mcpConfig();
+      if (data) {
+        setCfg(data as McpConfig);
+        setServerName((data as any).server_name || "");
+        setEnabled((data as any).enabled ?? true);
+        setAllowWrite((data as any).allow_write ?? false);
+      }
+    } catch (err) {
+      toast.error((err as Error).message);
     }
   }
 
   async function save() {
     if (!cfg) return;
-    const { error } = await supabase
-      .from("mcp_config")
-      .update({ server_name: serverName, enabled, allow_write: allowWrite })
-      .eq("id", cfg.id);
-    if (error) return toast.error(error.message);
-    toast.success("MCP settings saved");
-    await refresh();
+    try {
+      await adminApi.updateMcp({ server_name: serverName, enabled, allow_write: allowWrite });
+      toast.success("MCP settings saved");
+      await refresh();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   async function rotateToken() {
     if (!cfg) return;
     const token = randomToken(32);
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { error } = await (supabase as any)
-      .from("mcp_config")
-      .update({ api_token: token, expires_at: expires, token_last_rotated_at: new Date().toISOString() })
-      .eq("id", cfg.id);
-    if (error) return toast.error(error.message);
-    toast.success("API token rotated. Update your ChatGPT connector.");
-    await refresh();
+    try {
+      await adminApi.updateMcp({ api_token: token, expires_at: expires, token_last_rotated_at: new Date().toISOString() });
+      toast.success("API token rotated. Update your ChatGPT connector.");
+      await refresh();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   async function testConnection() {
-    setTestStatus("Testing…");
+    setTestStatus("Testing...");
     try {
       const res = await fetch(`${mcpUrl}/health`);
       const json = await res.json();
-      setTestStatus(res.ok ? `OK · ${json.server}` : `Failed (${res.status})`);
+      setTestStatus(res.ok ? `OK - ${json.server}` : `Failed (${res.status})`);
     } catch (e) {
       setTestStatus(`Failed: ${(e as Error).message}`);
     }
@@ -115,7 +108,7 @@ export default function AdminMCP() {
     toast.success(`${label} copied`);
   }
 
-  if (loading) return <div className="container py-16">Loading…</div>;
+  if (loading) return <div className="container py-16">Loading...</div>;
   if (!authorized) {
     return (
       <div className="container py-16 max-w-xl">
@@ -148,7 +141,7 @@ export default function AdminMCP() {
       <Card>
         <CardHeader>
           <CardTitle>Connection</CardTitle>
-          <CardDescription>Paste these values into ChatGPT → Settings → Connectors → Developer mode.</CardDescription>
+          <CardDescription>Paste these values into ChatGPT - Settings - Connectors - Developer mode.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -180,7 +173,7 @@ export default function AdminMCP() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Send as <code>Authorization: Bearer &lt;token&gt;</code> or <code>?token=…</code> query param.
+              Send as <code>Authorization: Bearer &lt;token&gt;</code> or <code>?token=...</code> query param.
             </p>
             {cfg?.expires_at && (
               <p className="text-xs text-muted-foreground">Token expires: {new Date(cfg.expires_at).toLocaleString()}</p>
@@ -227,10 +220,10 @@ export default function AdminMCP() {
         </CardHeader>
         <CardContent>
           <ul className="text-sm space-y-2">
-            <li><code className="font-mono">search_businesses</code> — query/category/industry search ranked by GEO score</li>
-            <li><code className="font-mono">get_business</code> — fetch a single listing by id or slug</li>
-            <li><code className="font-mono">list_categories</code> — distinct category list</li>
-            <li><code className="font-mono">recommend_for_intent</code> — natural-language recommendations</li>
+            <li><code className="font-mono">search_businesses</code> - query/category/industry search ranked by GEO score</li>
+            <li><code className="font-mono">get_business</code> - fetch a single listing by id or slug</li>
+            <li><code className="font-mono">list_categories</code> - distinct category list</li>
+            <li><code className="font-mono">recommend_for_intent</code> - natural-language recommendations</li>
           </ul>
         </CardContent>
       </Card>

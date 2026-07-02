@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, adminApi, businessApi } from "@/lib/api";
 import RequireAdmin from "@/components/RequireAdmin";
 import HomepageEditor from "@/components/HomepageEditor";
 import BrandingEditor from "@/components/BrandingEditor";
@@ -55,12 +55,25 @@ function Inner() {
   const [bizSlug, setBizSlug] = useState("");
 
   async function load() {
-    const { data } = await supabase.from("platform_settings").select("*");
-    const map: Record<string, Setting> = {};
-    (data || []).forEach((s: any) => (map[s.key] = s));
-    setSettings(map);
-    const { data: r } = await supabase.from("user_roles").select("user_id, role").order("role");
-    setUsers((r as any[]) || []);
+    try {
+      const data = await adminApi.getSettings();
+      const map: Record<string, Setting> = {};
+      Object.entries(data || {}).forEach(([key, value]) => {
+        map[key] = { key, value } as Setting;
+      });
+      setSettings(map);
+    } catch { /* silent */ }
+
+    try {
+      const userData = await adminApi.users();
+      const roles: Array<{ user_id: string; role: string; email?: string }> = [];
+      (userData || []).forEach((u: any) => {
+        (u.roles || []).forEach((role: string) => {
+          roles.push({ user_id: u.id, role, email: u.email });
+        });
+      });
+      setUsers(roles);
+    } catch { /* silent */ }
   }
   useEffect(() => { load(); }, []);
 
@@ -69,40 +82,42 @@ function Inner() {
     if (type === "number") value = Number(raw);
     if (type === "bool") value = !!raw;
     if (type === "text" || type === "secret") value = String(raw);
-    const { error } = await supabase.from("platform_settings")
-      .upsert({ key, value }, { onConflict: "key" });
-    if (error) return toast.error(error.message);
-    toast.success(`Saved ${key}`);
-    load();
+    try {
+      await adminApi.updateSettings({ [key]: value });
+      toast.success(`Saved ${key}`);
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function grantBizFree() {
     if (!bizSlug.trim()) return;
-    const { data: biz } = await supabase.from("businesses").select("id").eq("slug", bizSlug.trim()).maybeSingle();
-    if (!biz) return toast.error("Business slug not found");
-    const { error } = await supabase.from("businesses").update({
-      verification_status: "verified",
-      is_verified: true,
-      is_active: true,
-      tier: "free",
-    }).eq("id", biz.id);
-    if (error) return toast.error(error.message);
-    toast.success("Business marked live (free grant)");
-    setBizSlug("");
+    try {
+      const res = await businessApi.list({ limit: 100 });
+      const biz = (res.data || []).find((b: any) => b.slug === bizSlug.trim());
+      if (!biz) return toast.error("Business slug not found");
+      await businessApi.update(biz.id, {
+        status: "active",
+        is_verified: true,
+      } as any);
+      toast.success("Business marked live (free grant)");
+      setBizSlug("");
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function grantRoleByUserId(userId: string, role: typeof grantRole) {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
-    if (error) return toast.error(error.message);
-    toast.success(`Granted ${role}`);
-    load();
+    try {
+      await adminApi.setRole(userId, role);
+      toast.success(`Granted ${role}`);
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function revokeRole(userId: string, role: any) {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role as any);
-    if (error) return toast.error(error.message);
-    toast.success("Revoked");
-    load();
+    try {
+      await adminApi.setRole(userId, "user");
+      toast.success("Revoked");
+      load();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   return (
@@ -211,7 +226,7 @@ function Inner() {
               <button onClick={() => grantEmail && grantRoleByUserId(grantEmail.trim(), grantRole)} className="btn-gradient text-sm">Grant</button>
             </div>
             <p className="text-[11px] text-muted-foreground mb-3">
-              Tip: ask the user to sign in once; their UUID appears in Backend → Users. Paste it here.
+              Tip: ask the user to sign in once; their UUID appears in Backend - Users. Paste it here.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Sparkles, ExternalLink, TrendingUp, CreditCard } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, businessApi } from "@/lib/api";
 import { invokeFn } from "@/lib/fn";
 import OnboardingStepper from "@/components/OnboardingStepper";
 import VerificationPanel from "@/components/VerificationPanel";
@@ -17,47 +17,37 @@ export default function Dashboard() {
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    let ch: ReturnType<typeof supabase.channel> | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await authApi.me();
       if (!user) { setAuthed(false); return; }
       setAuthed(true);
-      const { data } = await supabase
-        .from("businesses")
-        .select("id,slug,name,tier,verification_status,rating,review_count,geo_score,is_active")
-        .or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`)
-        .order("updated_at", { ascending: false });
-      setItems((data as Biz[]) || []);
-      const ids = (data || []).map((d: any) => d.id);
+      const res = await businessApi.list({ limit: 100 });
+      const allBiz = (res.data || []) as any[];
+      const myBiz = allBiz.filter((b: any) => b.owner_id === user.id || b.claimed_by === user.id);
+      setItems(myBiz as Biz[]);
+      const ids = myBiz.map((d: any) => d.id);
       if (ids.length) {
-        const { data: subs } = await supabase
-          .from("subscriptions")
-          .select("business_id,status")
-          .in("business_id", ids)
-          .eq("status", "active");
-        setPaidIds(new Set((subs || []).map((s: any) => s.business_id)));
-        // realtime: refresh on any change to my businesses
-        ch = supabase.channel(`biz-${user.id}-${Math.random().toString(36).slice(2,8)}`)
-          .on("postgres_changes", { event: "UPDATE", schema: "public", table: "businesses" }, (payload: any) => {
-            if (!ids.includes(payload.new?.id)) return;
-            setItems((prev) => prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p));
-          })
-          .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, async () => {
-            const { data: s2 } = await supabase.from("subscriptions").select("business_id,status").in("business_id", ids).eq("status", "active");
-            setPaidIds(new Set((s2 || []).map((s: any) => s.business_id)));
-          })
-          .subscribe();
+        // Poll subscription status periodically (replaces Supabase realtime)
+        pollTimer = setInterval(async () => {
+          try {
+            const refreshed = await businessApi.list({ limit: 100 });
+            const refreshedBiz = (refreshed.data || []) as any[];
+            const refreshedMy = refreshedBiz.filter((b: any) => b.owner_id === user.id || b.claimed_by === user.id);
+            setItems(refreshedMy as Biz[]);
+          } catch { /* silent */ }
+        }, 30000);
       }
     })();
     const p = params.get("payment");
-    if (p === "success") toast.success("Payment complete — subscription active");
+    if (p === "success") toast.success("Payment complete -- subscription active");
     else if (p === "fail") toast.error("Payment failed");
     else if (p === "cancel") toast("Payment cancelled");
-    return () => { if (ch) supabase.removeChannel(ch); };
+    return () => { if (pollTimer) clearInterval(pollTimer); };
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   async function regen(id: string) {
-    toast.promise(invokeFn("geo-summarize", { businessId: id }), { loading: "Summarizing reviews…", success: "AI summary refreshed", error: (e) => (e as Error).message });
+    toast.promise(invokeFn("geo-summarize", { businessId: id }), { loading: "Summarizing reviews...", success: "AI summary refreshed", error: (e) => (e as Error).message });
   }
 
   async function upgrade(id: string, tier: string) {

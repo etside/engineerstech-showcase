@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApi, uploadApi } from "@/lib/api";
 import { Upload, Trash2, Link as LinkIcon } from "lucide-react";
 
 export interface BrandSettings {
@@ -41,13 +41,14 @@ export default function BrandingEditor() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("platform_settings")
-        .select("value")
-        .eq("key", "brand_settings")
-        .maybeSingle();
-      if (!error && data?.value) {
-        setBrand({ ...defaultBrand, ...(data.value as Partial<BrandSettings>) });
+      try {
+        const settings = await adminApi.getSettings();
+        const brandData = settings.brand_settings as Partial<BrandSettings> | undefined;
+        if (brandData) {
+          setBrand({ ...defaultBrand, ...brandData });
+        }
+      } catch {
+        // Settings unavailable — keep defaults
       }
     })();
   }, []);
@@ -60,34 +61,24 @@ export default function BrandingEditor() {
     const file = ref.current?.files?.[0];
     if (!file) return;
     setUploading(field);
-    const ext = file.name.split(".").pop();
-    const path = `branding/${field}_${Date.now()}.${ext}`;
-    const { error: uploadErr } = await supabase.storage.from("logos").upload(path, file, {
-      cacheControl: "31536000",
-      upsert: true,
-    });
-    if (uploadErr) {
-      toast.error(`Upload failed: ${uploadErr.message}`);
-      setUploading(null);
-      return;
+    try {
+      const { url } = await uploadApi.upload(file);
+      update(field, url);
+      toast.success(`${field} uploaded`);
+    } catch (err) {
+      toast.error(`Upload failed: ${(err as Error).message}`);
     }
-    const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
-    update(field, urlData.publicUrl);
     setUploading(null);
-    toast.success(`${field} uploaded`);
     if (ref.current) ref.current.value = "";
   }
 
   async function save() {
     setSaving(true);
-    const { error } = await supabase.from("platform_settings").upsert(
-      { key: "brand_settings", value: brand as Record<string, unknown> },
-      { onConflict: "key" }
-    );
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await adminApi.updateSettings({ brand_settings: brand });
       toast.success("Brand settings saved!");
+    } catch (err) {
+      toast.error((err as Error).message);
     }
     setSaving(false);
   }

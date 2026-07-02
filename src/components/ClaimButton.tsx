@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { claimApi, authApi } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck } from "lucide-react";
@@ -12,13 +12,16 @@ export default function ClaimButton({ businessId }: { businessId: string }) {
 
   async function submit() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error("Sign in to claim"); setLoading(false); return; }
-    const { error } = await supabase.from("business_claims").insert({ business_id: businessId, user_id: user.id, evidence });
+    try {
+      const { user } = await authApi.me();
+      if (!user) { toast.error("Sign in to claim"); setLoading(false); return; }
+      await claimApi.submit({ business_id: businessId, evidence, claim_type: "initial" });
+      toast.success("Claim submitted — admin will review");
+      setOpen(false); setEvidence("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Claim submitted — admin will review");
-    setOpen(false); setEvidence("");
   }
 
   return (

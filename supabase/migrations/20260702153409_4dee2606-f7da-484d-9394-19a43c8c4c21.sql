@@ -1,1 +1,0 @@
-REVOKE EXECUTE ON FUNCTION public.is_any_admin(uuid) FROM PUBLIC, anon, authenticated;

@@ -1,25 +1,27 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
+import { newsletterApi } from "@/lib/api";
 
 export default function NewsletterSignup() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase
-      .from("newsletter_subscribers")
-      .insert({ email, language: i18n.language?.slice(0, 2) || "en" });
-    setLoading(false);
-    if (error && !error.message.includes("duplicate")) {
-      return toast.error(t("newsletter.error"));
+    try {
+      await newsletterApi.subscribe(email);
+      setEmail("");
+      toast.success(t("newsletter.success"));
+    } catch (err) {
+      const msg = (err as Error).message || "";
+      if (!msg.includes("duplicate")) {
+        toast.error(t("newsletter.error"));
+      }
     }
-    setEmail("");
-    toast.success(t("newsletter.success"));
+    setLoading(false);
   }
 
   return (

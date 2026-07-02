@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, businessApi, categoryApi } from "@/lib/api";
 import OnboardingStepper from "@/components/OnboardingStepper";
 import { useTranslation } from "react-i18next";
 import { ClipboardList, CreditCard, ShieldCheck, Rocket } from "lucide-react";
@@ -23,8 +23,8 @@ export default function Submit() {
   const [cats, setCats] = useState<Array<{ slug: string; name: string }>>([]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
-    supabase.from("categories").select("slug,name").order("name").then(({ data }) => setCats(data || []));
+    authApi.me().then(({ user }) => setAuthed(!!user));
+    categoryApi.list().then((data) => setCats((data || []).map((c: any) => ({ slug: c.slug, name: c.name }))));
   }, []);
 
   if (authed === false) {
@@ -33,53 +33,35 @@ export default function Submit() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user } = await authApi.me();
     if (!user) return;
     const slug = slugify(f.name) + "-" + Math.random().toString(36).slice(2, 6);
-    const { data: biz, error } = await supabase.from("businesses").insert({
-      owner_id: user.id,
-      claimed_by: user.id,
-      slug,
-      name: f.name,
-      tagline: f.tagline,
-      description: f.description,
-      website: f.website,
-      email: f.email,
-      phone: f.phone || null,
-      category: f.category,
-      country: f.country,
-      location: f.location || null,
-      industry: f.industry || null,
-      founded_year: f.founded_year ? parseInt(f.founded_year, 10) : null,
-      employee_count: f.employee_count || null,
-      hourly_rate: f.hourly_rate || null,
-      min_project_size: f.min_project_size || null,
-      services: f.services.split(",").map((s) => s.trim()).filter(Boolean),
-      social_links: {
-        linkedin: f.social_linkedin || null,
-        twitter: f.social_twitter || null,
-        github: f.social_github || null,
-      },
-      is_active: false,
-      verification_status: "pending",
-    }).select("id").maybeSingle();
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    // Save ownership/verification evidence for admin review
-    if (biz && f.evidence.trim()) {
-      const { data: claim } = await supabase.from("business_claims").insert({
-        business_id: biz.id, user_id: user.id, evidence: f.evidence,
-        status: "pending", claim_type: "initial",
-      }).select("id").maybeSingle();
-      if (claim) {
-        await supabase.from("claim_audit_log").insert({
-          claim_id: claim.id, business_id: biz.id, actor_id: user.id, actor_role: "owner",
-          action: "submitted", notes: "Initial submission with evidence",
-        });
-      }
+    try {
+      const { id } = await businessApi.create({
+        name: f.name,
+        slug,
+        description: f.description,
+        short_description: f.tagline,
+        website: f.website,
+        email: f.email,
+        phone: f.phone || undefined,
+        category_name: f.category,
+        country: f.country,
+        services: f.services.split(",").map((s) => s.trim()).filter(Boolean),
+        social_links: {
+          linkedin: f.social_linkedin || undefined,
+          twitter: f.social_twitter || undefined,
+          github: f.social_github || undefined,
+        },
+        tags: [f.industry, f.location].filter(Boolean),
+      });
+      setLoading(false);
+      toast.success("Listing saved -- choose a plan to continue");
+      nav(`/pricing?biz=${id ?? ""}`);
+    } catch (err) {
+      setLoading(false);
+      toast.error((err as Error).message);
     }
-    toast.success("Listing saved — choose a plan to continue");
-    nav(`/pricing?biz=${biz?.id ?? ""}`);
   }
 
   return (
@@ -205,11 +187,11 @@ export default function Submit() {
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Employee count</label>
             <select value={f.employee_count} onChange={(e) => setF({ ...f, employee_count: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-muted/40 border border-border text-sm">
-              <option value="">Select…</option>
-              <option value="1-10">1–10</option>
-              <option value="11-50">11–50</option>
-              <option value="51-200">51–200</option>
-              <option value="201-500">201–500</option>
+              <option value="">Select...</option>
+              <option value="1-10">1-10</option>
+              <option value="11-50">11-50</option>
+              <option value="51-200">51-200</option>
+              <option value="201-500">201-500</option>
               <option value="500+">500+</option>
             </select>
           </div>
@@ -282,7 +264,7 @@ export default function Submit() {
           />
           <p className="text-[11px] text-muted-foreground mt-1">Reviewed by our admin team before your listing goes live.</p>
         </div>
-        <button disabled={loading} className="btn-gradient w-full justify-center">{loading ? "Saving…" : "Continue to payment →"}</button>
+        <button disabled={loading} className="btn-gradient w-full justify-center">{loading ? "Saving..." : "Continue to payment"}</button>
         <p className="text-[11px] text-muted-foreground text-center">All listings require a paid plan. You'll pick a tier on the next step.</p>
       </form>
     </section>
