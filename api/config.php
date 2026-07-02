@@ -16,15 +16,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // --- Session ---
 session_start();
 
-// --- Database ---
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'engineerstech');
-define('DB_USER', 'root');       // Change for production
-define('DB_PASS', '');            // Change for production
+// --- Database (edit config.env on cPanel) ---
+$configFile = __DIR__ . '/config.env';
+if (file_exists($configFile)) {
+    $cfg = parse_ini_file($configFile);
+} else {
+    $cfg = [];
+}
+
+define('DB_HOST', $cfg['DB_HOST'] ?? 'localhost');
+define('DB_NAME', $cfg['DB_NAME'] ?? 'engineerstech');
+define('DB_USER', $cfg['DB_USER'] ?? 'root');
+define('DB_PASS', $cfg['DB_PASS'] ?? '');
 define('DB_CHARSET', 'utf8mb4');
 
 // --- JWT ---
-define('JWT_SECRET', 'engineerstech-showcase-secret-change-in-production');
+define('JWT_SECRET', $cfg['JWT_SECRET'] ?? 'engineerstech-showcase-secret-change-in-production');
 define('JWT_EXPIRY', 86400 * 7); // 7 days
 
 // --- Upload ---
