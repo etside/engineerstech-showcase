@@ -240,6 +240,7 @@ export type Database = {
           search_vector: unknown
           services: string[] | null
           slug: string
+          social_links: Json | null
           tagline: string | null
           tier: string
           updated_at: string
@@ -277,6 +278,7 @@ export type Database = {
           search_vector?: unknown
           services?: string[] | null
           slug: string
+          social_links?: Json | null
           tagline?: string | null
           tier?: string
           updated_at?: string
@@ -314,6 +316,7 @@ export type Database = {
           search_vector?: unknown
           services?: string[] | null
           slug?: string
+          social_links?: Json | null
           tagline?: string | null
           tier?: string
           updated_at?: string
@@ -400,6 +403,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          subject?: string | null
+        }
+        Relationships: []
       }
       geo_feed_cache: {
         Row: {
