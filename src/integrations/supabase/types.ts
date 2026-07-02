@@ -790,7 +790,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mcp_configs_public: {
+        Row: {
+          business_id: string | null
+          context_window: number | null
+          expose_fields: string[] | null
+          id: string | null
+          include_logo: boolean | null
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          context_window?: number | null
+          expose_fields?: string[] | null
+          id?: string | null
+          include_logo?: boolean | null
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          context_window?: number | null
+          expose_fields?: string[] | null
+          id?: string | null
+          include_logo?: boolean | null
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_configs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
