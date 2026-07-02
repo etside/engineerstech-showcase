@@ -50,6 +50,13 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_recommendations_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       api_keys: {
@@ -95,6 +102,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
             referencedColumns: ["id"]
           },
         ]
@@ -205,6 +219,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_claims_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
             referencedColumns: ["id"]
           },
         ]
@@ -396,6 +417,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "claim_audit_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "claim_audit_log_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: false
@@ -528,6 +556,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: true
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_configs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses_public"
             referencedColumns: ["id"]
           },
         ]
@@ -706,6 +741,13 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subscriptions: {
@@ -765,6 +807,13 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -790,6 +839,93 @@ export type Database = {
       }
     }
     Views: {
+      businesses_public: {
+        Row: {
+          category: string | null
+          country: string | null
+          cover_url: string | null
+          created_at: string | null
+          description: string | null
+          employee_count: string | null
+          founded_year: number | null
+          geo_score: number | null
+          hourly_rate: string | null
+          id: string | null
+          industry: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_verified: boolean | null
+          location: string | null
+          logo_url: string | null
+          min_project_size: string | null
+          name: string | null
+          rating: number | null
+          review_count: number | null
+          services: string[] | null
+          slug: string | null
+          social_links: Json | null
+          tagline: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_count?: string | null
+          founded_year?: number | null
+          geo_score?: number | null
+          hourly_rate?: string | null
+          id?: string | null
+          industry?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          logo_url?: string | null
+          min_project_size?: string | null
+          name?: string | null
+          rating?: number | null
+          review_count?: number | null
+          services?: string[] | null
+          slug?: string | null
+          social_links?: Json | null
+          tagline?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_count?: string | null
+          founded_year?: number | null
+          geo_score?: number | null
+          hourly_rate?: string | null
+          id?: string | null
+          industry?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          logo_url?: string | null
+          min_project_size?: string | null
+          name?: string | null
+          rating?: number | null
+          review_count?: number | null
+          services?: string[] | null
+          slug?: string | null
+          social_links?: Json | null
+          tagline?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       mcp_configs_public: {
         Row: {
           business_id: string | null
@@ -824,6 +960,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: true
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_configs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses_public"
             referencedColumns: ["id"]
           },
         ]
