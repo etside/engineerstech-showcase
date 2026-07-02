@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
       .limit(limit);
     const base = url.origin;
     const body =
-      `# geoListed — Business Directory\n\n> Verified businesses optimized for AI discovery.\n\n## Feed\n- [JSON-LD Feed](${base}/functions/v1/geo-feed)\n\n## Listings\n${(data || [])
+      `# engineersTech — Business Directory\n\n> Verified businesses optimized for AI discovery.\n\n## Feed\n- [JSON-LD Feed](${base}/functions/v1/geo-feed)\n\n## Listings\n${(data || [])
         .map((b) => `- [${b.name}](${base.replace(/\.supabase\.co.*/, "")}/business/${b.slug}) — ${b.tagline ?? ""} (${b.category ?? ""})`)
         .join("\n")}\n`;
     return new Response(body, { headers: { ...corsHeaders, "Content-Type": "text/plain; charset=utf-8" } });
@@ -46,10 +46,10 @@ Deno.serve(async (req) => {
       position: i + 1,
       item: {
         "@type": "LocalBusiness",
-        "@id": `https://geolisted.app/business/${b.slug}`,
+        "@id": `https://engineerstechbd.com/business/${b.slug}`,
         name: b.name,
         description: b.description || b.tagline,
-        url: `https://geolisted.app/business/${b.slug}`,
+        url: `https://engineerstechbd.com/business/${b.slug}`,
         telephone: b.phone,
         email: b.email,
         address: b.location
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     return json({
       "@context": "https://schema.org",
       "@type": "ItemList",
-      name: "geoListed — AI-Ready Business Directory",
+      name: "engineersTech — AI-Ready Business Directory",
       description: "Structured directory of verified businesses indexed for LLM discovery.",
       numberOfItems: items.length,
       itemListElement: items,

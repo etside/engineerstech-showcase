@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const provider = await getSetting<string>("smtp_provider", "sendgrid");
     const apiKey = await getSetting<string>("smtp_api_key", "");
     const from = await getSetting<string>("smtp_from", "noreply@example.com");
-    const fromName = await getSetting<string>("smtp_from_name", "GeoListed");
+    const fromName = await getSetting<string>("smtp_from_name", "engineersTech");
 
     if (!apiKey) return new Response("SMTP not configured", { status: 500, headers: corsHeaders });
 

@@ -2,7 +2,7 @@
 # Production Readiness Verification Script
 # Run this script to verify all production components are in place
 
-echo "🔍 geoListed Production Readiness Check"
+echo "🔍 engineersTech Production Readiness Check"
 echo "=========================================="
 echo ""
 

@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       cancel_url: `${fnBase}/sslcz-ipn?status=cancel&origin=${encodeURIComponent(origin)}`,
       ipn_url: `${fnBase}/sslcz-ipn`,
       cus_name: user.email?.split("@")[0] ?? "Customer",
-      cus_email: user.email ?? "noreply@geolisted.app",
+      cus_email: user.email ?? "noreply@engineerstechbd.com",
       cus_add1: "N/A",
       cus_city: "Dhaka",
       cus_country: "Bangladesh",

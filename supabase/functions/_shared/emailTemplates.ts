@@ -9,10 +9,10 @@ export interface EmailTemplate {
 
 export function verificationEmail(verificationLink: string, userName: string = "User"): EmailTemplate {
   return {
-    subject: "Verify your geoListed account",
+    subject: "Verify your engineersTech account",
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to geoListed, ${userName}!</h2>
+        <h2>Welcome to engineersTech, ${userName}!</h2>
         <p>Please verify your email address by clicking the button below:</p>
         <a href="${verificationLink}" style="display: inline-block; padding: 12px 24px; background-color: #0066ff; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Verify Email</a>
         <p style="color: #666; font-size: 14px; margin-top: 24px;">Or copy this link: ${verificationLink}</p>
@@ -20,13 +20,13 @@ export function verificationEmail(verificationLink: string, userName: string = "
         <p style="color: #999; font-size: 12px;">If you didn't create this account, you can safely ignore this email.</p>
       </div>
     `,
-    text: `Welcome to geoListed, ${userName}!\n\nVerify your email by visiting: ${verificationLink}\n\nIf you didn't create this account, ignore this email.`,
+    text: `Welcome to engineersTech, ${userName}!\n\nVerify your email by visiting: ${verificationLink}\n\nIf you didn't create this account, ignore this email.`,
   };
 }
 
 export function passwordResetEmail(resetLink: string, userName: string = "User"): EmailTemplate {
   return {
-    subject: "Reset your geoListed password",
+    subject: "Reset your engineersTech password",
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Password Reset Request</h2>
@@ -45,7 +45,7 @@ export function passwordResetEmail(resetLink: string, userName: string = "User")
 
 export function businessClaimApprovedEmail(businessName: string, dashboardLink: string): EmailTemplate {
   return {
-    subject: `Your listing "${businessName}" is now live on geoListed!`,
+    subject: `Your listing "${businessName}" is now live on engineersTech!`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>🎉 Listing Approved!</h2>

@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
-  const origin = url.searchParams.get("origin") || "https://geolisted.app";
+  const origin = url.searchParams.get("origin") || "https://engineerstechbd.com";
   let payload: Record<string, string> = {};
   if (req.method === "POST") {
     const ct = req.headers.get("content-type") || "";
