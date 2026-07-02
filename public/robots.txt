@@ -1,4 +1,4 @@
-# geoListed — open to AI crawlers for GEO ingestion
+# engineersTech — open to AI crawlers for GEO ingestion
 User-agent: *
 Allow: /
 Disallow: /admin

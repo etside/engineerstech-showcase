@@ -501,6 +501,60 @@ function CategoryAdmin() {
   );
 }
 
+function ContactMessagesAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("contact_messages")
+      .select("id,name,email,subject,message,created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    setRows(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function remove(id: string) {
+    if (!window.confirm("Delete this message?")) return;
+    const { error } = await supabase.from("contact_messages").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    load();
+  }
+
+  if (loading) return <div className="text-muted-foreground text-sm py-8 text-center">Loading messages…</div>;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-muted-foreground">{rows.length} message{rows.length !== 1 ? "s" : ""}</p>
+        <Button size="sm" variant="outline" onClick={load}>Refresh</Button>
+      </div>
+      {rows.map((m) => (
+        <div key={m.id} className="glass-card p-5 space-y-2">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="font-semibold">{m.name}</div>
+              <a href={`mailto:${m.email}`} className="text-xs text-primary-light hover:underline">{m.email}</a>
+              {m.subject && <div className="text-xs text-muted-foreground mt-0.5">Subject: {m.subject}</div>}
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-[11px] text-muted-foreground">{new Date(m.created_at).toLocaleString()}</span>
+              <Button size="sm" variant="outline" onClick={() => remove(m.id)}>Delete</Button>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap border-t border-border pt-3">{m.message}</p>
+        </div>
+      ))}
+      {!rows.length && <p className="text-muted-foreground text-sm">No messages yet.</p>}
+    </div>
+  );
+}
+
 function SettingsAdmin() {
   const [rows, setRows] = useState<any[]>([]);
   async function load() { const { data } = await supabase.from("platform_settings").select("*").order("key"); setRows(data || []); }
@@ -556,6 +610,7 @@ export default function Admin() {
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="pt-5"><Overview /></TabsContent>
@@ -566,6 +621,7 @@ export default function Admin() {
           <TabsContent value="content" className="pt-5"><ContentAdmin /></TabsContent>
           <TabsContent value="categories" className="pt-5"><CategoryAdmin /></TabsContent>
           <TabsContent value="pricing" className="pt-5"><PricingAdmin /></TabsContent>
+          <TabsContent value="messages" className="pt-5"><ContactMessagesAdmin /></TabsContent>
           <TabsContent value="settings" className="pt-5"><SettingsAdmin /></TabsContent>
         </Tabs>
       </section>

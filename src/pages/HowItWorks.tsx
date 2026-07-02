@@ -71,8 +71,8 @@ export default function HowItWorks() {
               your business — we structure it so AI can read, understand, and recommend it.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-base px-7 py-3.5">
-                Get listed free <ArrowRight className="w-4 h-4" />
+              <Link to="/submit" className="btn-gradient shimmer-btn text-base px-7 py-3.5">
+                Get listed <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/pricing" className="btn-ghost text-base px-7 py-3.5">See pricing</Link>
             </div>
@@ -166,10 +166,10 @@ export default function HowItWorks() {
           <div className="relative">
             <h2 className="display-2 text-white mb-4">Start your GEO journey today.</h2>
             <p className="text-white/80 text-lg max-w-md mx-auto mb-8">
-              Free listing. No credit card. Live within 24 hours.
+              Guided listing, payment, verification, and AI indexing in one flow.
             </p>
-            <Link to="/auth?mode=signup" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
-              Get listed free <ArrowRight className="w-4 h-4" />
+            <Link to="/submit" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
+              Get listed <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </Reveal>

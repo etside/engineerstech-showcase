@@ -22,7 +22,7 @@ const en = {
     platform: "Platform",
     aiDiscovery: "AI Discovery",
     company: "Company",
-    rights: "All rights reserved.",
+    rights: "Copyright reserved.",
     builtBy: "Built and maintained by",
   },
   newsletter: {

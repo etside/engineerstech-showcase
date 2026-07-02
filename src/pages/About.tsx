@@ -131,8 +131,8 @@ export default function About() {
               Join 500+ tech businesses already getting cited by AI recommendation engines.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/auth?mode=signup" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
-                List your business free <ArrowRight className="w-4 h-4" />
+              <Link to="/submit" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
+                List your business <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm border border-white/30 text-white hover:bg-white/10 transition-all">
                 Contact us

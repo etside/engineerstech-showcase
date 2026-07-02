@@ -19,7 +19,7 @@ interface Business {
 // ─── Support stats section ──────────────────────────────────────────────────
 function SupportSection() {
   const items = [
-    { icon: HeartHandshake, stat: "98%", label: "Customer satisfaction score", sub: "Verified by 2,400+ reviews" },
+    { icon: HeartHandshake, stat: "98%", label: "Customer satisfaction score", sub: "Based on moderated community reviews" },
     { icon: Clock, stat: "<25s", label: "Avg. first response time", sub: "Our team replies fast, always" },
     { icon: ShieldCheck, stat: "500+", label: "Verified tech businesses", sub: "Manually reviewed & approved" },
   ];

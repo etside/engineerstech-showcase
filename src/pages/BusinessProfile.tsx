@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star, MapPin, Globe, Mail, Phone, ShieldCheck, Sparkles, Users, Calendar, DollarSign, ArrowLeft, Check, ChevronRight } from "lucide-react";
+import { Star, MapPin, Globe, Mail, Phone, ShieldCheck, Sparkles, Users, Calendar, DollarSign, ArrowLeft, Check, ChevronRight, Twitter, Linkedin, Github, Youtube, Facebook, Instagram } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
 import ReviewList from "@/components/ReviewList";
 import ClaimButton from "@/components/ClaimButton";
 import WriteReviewDialog from "@/components/WriteReviewDialog";
 import { supabase } from "@/integrations/supabase/client";
+
+type SocialLinks = {
+  twitter?: string;
+  linkedin?: string;
+  github?: string;
+  youtube?: string;
+  facebook?: string;
+  instagram?: string;
+  [key: string]: string | undefined;
+};
 
 type Business = {
   id: string;
@@ -32,6 +42,16 @@ type Business = {
   geo_score?: number | null;
   is_verified?: boolean | null;
   ai_summary?: string | null;
+  social_links?: SocialLinks | null;
+};
+
+const SOCIAL_META: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
+  twitter:   { label: "Twitter / X",  Icon: Twitter },
+  linkedin:  { label: "LinkedIn",     Icon: Linkedin },
+  github:    { label: "GitHub",       Icon: Github },
+  youtube:   { label: "YouTube",      Icon: Youtube },
+  facebook:  { label: "Facebook",     Icon: Facebook },
+  instagram: { label: "Instagram",    Icon: Instagram },
 };
 
 export default function BusinessProfile() {
@@ -52,7 +72,7 @@ export default function BusinessProfile() {
       const { data, error } = await supabase
         .from("businesses_public" as any)
         .select(
-          "id,owner_id,slug,name,tagline,description,logo_url,category,industry,services,website,email,phone,location,country,founded_year,employee_count,min_project_size,hourly_rate,rating,review_count,geo_score,is_verified,ai_summary"
+          "id,owner_id,slug,name,tagline,description,logo_url,category,industry,services,website,email,phone,location,country,founded_year,employee_count,min_project_size,hourly_rate,rating,review_count,geo_score,is_verified,ai_summary,social_links"
         )
         .eq("slug", slug)
         .maybeSingle();
@@ -225,6 +245,33 @@ export default function BusinessProfile() {
                 )}
               </div>
             </div>
+
+            {business.social_links && Object.keys(business.social_links).some((k) => business.social_links![k]) && (
+              <div className="glass-card p-6">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-4 font-semibold">Social</div>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(business.social_links).map(([key, url]) => {
+                    if (!url) return null;
+                    const meta = SOCIAL_META[key];
+                    const Icon = meta?.Icon;
+                    const label = meta?.label ?? key;
+                    return (
+                      <a
+                        key={key}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={label}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/40 border border-border text-xs hover:border-primary/50 hover:text-primary-light transition-colors"
+                      >
+                        {Icon ? <Icon className="w-3.5 h-3.5 shrink-0" /> : null}
+                        {label}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {business.geo_score != null && (
               <div className="glass-card p-6 border-primary/30">
