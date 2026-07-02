@@ -57,11 +57,13 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    const apply = async (u: any) => {
-      setUser(u ? { id: u.id, email: u.email } : null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const apply = async (u: { id: string; email?: string } | null) => {
+      setUser(u ? { id: u.id, email: u.email ?? "" } : null);
       if (u) {
         const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.id);
-        const roles = (data || []).map((r: any) => r.role);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const roles = (data || []).map((r: Record<string, any>) => r.role as string);
         setIsAdmin(roles.includes("admin") || roles.includes("super_admin"));
         setIsSuper(roles.includes("super_admin"));
       } else { setIsAdmin(false); setIsSuper(false); }

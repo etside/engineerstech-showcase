@@ -28,10 +28,12 @@ export default function ReviewsModerationUI() {
 
   useEffect(() => {
     loadReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   async function loadReviews() {
     setLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q = (supabase as any)
       .from("reviews")
       .select("id,rating,title,body,status,author_id,business_id,created_at,businesses(name,slug)")
@@ -54,6 +56,7 @@ export default function ReviewsModerationUI() {
   }
 
   async function approveReview(id: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from("reviews")
       .update({ status: "approved" })
@@ -69,6 +72,7 @@ export default function ReviewsModerationUI() {
 
   async function rejectReview(id: string) {
     const reason = rejectionReason[id] || "Violates community guidelines";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from("reviews")
       .update({ status: "rejected" })

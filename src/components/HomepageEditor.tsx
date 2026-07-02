@@ -22,22 +22,26 @@ export default function HomepageEditor() {
     })();
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function updateSection(path: string, value: any) {
     setContent((prev) => {
       const next = structuredClone(prev);
       const keys = path.split(".");
-      let obj: any = next;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let obj: Record<string, any> = next as Record<string, any>;
       for (let i = 0; i < keys.length - 1; i++) {
-        obj = obj[keys[i]];
+        obj = obj[keys[i]] as Record<string, any>;
       }
       obj[keys[keys.length - 1]] = value;
       return next;
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function updateArrayItem(section: keyof HomepageContent, index: number, key: string, value: any) {
     setContent((prev) => {
       const next = structuredClone(prev);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const arr = next[section] as any[];
       if (arr[index]) {
         arr[index][key] = value;
@@ -49,7 +53,7 @@ export default function HomepageEditor() {
   async function save() {
     setSaving(true);
     const { error } = await supabase.from("platform_settings").upsert(
-      { key: "homepage_content", value: content as any },
+      { key: "homepage_content", value: content as Record<string, unknown> },
       { onConflict: "key" }
     );
     if (error) {
@@ -232,6 +236,7 @@ function TextareaField({ label, value, onChange }: { label: string; value: strin
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deepMerge<T extends Record<string, any>>(defaults: T, override: Partial<T>): T {
   const result = { ...defaults } as T;
   for (const key of Object.keys(defaults) as (keyof T)[]) {
@@ -239,10 +244,13 @@ function deepMerge<T extends Record<string, any>>(defaults: T, override: Partial
     const ovrVal = override[key];
     if (ovrVal === undefined || ovrVal === null) continue;
     if (Array.isArray(defVal) && Array.isArray(ovrVal)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[key] = ovrVal;
     } else if (typeof defVal === "object" && defVal !== null && typeof ovrVal === "object" && ovrVal !== null) {
-      (result as any)[key] = deepMerge(defVal as any, ovrVal as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (result as any)[key] = deepMerge(defVal as Record<string, any>, ovrVal as Record<string, any>);
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[key] = ovrVal;
     }
   }

@@ -37,9 +37,11 @@ export default function Reveal({ children, className, delay = 0, as: Tag = "div"
     return () => io.disconnect();
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Comp = Tag as any;
   return (
     <Comp
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ref={ref as any}
       style={{
         ...style,

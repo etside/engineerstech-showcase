@@ -45,6 +45,7 @@ export default function VerificationPanel({ businessId }: { businessId: string }
     setAudits((a as Audit[]) || []);
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [businessId]);
 
   // realtime: claim updates

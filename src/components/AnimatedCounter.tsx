@@ -32,6 +32,7 @@ export default function AnimatedCounter({ value, duration = 1800, prefix = "", s
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function animateCount() {

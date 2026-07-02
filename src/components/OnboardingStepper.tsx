@@ -10,7 +10,7 @@ export type StepperState = {
   live: boolean;
 };
 
-const STEPS: { key: StepKey; label: string; icon: any; hint: string }[] = [
+const STEPS: { key: StepKey; label: string; icon: React.ComponentType<{ className?: string }>; hint: string }[] = [
   { key: "submit", label: "Submit",        icon: FileText,    hint: "Business details + evidence" },
   { key: "pay",    label: "Pay",           icon: CreditCard,  hint: "Choose a plan via SSLCommerz" },
   { key: "verify", label: "Admin verify",  icon: ShieldCheck, hint: "Our team reviews your evidence" },

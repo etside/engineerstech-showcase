@@ -52,7 +52,7 @@ export default function BrandingEditor() {
     })();
   }, []);
 
-  function update(field: keyof BrandSettings, value: any) {
+  function update(field: keyof BrandSettings, value: string | null) {
     setBrand((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -81,7 +81,7 @@ export default function BrandingEditor() {
   async function save() {
     setSaving(true);
     const { error } = await supabase.from("platform_settings").upsert(
-      { key: "brand_settings", value: brand as any },
+      { key: "brand_settings", value: brand as Record<string, unknown> },
       { onConflict: "key" }
     );
     if (error) {
