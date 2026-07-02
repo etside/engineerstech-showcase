@@ -167,6 +167,7 @@ function CommunitySection() {
               </div>
             </div>
             <a href="https://discord.gg/engineerstech" className="btn-ghost text-sm w-full justify-center">
+              Join Discord <ArrowRight className="w-4 h-4" />
             </a>
           </div>
         </Reveal>
@@ -205,6 +206,7 @@ function CommunitySection() {
               </div>
             </div>
             <a href="https://youtube.com/@engineerstech" className="btn-ghost text-sm w-full justify-center">
+              Watch tutorials <ArrowRight className="w-4 h-4" />
             </a>
           </div>
         </Reveal>

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* === Dark-first design (FundedNext inspired) === */
+    /* === Dark-first engineersTech design === */
     --background: 222 47% 4%;
     --foreground: 210 40% 96%;
     --card: 222 40% 7%;
@@ -12,40 +12,39 @@
     --popover: 222 40% 7%;
     --popover-foreground: 210 40% 96%;
 
-    /* Green accent — FundedNext's signature */
-    --primary: 145 80% 38%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 145 85% 50%;
-    --primary-light: 145 80% 62%;
+    --primary-glow: 199 89% 48%;
+    --primary-light: 213 94% 68%;
 
     --secondary: 222 35% 12%;
     --secondary-foreground: 210 40% 96%;
     --muted: 222 30% 12%;
     --muted-foreground: 215 20% 55%;
-    --accent: 145 80% 38%;
+    --accent: 221 83% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 222 30% 14%;
     --input: 222 30% 12%;
-    --ring: 145 80% 42%;
+    --ring: 221 83% 53%;
     --radius: 0.875rem;
 
     --glass-bg: 255 255 255;
     --glass-alpha: 0.04;
     --glass-border: 222 30% 20%;
 
-    --hero-glow-1: 145 80% 42%;
-    --hero-glow-2: 160 70% 35%;
+    --hero-glow-1: 221 83% 53%;
+    --hero-glow-2: 199 89% 48%;
 
     --sidebar-background: 222 40% 7%;
     --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 145 80% 38%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 35% 12%;
     --sidebar-accent-foreground: 210 40% 96%;
     --sidebar-border: 222 30% 14%;
-    --sidebar-ring: 145 80% 42%;
+    --sidebar-ring: 221 83% 53%;
   }
 
   /* Light mode kept as opt-in override */
@@ -56,34 +55,34 @@
     --card-foreground: 215 35% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 215 35% 12%;
-    --primary: 145 70% 34%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 145 75% 44%;
-    --primary-light: 145 65% 52%;
-    --secondary: 145 20% 95%;
+    --primary-glow: 199 89% 48%;
+    --primary-light: 213 94% 68%;
+    --secondary: 214 32% 95%;
     --secondary-foreground: 215 35% 12%;
-    --muted: 145 15% 95%;
+    --muted: 214 32% 95%;
     --muted-foreground: 215 16% 42%;
-    --accent: 145 70% 34%;
+    --accent: 221 83% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 215 25% 88%;
     --input: 215 25% 88%;
-    --ring: 145 70% 38%;
+    --ring: 221 83% 53%;
     --glass-bg: 255 255 255;
     --glass-alpha: 0.6;
     --glass-border: 215 30% 80%;
-    --hero-glow-1: 145 75% 44%;
-    --hero-glow-2: 160 65% 38%;
+    --hero-glow-1: 221 83% 53%;
+    --hero-glow-2: 199 89% 48%;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 145 70% 34%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 15% 95%;
+    --sidebar-accent: 214 32% 95%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 145 70% 38%;
+    --sidebar-ring: 221 83% 53%;
   }
 }
 
@@ -103,7 +102,7 @@
 
   /* === Colors & Gradients === */
   .gradient-text {
-    background: linear-gradient(135deg, hsl(var(--primary-light)) 0%, hsl(var(--primary-glow)) 50%, hsl(145 90% 70%) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary-light)) 0%, hsl(var(--primary-glow)) 50%, hsl(221 92% 72%) 100%);
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
   .gradient-bg {

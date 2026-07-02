@@ -91,7 +91,7 @@ export default function Footer() {
               {[
                 { icon: Users, value: 6000, suffix: "+", label: "Team Members", desc: "Worldwide talent" },
                 { icon: Globe2, value: 50, suffix: "+", label: "Global Offices", desc: "Across continents" },
-                { icon: MapPin, value: 1700, suffix: "+", label: "Countries Served", desc: "Global reach" },
+                { icon: MapPin, value: 17, suffix: "+", label: "Countries Served", desc: "Global reach" },
                 { icon: Clock, value: 24, suffix: "/7", label: "Operations", desc: "Never stops" },
               ].map((s, i) => (
                 <Reveal key={s.label} delay={i * 80} className="text-center group">
@@ -184,7 +184,7 @@ export default function Footer() {
               >
                 engineersTech <ExternalLink className="w-3 h-3" />
               </a>
-              . All rights reserved.
+              . Copyright reserved.
             </p>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
