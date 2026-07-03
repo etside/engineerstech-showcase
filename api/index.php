@@ -8,6 +8,19 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 // Strip /api prefix if present
 $uri = preg_replace('#^/api#', '', $uri);
 $uri = rtrim($uri, '/');
+if ($uri === '') $uri = '/';
+
+// ── MCP Streamable HTTP (all sub-paths under /mcp-server) ───────────────────
+if (preg_match('#^/mcp-server(/.*)?$#', $uri)) {
+    require_once __DIR__ . '/mcp-server.php';
+    exit;
+}
+
+// ── OAuth2.1 Authorization Server ───────────────────────────────────────────
+if (preg_match('#^/oauth(/.*)?$#', $uri) || preg_match('#^/\.well-known/#', $uri)) {
+    require_once __DIR__ . '/oauth.php';
+    exit;
+}
 
 // Route table
 $routes = [
@@ -38,15 +51,30 @@ $routes = [
     'DELETE /reviews/(.+)'      => 'reviews.php@reviews_delete',
 
     // Admin
-    'GET /admin/dashboard'      => 'admin.php@admin_dashboard',
-    'GET /admin/users'          => 'admin.php@admin_users',
-    'PUT /admin/users/(.+)/role' => 'admin.php@admin_set_role',
-    'GET /admin/settings'       => 'admin.php@admin_get_settings',
-    'PUT /admin/settings'       => 'admin.php@admin_update_settings',
-    'GET /admin/claims'         => 'admin.php@admin_claims',
-    'PUT /admin/claims/(.+)'    => 'admin.php@admin_review_claim',
-    'GET /admin/mcp'            => 'admin.php@admin_mcp_config',
-    'PUT /admin/mcp'            => 'admin.php@admin_update_mcp',
+    'GET /admin/dashboard'              => 'admin.php@admin_dashboard',
+    'GET /admin/users'                  => 'admin.php@admin_users',
+    'PUT /admin/users/(.+)/role'        => 'admin.php@admin_set_role',
+    'GET /admin/settings'               => 'admin.php@admin_get_settings',
+    'PUT /admin/settings'               => 'admin.php@admin_update_settings',
+    'GET /admin/claims'                 => 'admin.php@admin_claims',
+    'PUT /admin/claims/(.+)'            => 'admin.php@admin_review_claim',
+
+    // MCP admin config
+    'GET /admin/mcp'                    => 'admin.php@admin_mcp_config',
+    'PUT /admin/mcp'                    => 'admin.php@admin_update_mcp',
+    'GET /admin/mcp/analytics'          => 'admin.php@admin_mcp_analytics',
+    'GET /admin/mcp/clients'            => 'admin.php@admin_mcp_clients',
+    'POST /admin/mcp/clients'           => 'admin.php@admin_mcp_create_client',
+    'DELETE /admin/mcp/clients/(.+)'    => 'admin.php@admin_mcp_delete_client',
+
+    // AI Listing management
+    'GET /admin/ai-listings'            => 'admin.php@admin_ai_listings',
+    'PUT /admin/ai-listings/(.+)'       => 'admin.php@admin_toggle_ai_listing',
+
+    // Vendor MCP keys
+    'GET /vendor/mcp-keys'              => 'admin.php@vendor_mcp_keys',
+    'POST /vendor/mcp-keys'             => 'admin.php@vendor_mcp_create_key',
+    'DELETE /vendor/mcp-keys/(.+)'      => 'admin.php@vendor_mcp_revoke_key',
 
     // Claims
     'GET /claims'               => 'claims.php@claims_list',

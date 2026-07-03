@@ -28,3 +28,4 @@ dist-ssr
 *.sln
 *.sw?
 deploy.zip
+vite.config.ts.timestamp-*.mjs

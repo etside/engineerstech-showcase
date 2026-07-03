@@ -67,6 +67,13 @@ CREATE TABLE IF NOT EXISTS businesses (
     social_links JSON,
     business_hours JSON,
     geo_metadata JSON,
+    tier ENUM('free','pro','featured','enterprise') DEFAULT 'free',
+    ai_listing_enabled BOOLEAN DEFAULT FALSE COMMENT 'Paid AI/GEO SEO listing or admin-promoted',
+    ai_listing_source ENUM('paid','admin') DEFAULT NULL COMMENT 'How AI listing was granted',
+    ai_listing_updated_at TIMESTAMP NULL,
+    verification_status ENUM('unverified','pending','verified') DEFAULT 'unverified',
+    geo_score DECIMAL(5,2) DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
@@ -75,6 +82,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     INDEX idx_status (status),
     INDEX idx_category (category_id),
     INDEX idx_featured (is_featured),
+    INDEX idx_ai_listing (ai_listing_enabled),
     FULLTEXT INDEX idx_search (name, description, short_description)
 ) ENGINE=InnoDB;
 
@@ -207,19 +215,84 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- MCP CONFIG
+-- MCP CONFIG (updated for spec 2025-11-25)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mcp_config (
     id CHAR(36) PRIMARY KEY,
-    project_name VARCHAR(255) DEFAULT 'engineersTech',
-    api_key VARCHAR(255),
-    enabled_endpoints JSON,
+    server_name VARCHAR(255) DEFAULT 'engineersTech MCP',
+    api_token VARCHAR(255),
+    enabled BOOLEAN DEFAULT TRUE,
+    allow_write BOOLEAN DEFAULT FALSE,
+    hidden_tools JSON,
     rate_limit INT DEFAULT 60,
-    is_active BOOLEAN DEFAULT TRUE,
     expires_at TIMESTAMP NULL,
     token_last_rotated_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- MCP OAUTH CLIENTS (dynamic registration RFC 7591)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mcp_oauth_clients (
+    id CHAR(36) PRIMARY KEY,
+    client_name VARCHAR(255) NOT NULL,
+    redirect_uris JSON NOT NULL,
+    grant_types JSON NOT NULL,
+    scopes VARCHAR(500) DEFAULT 'mcp:read',
+    client_secret VARCHAR(255),
+    token_endpoint_auth_method VARCHAR(50) DEFAULT 'none',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- MCP OAUTH AUTHORIZATION CODES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mcp_oauth_codes (
+    id CHAR(36) PRIMARY KEY,
+    code VARCHAR(255) UNIQUE NOT NULL,
+    client_id CHAR(36) NOT NULL,
+    user_id CHAR(36),
+    redirect_uri VARCHAR(500),
+    scope VARCHAR(500),
+    code_challenge VARCHAR(255) NOT NULL,
+    code_challenge_method VARCHAR(10) DEFAULT 'S256',
+    used TINYINT DEFAULT 0,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES mcp_oauth_clients(id) ON DELETE CASCADE,
+    INDEX idx_code (code)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- MCP OAUTH TOKENS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mcp_oauth_tokens (
+    id CHAR(36) PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    refresh_token VARCHAR(255),
+    client_id CHAR(36) NOT NULL,
+    user_id CHAR(36),
+    scope VARCHAR(500),
+    revoked TINYINT DEFAULT 0,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES mcp_oauth_clients(id) ON DELETE CASCADE,
+    INDEX idx_access (access_token(64)),
+    INDEX idx_refresh (refresh_token)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- MCP CALL LOG (analytics)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mcp_call_log (
+    id CHAR(36) PRIMARY KEY,
+    tool_name VARCHAR(100) NOT NULL,
+    client_id VARCHAR(255),
+    called_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tool (tool_name),
+    INDEX idx_client (client_id),
+    INDEX idx_called (called_at)
 ) ENGINE=InnoDB;
 
 -- ============================================================

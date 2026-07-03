@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { adminApi, businessApi, categoryApi, reviewApi, contactApi } from "@/lib/api";
+import { adminApi, businessApi, categoryApi, reviewApi, contactApi, type AiListing } from "@/lib/api";
 import RequireAdmin from "@/components/RequireAdmin";
 import ReviewsModerationUI from "@/components/ReviewsModerationUI";
+import BrandingEditor from "@/components/BrandingEditor";
+import HomepageEditor from "@/components/HomepageEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Bot, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 
 function Overview() {
   const [stats, setStats] = useState({ businesses: 0, pendingClaims: 0, pendingReviews: 0, subs: 0 });
@@ -597,6 +600,107 @@ function SettingsAdmin() {
   );
 }
 
+// ── AI Listing Manager ────────────────────────────────────────────────────────
+function AiListingsAdmin() {
+  const [rows, setRows]     = useState<AiListing[]>([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all"|"enabled"|"disabled">("all");
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try { setRows(await adminApi.aiListings() as AiListing[]); }
+    catch { /* silent */ }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function toggle(id: string, val: boolean) {
+    try {
+      await adminApi.toggleAiListing(id, val);
+      toast.success(val ? "AI listing enabled" : "AI listing disabled");
+      setRows(r => r.map(b => b.id === id ? { ...b, ai_listing_enabled: val, ai_listing_source: "admin" } : b));
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  const counts = {
+    total: rows.length,
+    enabled: rows.filter(b => b.ai_listing_enabled).length,
+    paid: rows.filter(b => b.ai_listing_source === "paid").length,
+    admin: rows.filter(b => b.ai_listing_source === "admin").length,
+  };
+
+  const filtered = rows.filter(b => {
+    if (filter === "enabled"  && !b.ai_listing_enabled) return false;
+    if (filter === "disabled" &&  b.ai_listing_enabled) return false;
+    if (search && !b.name.toLowerCase().includes(search.toLowerCase()) &&
+        !(b.owner_email || "").toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const tierColor = (t: string) => ({
+    enterprise: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+    featured:   "bg-purple-500/10 text-purple-400 border-purple-500/30",
+    pro:        "bg-blue-500/10 text-blue-400 border-blue-500/30",
+    free:       "bg-muted text-muted-foreground border-border",
+  }[t] ?? "bg-muted text-muted-foreground border-border");
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { l: "Total",        v: counts.total,   c: "" },
+          { l: "AI listing ON",v: counts.enabled, c: "text-green-400" },
+          { l: "Paid (auto)",  v: counts.paid,    c: "text-blue-400" },
+          { l: "Admin promoted",v: counts.admin,  c: "text-violet-400" },
+        ].map(s => (
+          <Card key={s.l}><CardContent className="p-4">
+            <div className={`text-2xl font-bold ${s.c}`}>{s.v}</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{s.l}</div>
+          </CardContent></Card>
+        ))}
+      </div>
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-muted-foreground">
+        <strong className="text-foreground">How it works:</strong> Businesses on Pro / Featured / Enterprise are
+        auto-added when they pay (<em>source: paid</em>). Admins can promote any business manually regardless of tier.
+        Only enabled businesses appear in ChatGPT, Claude, Cursor &amp; other MCP clients.
+      </div>
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input placeholder="Search name or email…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 w-52 text-xs" />
+        {(["all","enabled","disabled"] as const).map(f => (
+          <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} className="h-7 text-xs capitalize" onClick={() => setFilter(f)}>{f}</Button>
+        ))}
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={load}><RefreshCw className="size-3 mr-1" />Refresh</Button>
+      </div>
+      {loading && <p className="text-xs text-muted-foreground">Loading…</p>}
+      <div className="space-y-2">
+        {filtered.map(b => (
+          <div key={b.id} className={`flex items-center justify-between gap-3 flex-wrap rounded-lg border p-3 transition-colors ${b.ai_listing_enabled ? "border-green-500/30 bg-green-500/5" : "border-border"}`}>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm">{b.name}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${tierColor(b.tier)}`}>{b.tier}</span>
+                {b.ai_listing_enabled && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${b.ai_listing_source === "paid" ? "bg-blue-500/10 text-blue-400 border-blue-500/30" : "bg-violet-500/10 text-violet-400 border-violet-500/30"}`}>
+                    {b.ai_listing_source}
+                  </span>
+                )}
+                {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">verified</span>}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">{b.category_name} · ★{Number(b.rating).toFixed(1)} ({b.review_count}) · {b.owner_email}</div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-muted-foreground">{b.ai_listing_enabled ? "In AI index" : "Hidden"}</span>
+              <Switch checked={b.ai_listing_enabled} onCheckedChange={v => toggle(b.id, v)} />
+            </div>
+          </div>
+        ))}
+        {!loading && filtered.length === 0 && <p className="text-xs text-muted-foreground">No businesses match.</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   return (
     <RequireAdmin>
@@ -612,25 +716,31 @@ export default function Admin() {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="listings">Listings</TabsTrigger>
+            <TabsTrigger value="ai-listings">AI Listings</TabsTrigger>
             <TabsTrigger value="claims">Claims</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
             <TabsTrigger value="blog">Blog</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="homepage">Homepage CMS</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
-          <TabsContent value="overview" className="pt-5"><Overview /></TabsContent>
-          <TabsContent value="listings" className="pt-5"><ListingsAdmin /></TabsContent>
-          <TabsContent value="claims" className="pt-5"><ClaimsAdmin /></TabsContent>
-          <TabsContent value="reviews" className="pt-5"><ReviewsAdmin /></TabsContent>
-          <TabsContent value="blog" className="pt-5"><BlogAdmin /></TabsContent>
-          <TabsContent value="content" className="pt-5"><ContentAdmin /></TabsContent>
-          <TabsContent value="categories" className="pt-5"><CategoryAdmin /></TabsContent>
-          <TabsContent value="pricing" className="pt-5"><PricingAdmin /></TabsContent>
-          <TabsContent value="messages" className="pt-5"><ContactMessagesAdmin /></TabsContent>
-          <TabsContent value="settings" className="pt-5"><SettingsAdmin /></TabsContent>
+          <TabsContent value="overview"    className="pt-5"><Overview /></TabsContent>
+          <TabsContent value="listings"    className="pt-5"><ListingsAdmin /></TabsContent>
+          <TabsContent value="ai-listings" className="pt-5"><AiListingsAdmin /></TabsContent>
+          <TabsContent value="claims"      className="pt-5"><ClaimsAdmin /></TabsContent>
+          <TabsContent value="reviews"     className="pt-5"><ReviewsAdmin /></TabsContent>
+          <TabsContent value="blog"        className="pt-5"><BlogAdmin /></TabsContent>
+          <TabsContent value="content"     className="pt-5"><ContentAdmin /></TabsContent>
+          <TabsContent value="homepage"    className="pt-5"><HomepageEditor /></TabsContent>
+          <TabsContent value="branding"    className="pt-5"><BrandingEditor /></TabsContent>
+          <TabsContent value="categories"  className="pt-5"><CategoryAdmin /></TabsContent>
+          <TabsContent value="pricing"     className="pt-5"><PricingAdmin /></TabsContent>
+          <TabsContent value="messages"    className="pt-5"><ContactMessagesAdmin /></TabsContent>
+          <TabsContent value="settings"    className="pt-5"><SettingsAdmin /></TabsContent>
         </Tabs>
       </section>
     </RequireAdmin>

@@ -204,6 +204,25 @@ export const reviewApi = {
 // ============================================================
 // Admin API
 // ============================================================
+
+// AI Listing type — must be defined before adminApi uses it
+export interface AiListing {
+  id: string;
+  name: string;
+  slug: string;
+  tier: string;
+  status: string;
+  is_verified: boolean;
+  is_featured: boolean;
+  ai_listing_enabled: boolean;
+  ai_listing_source: 'paid' | 'admin' | null;
+  ai_listing_updated_at: string | null;
+  rating: number;
+  review_count: number;
+  category_name: string;
+  owner_email: string;
+}
+
 export const adminApi = {
   dashboard: () =>
     request<{
@@ -236,6 +255,55 @@ export const adminApi = {
 
   updateMcp: (config: Record<string, unknown>) =>
     request('/admin/mcp', { method: 'PUT', body: config }),
+
+  mcpAnalytics: () =>
+    request<{
+      total_calls: number;
+      by_tool: { tool_name: string; calls: number }[];
+      by_client: { client_id: string; calls: number }[];
+      daily: { day: string; calls: number }[];
+    }>('/admin/mcp/analytics'),
+
+  mcpClients: () => request('/admin/mcp/clients'),
+
+  mcpCreateClient: (data: {
+    client_name: string;
+    redirect_uris: string[];
+    scope: string;
+    grant_types: string[];
+  }) => request('/admin/mcp/clients', { method: 'POST', body: data }),
+
+  mcpDeleteClient: (clientId: string) =>
+    request(`/admin/mcp/clients/${clientId}`, { method: 'DELETE' }),
+
+  // AI Listing — admin controls which businesses appear in MCP/AI results
+  aiListings: () =>
+    request<AiListing[]>('/admin/ai-listings'),
+
+  toggleAiListing: (businessId: string, enabled: boolean) =>
+    request(`/admin/ai-listings/${businessId}`, { method: 'PUT', body: { enabled } }),
+};
+
+// ============================================================
+// Vendor MCP Key API
+// ============================================================
+export interface VendorMcpKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string;
+  is_active: boolean;
+  expires_at: string | null;
+  last_used: string | null;
+  created_at: string;
+}
+
+export const vendorMcpApi = {
+  listKeys: () => request<VendorMcpKey[]>('/vendor/mcp-keys'),
+  createKey: (data: { business_id: string; name: string }) =>
+    request<{ id: string; key: string; message: string }>('/vendor/mcp-keys', { method: 'POST', body: data }),
+  revokeKey: (keyId: string) =>
+    request(`/vendor/mcp-keys/${keyId}`, { method: 'DELETE' }),
 };
 
 // ============================================================
