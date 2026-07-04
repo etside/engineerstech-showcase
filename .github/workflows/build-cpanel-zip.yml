@@ -3,10 +3,10 @@ name: Build cPanel Deployment ZIP
 on:
   push:
     branches: [main]
-  workflow_dispatch:          # allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 permissions:
-  contents: write             # needed to create/update releases
+  contents: write
 
 jobs:
   build-and-zip:
@@ -18,134 +18,116 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Setup Bun ─────────────────────────────────────────────────────────
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      # ── 2. Setup Node (needed for vite/swc native binaries on x64) ───────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '20'
+          cache: 'npm'
 
-      # ── 3. Install dependencies ───────────────────────────────────────────────
+      # ── 3. Install dependencies via npm (reliable on GitHub Actions) ──────────
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       # ── 4. Build React app ────────────────────────────────────────────────────
       - name: Build React frontend
         env:
           VITE_API_URL: /api
-        run: bun run build
+        run: npx vite build
 
       # ── 5. Assemble deployment folder ────────────────────────────────────────
-      #  Final structure (extract to public_html/ on cPanel):
-      #    public_html/
-      #      index.html          ← React entry
-      #      assets/             ← hashed JS/CSS
-      #      .htaccess           ← SPA + API routing
-      #      robots.txt
-      #      sitemap.xml
-      #      favicon.ico
-      #      api/                ← PHP backend
-      #        index.php
-      #        config.php
-      #        config.env        ← DB credentials (pre-filled)
-      #        schema.sql        ← Run once in phpMyAdmin
-      #        *.php
-      #        .htaccess
-      #      uploads/            ← writable upload dir
       - name: Assemble deployment package
         run: |
           mkdir -p deploy/api
           mkdir -p deploy/uploads
 
-          # Copy built React app
-          cp -r dist/* deploy/
+          # React build output
+          cp -r dist/. deploy/
 
-          # Copy root .htaccess (SPA routing)
+          # Root .htaccess (SPA + API routing + HTTPS + security headers)
           cp .htaccess deploy/.htaccess
 
-          # Copy entire api/ folder
-          cp -r api/* deploy/api/
+          # Full PHP API backend
+          cp -r api/. deploy/api/
 
-          # Ensure api/.htaccess is present
-          cp api/.htaccess deploy/api/.htaccess
+          # Public assets (may already be in dist, copy anyway)
+          [ -f public/robots.txt  ] && cp public/robots.txt  deploy/ || true
+          [ -f public/sitemap.xml ] && cp public/sitemap.xml deploy/ || true
+          [ -f public/llms.txt    ] && cp public/llms.txt    deploy/ || true
+          [ -f public/favicon.ico ] && cp public/favicon.ico deploy/ || true
 
-          # Copy public assets not already in dist
-          [ -f public/robots.txt   ] && cp public/robots.txt   deploy/
-          [ -f public/sitemap.xml  ] && cp public/sitemap.xml  deploy/
-          [ -f public/llms.txt     ] && cp public/llms.txt     deploy/
-          [ -f public/favicon.ico  ] && cp public/favicon.ico  deploy/
+          # Uploads placeholder (chmod 755 after upload to cPanel)
+          echo "Writable upload directory. Set chmod 755 in cPanel." \
+            > deploy/uploads/README.txt
 
-          # Add a placeholder README for uploads dir
-          echo "This directory stores user-uploaded files. Must be writable (chmod 755)." \
-            > deploy/uploads/.gitkeep
+          echo "── Deploy package contents ──────────────────────────────"
+          find deploy -maxdepth 3 | sort
 
-          echo "Deployment package assembled successfully"
-          echo "Contents:"
-          find deploy -maxdepth 2 | sort
-
-      # ── 6. Verify config.env has real credentials ─────────────────────────────
-      - name: Verify production config
+      # ── 6. Verify credentials are baked in ────────────────────────────────────
+      - name: Verify production config.env
         run: |
-          echo "Checking api/config.env..."
-          grep "DB_NAME" deploy/api/config.env
-          grep "DB_USER" deploy/api/config.env
-          grep "JWT_SECRET" deploy/api/config.env
-          echo "Config OK"
+          echo "=== api/config.env ==="
+          grep -E "^DB_|^JWT_|^SITE_" deploy/api/config.env
+          echo "Config OK ✓"
 
       # ── 7. Create ZIP ─────────────────────────────────────────────────────────
       - name: Create deployment ZIP
         run: |
+          BUILD_DATE=$(date +%Y%m%d-%H%M)
           cd deploy
-          zip -r ../engineerstech-cpanel-$(date +%Y%m%d-%H%M).zip . \
-            --exclude "*.DS_Store" \
-            --exclude "__MACOSX*"
+          zip -r ../engineerstech-cpanel-${BUILD_DATE}.zip . \
+            --exclude "*.DS_Store" --exclude "__MACOSX*"
           cd ..
-          ls -lh engineerstech-cpanel-*.zip
-          # Also create a fixed-name zip for easy reference
-          cp engineerstech-cpanel-*.zip engineerstech-cpanel-latest.zip
+          # Also copy as fixed-name for easy reference
+          cp engineerstech-cpanel-${BUILD_DATE}.zip engineerstech-cpanel-latest.zip
+          echo "ZIP_NAME=engineerstech-cpanel-${BUILD_DATE}.zip" >> $GITHUB_ENV
+          ls -lh *.zip
 
-      # ── 8. Upload as GitHub Actions artifact (always available) ───────────────
-      - name: Upload ZIP artifact
+      # ── 8. Upload as Actions artifact (30-day retention, always available) ────
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: engineerstech-cpanel-latest
           path: engineerstech-cpanel-latest.zip
           retention-days: 30
 
-      # ── 9. Create/update GitHub Release with ZIP attached ─────────────────────
+      # ── 9. Create GitHub Release with ZIP attached ────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: cpanel-deploy-${{ github.run_number }}
-          name: "cPanel Deploy #${{ github.run_number }} — ${{ github.sha }}"
+          tag_name: deploy-${{ github.run_number }}
+          name: "cPanel Deploy #${{ github.run_number }}"
           body: |
-            ## engineersTech cPanel Deployment Package
+            ## engineersTech — cPanel Deployment Package
 
-            **Build:** #${{ github.run_number }}
-            **Commit:** ${{ github.sha }}
-            **Branch:** ${{ github.ref_name }}
-            **Built at:** ${{ github.event.head_commit.timestamp }}
+            | Field | Value |
+            |---|---|
+            | Build | #${{ github.run_number }} |
+            | Commit | `${{ github.sha }}` |
+            | Branch | `${{ github.ref_name }}` |
 
-            ### How to deploy to biz.h-tv.online
+            ---
 
-            1. Download `engineerstech-cpanel-latest.zip` below
-            2. Log in to cPanel → File Manager → navigate to `public_html/`
-            3. Upload the zip → Extract here
-            4. In cPanel → MySQL Databases, run `api/schema.sql` in phpMyAdmin
-               (select database `samarain_engineerstech` first)
-            5. Visit `https://biz.h-tv.online` — site is live
+            ### Deploy to biz.h-tv.online
+
+            1. **Download** `engineerstech-cpanel-latest.zip` below
+            2. **cPanel → File Manager** → navigate to the root of `biz.h-tv.online` (usually `public_html/` or a subdomain folder)
+            3. **Upload** the zip → click **Extract**
+            4. **cPanel → phpMyAdmin** → select database `samarain_engineerstech` → Import → upload `api/schema.sql`
+            5. Visit **https://biz.h-tv.online** ✅
 
             ### Admin login
-            - **URL:** https://biz.h-tv.online/auth
-            - **Email:** tjms.kp@gmail.com
-            - **Password:** admin#1234
-            - **Admin panel:** https://biz.h-tv.online/admin
-            - **MCP server:** https://biz.h-tv.online/api/mcp-server
+            | | |
+            |---|---|
+            | URL | https://biz.h-tv.online/auth |
+            | Email | tjms.kp@gmail.com |
+            | Password | admin#1234 |
+            | Admin CMS | https://biz.h-tv.online/admin |
+            | MCP Server | https://biz.h-tv.online/api/mcp-server |
 
-            ### Post-deploy checklist
-            - [ ] Run `api/schema.sql` in phpMyAdmin
-            - [ ] Set `uploads/` folder to chmod 755 in cPanel File Manager
-            - [ ] Test login at `/auth`
-            - [ ] Rotate MCP token at `/admin/mcp` → Token & Settings
+            ### Post-deploy
+            - Set `uploads/` to **chmod 755** in cPanel File Manager
+            - Go to `/admin/mcp` → rotate the MCP bearer token
           files: |
             engineerstech-cpanel-latest.zip
           draft: false
