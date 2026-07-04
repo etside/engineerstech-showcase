@@ -379,12 +379,22 @@ INSERT INTO platform_settings (`key`, `value`) VALUES
 ('homepage', '{"heroTitle":"The Business Directory Built for the AI Era","heroSubtitle":"Get discovered by AI, not just search. GEO-optimized listings for ChatGPT, Claude, Gemini & more.","featuredTitle":"Featured Businesses","categoriesTitle":"Browse Categories","statsTitle":"Global Reach"}')
 ON DUPLICATE KEY UPDATE value = VALUES(value);
 
--- Super admin user: tjms.kp@gmail.com / admin@1234
+-- Super admin user: tjms.kp@gmail.com / admin#1234
+-- Password hash: bcrypt cost=12 of 'admin#1234'
 INSERT INTO users (id, email, password_hash, email_confirmed_at) VALUES
-('u0000001-0000-0000-0000-000000000001', 'tjms.kp@gmail.com', '$2y$10$YourHashHere', NOW())
-ON DUPLICATE KEY UPDATE email = VALUES(email);
+('u0000001-0000-0000-0000-000000000001', 'tjms.kp@gmail.com', '$2b$12$CX6aJJkWAdASiUBft4folelIY1OkUpIlUTDEb/R9p9XBQZujdvFMi', NOW())
+ON DUPLICATE KEY UPDATE
+    email = VALUES(email),
+    password_hash = VALUES(password_hash),
+    email_confirmed_at = COALESCE(email_confirmed_at, NOW());
 
--- Note: The password hash above is a placeholder. After running schema.sql,
--- run this SQL to set the correct password:
--- UPDATE users SET password_hash = '$2y$10$' ... where email = 'tjms.kp@gmail.com';
--- Or use the PHP admin panel to create the user properly.
+-- Grant super_admin AND admin roles
+INSERT INTO user_roles (id, user_id, role) VALUES
+('r0000001-0000-0000-0000-000000000001', 'u0000001-0000-0000-0000-000000000001', 'super_admin'),
+('r0000001-0000-0000-0000-000000000002', 'u0000001-0000-0000-0000-000000000001', 'admin')
+ON DUPLICATE KEY UPDATE role = VALUES(role);
+
+-- Seed default MCP config with a random token (rotate after first login)
+INSERT INTO mcp_config (id, server_name, api_token, enabled, allow_write, rate_limit) VALUES
+('m0000001-0000-0000-0000-000000000001', 'engineersTech MCP', 'et-mcp-change-after-first-login-a3f9b2c7d1e4', TRUE, FALSE, 60)
+ON DUPLICATE KEY UPDATE server_name = VALUES(server_name);
