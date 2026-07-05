@@ -1,140 +1,276 @@
 <?php
 /**
- * OAuth 2.1 Authorization Server for MCP
+ * OAuth 2.1 Authorization Server for MCP + ChatGPT
  * Spec: RFC 6749 + OAuth 2.1 + PKCE (RFC 7636) + Dynamic Registration (RFC 7591)
+ *       + OAuth Server Metadata (RFC 8414) + Resource Metadata (RFC 9396)
+ *       + JWKS (RFC 7517) for token verification
  *
- * Endpoints:
- *   GET  /.well-known/oauth-authorization-server  → server metadata
- *   GET  /.well-known/oauth-protected-resource    → resource metadata
- *   POST /oauth/register                          → dynamic client registration
- *   GET  /oauth/authorize                         → authorization endpoint
- *   POST /oauth/token                             → token endpoint
- *   POST /oauth/revoke                            → token revocation
+ * Deployed on: https://biz.h-tv.online
+ *
+ * Endpoints served by this file (called from api/index.php AND directly via .htaccess):
+ *
+ *   GET  /.well-known/oauth-authorization-server  → OAuth server metadata (ChatGPT discovery)
+ *   GET  /.well-known/oauth-protected-resource    → Resource server metadata
+ *   POST /api/oauth/register                      → Dynamic client registration (RFC 7591)
+ *   GET  /api/oauth/authorize                     → Authorization endpoint
+ *   POST /api/oauth/token                         → Token endpoint
+ *   POST /api/oauth/revoke                        → Token revocation (RFC 7009)
+ *   GET  /api/oauth/jwks                          → JWKS public key endpoint
  */
 
 require_once __DIR__ . '/config.php';
 
+// ── CORS — needed for browser-based OAuth clients ───────────────────────────
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri    = preg_replace('#^/api#', '', $uri);
-$uri    = rtrim($uri, '/') ?: '/';
 
+// Normalize: strip both /api prefix and trailing slash
+$uri = preg_replace('#^/api#', '', $uri);
+$uri = rtrim($uri, '/') ?: '/';
+
+// ── Routing ──────────────────────────────────────────────────────────────────
 match (true) {
-    $uri === '/.well-known/oauth-authorization-server'
+    // Well-known discovery endpoints — served at root (/.well-known/...)
+    // These come via .htaccess direct rewrite, so uri starts with /.well-known
+    str_starts_with($uri, '/.well-known/oauth-authorization-server')
         => oauth_well_known_as(),
-    $uri === '/.well-known/oauth-protected-resource'
+    str_starts_with($uri, '/.well-known/oauth-protected-resource')
         => oauth_well_known_resource(),
+
+    // OAuth endpoints under /api/oauth/...
     $uri === '/oauth/register' && $method === 'POST'
         => oauth_register(),
-    $uri === '/oauth/authorize'
+    str_starts_with($uri, '/oauth/authorize')
         => oauth_authorize(),
     $uri === '/oauth/token' && $method === 'POST'
         => oauth_token(),
     $uri === '/oauth/revoke' && $method === 'POST'
         => oauth_revoke(),
+    $uri === '/oauth/jwks' && $method === 'GET'
+        => oauth_jwks(),
+
+    // Also handle when called through api/index.php which passes /.well-known paths
+    str_starts_with($uri, '/.well-known')
+        => oauth_well_known_as(), // fallback
+
     default
         => oauth_error('not_found', 'Endpoint not found', 404),
 };
 
 // ============================================================
-// Server metadata (RFC 8414)
+// RFC 8414 — OAuth Server Metadata
+// ChatGPT reads this to discover all OAuth endpoints automatically
 // ============================================================
 function oauth_well_known_as(): never {
-    $base = oauth_base();
+    $base = SITE_URL;
     header('Content-Type: application/json');
+    header('Cache-Control: public, max-age=3600');
     echo json_encode([
-        'issuer'                               => $base . '/api/oauth',
-        'authorization_endpoint'               => $base . '/api/oauth/authorize',
-        'token_endpoint'                       => $base . '/api/oauth/token',
-        'revocation_endpoint'                  => $base . '/api/oauth/revoke',
-        'registration_endpoint'                => $base . '/api/oauth/register',
-        'jwks_uri'                             => $base . '/api/oauth/jwks',
-        'scopes_supported'                     => ['mcp:read', 'mcp:write', 'openid', 'profile'],
-        'response_types_supported'             => ['code'],
-        'grant_types_supported'                => ['authorization_code', 'refresh_token'],
-        'token_endpoint_auth_methods_supported'=> ['none', 'client_secret_post'],
-        'code_challenge_methods_supported'     => ['S256'],
-        'subject_types_supported'              => ['public'],
-        'service_documentation'                => $base . '/api-docs',
-    ]);
-    exit;
-}
+        // Issuer — MUST match the iss claim in issued JWTs
+        'issuer'                                => $base . '/api/oauth',
 
-function oauth_well_known_resource(): never {
-    $base = oauth_base();
-    header('Content-Type: application/json');
-    echo json_encode([
-        'resource'                     => $base . '/api/mcp-server',
-        'authorization_servers'        => [$base . '/api/oauth'],
-        'scopes_supported'             => ['mcp:read', 'mcp:write'],
-        'bearer_methods_supported'     => ['header', 'query'],
-        'resource_documentation'       => $base . '/api-docs',
-    ]);
+        // Core OAuth endpoints
+        'authorization_endpoint'                => $base . '/api/oauth/authorize',
+        'token_endpoint'                        => $base . '/api/oauth/token',
+        'revocation_endpoint'                   => $base . '/api/oauth/revoke',
+
+        // Dynamic Client Registration (RFC 7591) — key for ChatGPT one-time setup
+        'registration_endpoint'                 => $base . '/api/oauth/register',
+
+        // JWKS for token verification
+        'jwks_uri'                              => $base . '/api/oauth/jwks',
+
+        // Supported scopes — ChatGPT will request these
+        'scopes_supported'                      => ['mcp:read', 'mcp:write', 'openid', 'profile'],
+
+        // Response types
+        'response_types_supported'              => ['code'],
+
+        // Grant types
+        'grant_types_supported'                 => ['authorization_code', 'refresh_token'],
+
+        // PKCE — mandatory for public clients (ChatGPT is a public client)
+        'code_challenge_methods_supported'      => ['S256'],
+
+        // Token endpoint auth methods — 'none' = public client (PKCE-only)
+        'token_endpoint_auth_methods_supported' => ['none', 'client_secret_post'],
+
+        // Introspection
+        'subject_types_supported'               => ['public'],
+        'id_token_signing_alg_values_supported' => ['HS256'],
+
+        // Documentation
+        'service_documentation'                 => $base . '/api-docs',
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
 }
 
 // ============================================================
-// Dynamic Client Registration (RFC 7591)
+// RFC 9396 — OAuth Resource Metadata
+// Tells clients which auth server protects the MCP resource
+// ============================================================
+function oauth_well_known_resource(): never {
+    $base = SITE_URL;
+    header('Content-Type: application/json');
+    header('Cache-Control: public, max-age=3600');
+    echo json_encode([
+        // Resource server identifier
+        'resource'                  => $base . '/api/mcp-server',
+
+        // Which authorization server issues tokens for this resource
+        'authorization_servers'     => [$base . '/api/oauth'],
+
+        // Scopes this resource accepts
+        'scopes_supported'          => ['mcp:read', 'mcp:write'],
+
+        // How bearer tokens are transmitted
+        'bearer_methods_supported'  => ['header'],
+
+        'resource_documentation'    => $base . '/api-docs',
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
+
+// ============================================================
+// RFC 7517 — JWKS Endpoint
+// Allows token consumers (including ChatGPT) to verify JWTs
+// ============================================================
+function oauth_jwks(): never {
+    // We use HMAC-SHA256 (symmetric), so we expose a dummy symmetric JWK.
+    // For production, switch to RS256 and publish the real RSA public key here.
+    // ChatGPT primarily uses this to confirm the issuer, not to verify symmetric keys.
+    header('Content-Type: application/json');
+    header('Cache-Control: public, max-age=86400');
+
+    // Get the JWT secret key ID (stable hash of the secret for the kid claim)
+    $kid = substr(hash('sha256', JWT_SECRET . 'kid'), 0, 16);
+
+    echo json_encode([
+        'keys' => [
+            [
+                'kty' => 'oct',      // symmetric key (HMAC-SHA256)
+                'use' => 'sig',
+                'alg' => 'HS256',
+                'kid' => $kid,
+                // 'k'  intentionally omitted — symmetric keys are private
+            ],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
+
+// ============================================================
+// RFC 7591 — Dynamic Client Registration
+//
+// ChatGPT calls this automatically when you add an MCP connection.
+// It does NOT require redirect_uris to be pre-registered — ChatGPT
+// provides them dynamically in the registration request.
 // ============================================================
 function oauth_register(): never {
-    $input       = get_json_input();
-    $db          = getDB();
+    $input = get_json_input();
+    $db    = getDB();
 
-    $clientName  = trim($input['client_name']      ?? '');
-    $redirectUris= $input['redirect_uris']          ?? [];
-    $grantTypes  = $input['grant_types']            ?? ['authorization_code'];
-    $scopes      = trim($input['scope']             ?? 'mcp:read');
-    $clientType  = $input['token_endpoint_auth_method'] ?? 'none'; // public client
+    $clientName   = trim($input['client_name']              ?? '');
+    $redirectUris = $input['redirect_uris']                  ?? [];
+    $grantTypes   = $input['grant_types']                    ?? ['authorization_code'];
+    $scope        = trim($input['scope']                     ?? 'mcp:read');
+    $authMethod   = $input['token_endpoint_auth_method']     ?? 'none';
+    $contacts     = $input['contacts']                       ?? [];
+    $logoUri      = trim($input['logo_uri']                  ?? '');
+    $tosUri       = trim($input['tos_uri']                   ?? '');
+    $policyUri    = trim($input['policy_uri']                ?? '');
 
-    if (!$clientName) oauth_error('invalid_request', 'client_name is required');
-    if (empty($redirectUris)) oauth_error('invalid_request', 'redirect_uris is required');
+    // client_name is optional for ChatGPT — default gracefully
+    if (!$clientName) {
+        $clientName = 'OAuth Client ' . substr(bin2hex(random_bytes(4)), 0, 8);
+    }
+
+    // Validate: redirect_uris must be HTTPS (except localhost for testing)
+    foreach ($redirectUris as $uri) {
+        if (!filter_var($uri, FILTER_VALIDATE_URL)) {
+            oauth_error('invalid_redirect_uri', "Invalid redirect_uri: $uri");
+        }
+        $scheme = parse_url($uri, PHP_URL_HOST);
+        if ($scheme !== 'localhost' && !str_starts_with($uri, 'https://')) {
+            oauth_error('invalid_redirect_uri', "redirect_uri must use HTTPS: $uri");
+        }
+    }
+
+    // Validate requested scopes (only allow known scopes)
+    $allowedScopes = ['mcp:read', 'mcp:write', 'openid', 'profile'];
+    $requestedScopes = array_filter(explode(' ', $scope));
+    $grantedScopes   = array_intersect($requestedScopes, $allowedScopes);
+    if (empty($grantedScopes)) {
+        $grantedScopes = ['mcp:read']; // default
+    }
+    $grantedScope = implode(' ', $grantedScopes);
 
     $clientId     = uuid();
-    $clientSecret = $clientType !== 'none' ? bin2hex(random_bytes(32)) : null;
+    $clientSecret = ($authMethod !== 'none') ? bin2hex(random_bytes(32)) : null;
     $now          = date('Y-m-d H:i:s');
 
     $stmt = $db->prepare(
         "INSERT INTO mcp_oauth_clients
            (id, client_name, redirect_uris, grant_types, scopes, client_secret,
-            token_endpoint_auth_method, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            token_endpoint_auth_method, logo_uri, tos_uri, policy_uri, contacts, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     $stmt->execute([
         $clientId,
         $clientName,
         json_encode(array_values($redirectUris)),
         json_encode($grantTypes),
-        $scopes,
+        $grantedScope,
         $clientSecret ? password_hash($clientSecret, PASSWORD_BCRYPT) : null,
-        $clientType,
+        $authMethod,
+        $logoUri  ?: null,
+        $tosUri   ?: null,
+        $policyUri?: null,
+        json_encode($contacts),
         $now,
     ]);
 
-    $base = oauth_base();
+    $base = SITE_URL;
     http_response_code(201);
     header('Content-Type: application/json');
-    echo json_encode(array_filter([
+
+    // RFC 7591 §3.2.1 — response MUST include client_id, MAY include client_secret
+    $response = [
         'client_id'                      => $clientId,
-        'client_secret'                  => $clientSecret, // only returned once
         'client_name'                    => $clientName,
         'redirect_uris'                  => $redirectUris,
         'grant_types'                    => $grantTypes,
-        'scope'                          => $scopes,
-        'token_endpoint_auth_method'     => $clientType,
-        'registration_access_token'      => null,
-        'registration_client_uri'        => $base . '/api/oauth/register/' . $clientId,
-    ]));
+        'scope'                          => $grantedScope,
+        'token_endpoint_auth_method'     => $authMethod,
+        'client_id_issued_at'            => time(),
+    ];
+    if ($clientSecret) {
+        $response['client_secret']            = $clientSecret;
+        $response['client_secret_expires_at'] = 0; // 0 = never expires
+    }
+    // Registration management URI (RFC 7592)
+    $response['registration_client_uri'] = $base . '/api/oauth/register/' . $clientId;
+
+    echo json_encode($response, JSON_UNESCAPED_SLASHES);
     exit;
 }
 
 // ============================================================
-// Authorization Endpoint
+// Authorization Endpoint (RFC 6749 §3.1)
 // ============================================================
 function oauth_authorize(): never {
     $method = $_SERVER['REQUEST_METHOD'];
 
     if ($method === 'GET') {
-        // Show consent page or redirect to front-end auth
         $params = [
             'client_id'             => $_GET['client_id']             ?? '',
             'redirect_uri'          => $_GET['redirect_uri']          ?? '',
@@ -150,17 +286,18 @@ function oauth_authorize(): never {
 
         $db     = getDB();
         $client = oauth_get_client($params['client_id'], $db);
-        oauth_validate_redirect($params['redirect_uri'], $client);
+        if ($params['redirect_uri']) {
+            oauth_validate_redirect($params['redirect_uri'], $client);
+        }
 
-        // Redirect to the front-end consent UI
-        $base    = oauth_base();
-        $qs      = http_build_query($params);
+        // Redirect to front-end consent page
+        $base = SITE_URL;
+        $qs   = http_build_query($params);
         header('Location: ' . $base . '/oauth/consent?' . $qs);
         exit;
     }
 
     if ($method === 'POST') {
-        // Front-end POSTs here after user consents
         $input          = get_json_input() ?: $_POST;
         $clientId       = $input['client_id']             ?? '';
         $redirectUri    = $input['redirect_uri']           ?? '';
@@ -168,15 +305,15 @@ function oauth_authorize(): never {
         $state          = $input['state']                  ?? '';
         $challenge      = $input['code_challenge']         ?? '';
         $challengeMethod= $input['code_challenge_method']  ?? 'S256';
-        $userId         = null;
 
-        // Require the user to be authenticated (JWT or session)
         $userId = get_user_id();
         if (!$userId) oauth_error('access_denied', 'User not authenticated');
 
         $db     = getDB();
         $client = oauth_get_client($clientId, $db);
-        oauth_validate_redirect($redirectUri, $client);
+        if ($redirectUri) {
+            oauth_validate_redirect($redirectUri, $client);
+        }
 
         $code = bin2hex(random_bytes(20));
         $stmt = $db->prepare(
@@ -192,7 +329,9 @@ function oauth_authorize(): never {
 
         $sep = strpos($redirectUri, '?') !== false ? '&' : '?';
         header('Content-Type: application/json');
-        echo json_encode(['redirect' => $redirectUri . $sep . http_build_query(['code' => $code, 'state' => $state])]);
+        echo json_encode([
+            'redirect' => $redirectUri . $sep . http_build_query(['code' => $code, 'state' => $state]),
+        ]);
         exit;
     }
 
@@ -200,7 +339,7 @@ function oauth_authorize(): never {
 }
 
 // ============================================================
-// Token Endpoint
+// Token Endpoint (RFC 6749 §3.2)
 // ============================================================
 function oauth_token(): never {
     $input     = get_json_input() ?: $_POST;
@@ -209,7 +348,7 @@ function oauth_token(): never {
     match ($grantType) {
         'authorization_code' => oauth_token_auth_code($input),
         'refresh_token'      => oauth_token_refresh($input),
-        default              => oauth_error('unsupported_grant_type', 'Unsupported grant type'),
+        default              => oauth_error('unsupported_grant_type', 'Supported: authorization_code, refresh_token'),
     };
 }
 
@@ -233,39 +372,41 @@ function oauth_token_auth_code(array $input): never {
     $row = $stmt->fetch();
     if (!$row) oauth_error('invalid_grant', 'Authorization code invalid or expired');
 
-    // Validate redirect_uri
-    if ($row['redirect_uri'] && $row['redirect_uri'] !== $redirectUri) {
+    // Validate redirect_uri (only if provided by client)
+    if ($row['redirect_uri'] && $redirectUri && $row['redirect_uri'] !== $redirectUri) {
         oauth_error('invalid_grant', 'redirect_uri mismatch');
     }
 
-    // Verify PKCE S256
+    // PKCE S256 verification
     $expectedChallenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
     if (!hash_equals($row['code_challenge'], $expectedChallenge)) {
         oauth_error('invalid_grant', 'PKCE code_verifier invalid');
     }
 
-    // Mark code used
+    // Mark code as used (one-time use)
     $db->prepare("UPDATE mcp_oauth_codes SET used = 1 WHERE id = ?")->execute([$row['id']]);
 
-    // Issue tokens
-    $base         = oauth_base();
-    $accessToken  = oauth_issue_jwt($row, $base);
+    // Issue JWT access token + long-lived refresh token
+    $accessToken  = oauth_issue_jwt($row);
     $refreshToken = bin2hex(random_bytes(32));
-    $expiresIn    = 3600;
+    $expiresIn    = 3600;               // 1 hour access token
+    $refreshTTL   = 30 * 24 * 3600;    // 30 days refresh token
 
     $db->prepare(
         "INSERT INTO mcp_oauth_tokens
            (id, access_token, refresh_token, client_id, user_id, scope,
-            expires_at, revoked)
-         VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), 0)"
+            expires_at, refresh_expires_at, revoked)
+         VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND),
+                 DATE_ADD(NOW(), INTERVAL ? SECOND), 0)"
     )->execute([
         uuid(), $accessToken, $refreshToken,
         $row['client_id'], $row['user_id'], $row['scope'],
-        $expiresIn,
+        $expiresIn, $refreshTTL,
     ]);
 
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
+    header('Pragma: no-cache');
     echo json_encode([
         'access_token'  => $accessToken,
         'token_type'    => 'Bearer',
@@ -288,33 +429,37 @@ function oauth_token_refresh(array $input): never {
     $stmt = $db->prepare(
         "SELECT * FROM mcp_oauth_tokens
          WHERE refresh_token = ? AND client_id = ? AND revoked = 0
+           AND (refresh_expires_at IS NULL OR refresh_expires_at > NOW())
          LIMIT 1"
     );
     $stmt->execute([$refreshToken, $clientId]);
     $row = $stmt->fetch();
-    if (!$row) oauth_error('invalid_grant', 'Invalid refresh token');
+    if (!$row) oauth_error('invalid_grant', 'Invalid or expired refresh token');
 
-    // Revoke old token
+    // Revoke old token pair (token rotation)
     $db->prepare("UPDATE mcp_oauth_tokens SET revoked = 1 WHERE id = ?")->execute([$row['id']]);
 
-    $base        = oauth_base();
-    $accessToken = oauth_issue_jwt($row, $base);
-    $newRefresh  = bin2hex(random_bytes(32));
-    $expiresIn   = 3600;
+    // Issue new token pair
+    $accessToken  = oauth_issue_jwt($row);
+    $newRefresh   = bin2hex(random_bytes(32));
+    $expiresIn    = 3600;
+    $refreshTTL   = 30 * 24 * 3600;
 
     $db->prepare(
         "INSERT INTO mcp_oauth_tokens
            (id, access_token, refresh_token, client_id, user_id, scope,
-            expires_at, revoked)
-         VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), 0)"
+            expires_at, refresh_expires_at, revoked)
+         VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND),
+                 DATE_ADD(NOW(), INTERVAL ? SECOND), 0)"
     )->execute([
         uuid(), $accessToken, $newRefresh,
         $row['client_id'], $row['user_id'], $row['scope'],
-        $expiresIn,
+        $expiresIn, $refreshTTL,
     ]);
 
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
+    header('Pragma: no-cache');
     echo json_encode([
         'access_token'  => $accessToken,
         'token_type'    => 'Bearer',
@@ -335,29 +480,39 @@ function oauth_revoke(): never {
     $db = getDB();
     $db->prepare("UPDATE mcp_oauth_tokens SET revoked = 1 WHERE access_token = ? OR refresh_token = ?")
        ->execute([$token, $token]);
+    http_response_code(200);
     header('Content-Type: application/json');
     echo json_encode(['revoked' => true]);
     exit;
 }
 
 // ============================================================
-// Helpers
+// JWT Issue Helper
+// Issuer and audience MUST match what mcp-server.php verifies
 // ============================================================
-function oauth_issue_jwt(array $row, string $base): string {
+function oauth_issue_jwt(array $row): string {
+    $base = SITE_URL;
+    $kid  = substr(hash('sha256', JWT_SECRET . 'kid'), 0, 16);
+
     $payload = [
-        'iss'       => $base . '/api/oauth',
-        'aud'       => $base . '/api/mcp-server',
+        'iss'       => $base . '/api/oauth',           // matches mcp_verify_oauth_token
+        'aud'       => $base . '/api/mcp-server',       // matches mcp-server audience check
         'sub'       => $row['user_id'] ?? $row['client_id'],
         'client_id' => $row['client_id'],
         'scope'     => $row['scope'],
+        'jti'       => bin2hex(random_bytes(16)),       // unique token ID (anti-replay)
         'iat'       => time(),
         'exp'       => time() + 3600,
+        'kid'       => $kid,
     ];
     return jwt_encode($payload);
 }
 
+// ============================================================
+// Helpers
+// ============================================================
 function oauth_get_client(string $clientId, PDO $db): array {
-    $stmt = $db->prepare("SELECT * FROM mcp_oauth_clients WHERE id = ?");
+    $stmt = $db->prepare("SELECT * FROM mcp_oauth_clients WHERE id = ? LIMIT 1");
     $stmt->execute([$clientId]);
     $client = $stmt->fetch();
     if (!$client) oauth_error('invalid_client', 'Unknown client_id');
@@ -367,15 +522,9 @@ function oauth_get_client(string $clientId, PDO $db): array {
 function oauth_validate_redirect(string $uri, array $client): void {
     if (!$uri) return;
     $allowed = json_decode($client['redirect_uris'] ?? '[]', true) ?: [];
-    if (!in_array($uri, $allowed, true)) {
+    if (!empty($allowed) && !in_array($uri, $allowed, true)) {
         oauth_error('invalid_request', 'redirect_uri not registered for this client');
     }
-}
-
-function oauth_base(): string {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    return $scheme . '://' . $host;
 }
 
 function oauth_error(string $code, string $description, int $status = 400): never {

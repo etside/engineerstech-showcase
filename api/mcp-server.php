@@ -16,6 +16,17 @@
 
 require_once __DIR__ . '/config.php';
 
+// ── CORS headers on every response ──────────────────────────────────────────
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, MCP-Protocol-Version');
+
+// ── Handle OPTIONS preflight immediately ────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 // ── Sub-path routing ────────────────────────────────────────────────────────
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $path = parse_url($requestUri, PHP_URL_PATH);
@@ -29,11 +40,45 @@ if ($path === '/health' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 // ── MCP protocol version header ─────────────────────────────────────────────
 header('MCP-Protocol-Version: 2025-11-25');
 
-// ── Only POST accepted on / ──────────────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+// ── GET / — discovery/info response ─────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $path === '/') {
+    $db  = getDB();
+    $cfg = mcp_get_config($db);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'server'     => $cfg['server_name'] ?? 'engineersTech MCP',
+        'version'    => '2025-11-25',
+        'transport'  => 'streamable-http',
+        'tools'      => [
+            'search_businesses',
+            'get_business',
+            'list_categories',
+            'recommend_for_intent',
+            'submit_business',
+            'write_review',
+        ],
+        'auth'       => [
+            'bearer'      => true,
+            'oauth2_pkce' => true,
+        ],
+        'well_known' => mcp_base_url() . '/.well-known/oauth-authorization-server',
+    ]);
+    exit;
+}
+
+// ── Block unsupported methods (PUT, DELETE, PATCH, etc.) ────────────────────
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST', 'OPTIONS'], true)) {
     http_response_code(405);
     header('Content-Type: application/json');
-    echo json_encode(['error' => 'Method Not Allowed — use POST']);
+    echo json_encode(['error' => 'Method Not Allowed — use POST, GET, or OPTIONS']);
+    exit;
+}
+
+// ── Only POST proceeds to JSON-RPC dispatch ──────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(400);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'No route matched for this GET path']);
     exit;
 }
 
@@ -110,7 +155,11 @@ function mcp_authenticate(): array {
     if (!$token) {
         http_response_code(401);
         header('Content-Type: application/json');
-        header('WWW-Authenticate: Bearer realm="engineersTech MCP", resource_metadata="' . mcp_base_url() . '/api/.well-known/oauth-protected-resource"');
+        // WWW-Authenticate header tells ChatGPT where to find OAuth metadata
+        // resource_metadata MUST be at /.well-known/oauth-protected-resource (root, not /api)
+        $base = mcp_base_url();
+        header('WWW-Authenticate: Bearer realm="engineersTech MCP",'
+            . ' resource_metadata="' . $base . '/.well-known/oauth-protected-resource"');
         echo json_encode(['error' => 'Bearer token required']);
         exit;
     }
@@ -154,8 +203,14 @@ function mcp_verify_oauth_token(string $token, PDO $db): ?array {
     // Decode JWT
     $payload = jwt_decode($token);
     if (!$payload) return null;
-    if (($payload['iss'] ?? '') !== mcp_base_url() . '/api/oauth') return null;
-    if (($payload['aud'] ?? '') !== mcp_base_url() . '/api/mcp-server') return null;
+
+    $base = mcp_base_url();
+
+    // iss MUST match our OAuth server URL
+    if (($payload['iss'] ?? '') !== $base . '/api/oauth') return null;
+
+    // aud MUST match this MCP server's URL
+    if (($payload['aud'] ?? '') !== $base . '/api/mcp-server') return null;
 
     return $payload;
 }
@@ -240,6 +295,7 @@ function mcp_tools_list(array $ctx): array {
                     'verified' => ['type' => 'boolean', 'description' => 'Only verified listings'],
                 ],
             ],
+            '_meta' => ['readOnlyHint' => true, 'openWorldHint' => false],
         ],
         [
             'name'        => 'get_business',
@@ -251,11 +307,13 @@ function mcp_tools_list(array $ctx): array {
                     'id_or_slug' => ['type' => 'string', 'description' => 'Business UUID or URL slug'],
                 ],
             ],
+            '_meta' => ['readOnlyHint' => true, 'openWorldHint' => false],
         ],
         [
             'name'        => 'list_categories',
             'description' => 'Return all available business categories with counts.',
             'inputSchema' => ['type' => 'object', 'properties' => []],
+            '_meta' => ['readOnlyHint' => true, 'openWorldHint' => false],
         ],
         [
             'name'        => 'recommend_for_intent',
@@ -270,6 +328,7 @@ function mcp_tools_list(array $ctx): array {
                     'country' => ['type' => 'string'],
                 ],
             ],
+            '_meta' => ['readOnlyHint' => true, 'openWorldHint' => true],
         ],
     ];
 
@@ -292,6 +351,7 @@ function mcp_tools_list(array $ctx): array {
                     'tags'              => ['type' => 'array', 'items' => ['type' => 'string']],
                 ],
             ],
+            '_meta' => ['readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true],
         ];
         $tools[] = [
             'name'        => 'write_review',
@@ -306,6 +366,7 @@ function mcp_tools_list(array $ctx): array {
                     'body'        => ['type' => 'string'],
                 ],
             ],
+            '_meta' => ['readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true],
         ];
     }
 
@@ -587,9 +648,10 @@ function mcp_get_config(PDO $db): array {
 }
 
 function mcp_base_url(): string {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    return $scheme . '://' . $host;
+    // Use the canonical SITE_URL constant defined in config.php
+    // This ensures issuer/audience in JWTs always match biz.h-tv.online
+    // regardless of proxy headers or server detection quirks
+    return defined('SITE_URL') ? SITE_URL : 'https://biz.h-tv.online';
 }
 
 function mcp_log_call(string $tool, string $clientId, PDO $db): void {

@@ -242,6 +242,10 @@ CREATE TABLE IF NOT EXISTS mcp_oauth_clients (
     scopes VARCHAR(500) DEFAULT 'mcp:read',
     client_secret VARCHAR(255),
     token_endpoint_auth_method VARCHAR(50) DEFAULT 'none',
+    logo_uri VARCHAR(500),
+    tos_uri VARCHAR(500),
+    policy_uri VARCHAR(500),
+    contacts JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -276,6 +280,7 @@ CREATE TABLE IF NOT EXISTS mcp_oauth_tokens (
     scope VARCHAR(500),
     revoked TINYINT DEFAULT 0,
     expires_at TIMESTAMP NOT NULL,
+    refresh_expires_at TIMESTAMP NULL COMMENT '30-day refresh token lifetime for one-time connection',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES mcp_oauth_clients(id) ON DELETE CASCADE,
     INDEX idx_access (access_token(64)),
