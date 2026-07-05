@@ -32,6 +32,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,8 @@ const App = () => (
       <BrowserRouter>
         <ErrorBoundary>
           <Routes>
+            {/* OAuth consent — standalone page, no site nav/footer */}
+            <Route path="/oauth/consent" element={<OAuthConsent />} />
             <Route element={<SiteLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/listings" element={<Listings />} />

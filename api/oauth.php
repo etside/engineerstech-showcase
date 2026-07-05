@@ -49,6 +49,8 @@ match (true) {
     // OAuth endpoints under /api/oauth/...
     $uri === '/oauth/register' && $method === 'POST'
         => oauth_register(),
+    preg_match('#^/oauth/register/([^/]+)$#', $uri, $m) && $method === 'GET'
+        => oauth_register_get($m[1]),
     str_starts_with($uri, '/oauth/authorize')
         => oauth_authorize(),
     $uri === '/oauth/token' && $method === 'POST'
@@ -261,6 +263,26 @@ function oauth_register(): never {
     $response['registration_client_uri'] = $base . '/api/oauth/register/' . $clientId;
 
     echo json_encode($response, JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+
+// ============================================================
+// GET /api/oauth/register/:id — client info (for consent page)
+// ============================================================
+function oauth_register_get(string $clientId): never {
+    $db     = getDB();
+    $stmt   = $db->prepare("SELECT id, client_name, scopes, redirect_uris, logo_uri FROM mcp_oauth_clients WHERE id = ? LIMIT 1");
+    $stmt->execute([$clientId]);
+    $client = $stmt->fetch();
+    if (!$client) oauth_error('not_found', 'Client not found', 404);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'client_id'   => $client['id'],
+        'client_name' => $client['client_name'],
+        'scope'       => $client['scopes'],
+        'logo_uri'    => $client['logo_uri'],
+    ]);
     exit;
 }
 
