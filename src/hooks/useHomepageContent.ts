@@ -44,10 +44,10 @@ export const defaultHomepageContent: HomepageContent = {
     ctaSecondary: "Browse directory",
   },
   stats: [
-    { value: "12k+", label: "Verified Businesses" },
-    { value: "180k", label: "Trusted Reviews" },
-    { value: "94%", label: "AI Discovery Rate" },
-    { value: "32M", label: "LLM API Calls / mo" },
+    { value: "500+",  label: "Verified Businesses" },
+    { value: "50K+",  label: "Monthly Users" },
+    { value: "98%",   label: "Satisfaction Score" },
+    { value: "24/7",  label: "AI Discovery" },
   ],
   aiFeatures: [
     { icon: "Bot", title: "AI Recommendation Engine", desc: "Conversational discovery — describe a need, get matched to vetted vendors." },

@@ -6,13 +6,14 @@ import RequireAdmin from "@/components/RequireAdmin";
 import ReviewsModerationUI from "@/components/ReviewsModerationUI";
 import BrandingEditor from "@/components/BrandingEditor";
 import HomepageEditor from "@/components/HomepageEditor";
+import MediaLibrary from "@/components/MediaLibrary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Bot, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { Bot, CheckCircle2, XCircle, RefreshCw, LayoutDashboard, ListChecks, Cpu, FileText, Palette, Image as ImageIcon, Settings2, MessageSquare as MsgIcon } from "lucide-react";
 
 function Overview() {
   const [stats, setStats] = useState({ businesses: 0, pendingClaims: 0, pendingReviews: 0, subs: 0 });
@@ -34,14 +35,23 @@ function Overview() {
     { l: "Pending reviews", v: stats.pendingReviews }, { l: "Active subscriptions", v: stats.subs },
   ];
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {tiles.map((t) => (
-        <Card key={t.l}><CardContent className="p-5"><div className="text-3xl font-bold gradient-text">{t.v}</div><div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{t.l}</div></CardContent></Card>
-      ))}
-      <Card className="sm:col-span-2 lg:col-span-4"><CardHeader><CardTitle>Quick links</CardTitle></CardHeader><CardContent className="flex gap-2 flex-wrap">
-        <Link to="/admin/mcp" className="btn-ghost text-xs">MCP server config</Link>
-        <a href="/api/feed" target="_blank" className="btn-ghost text-xs">Public LLM feed</a>
-      </CardContent></Card>
+    <div className="space-y-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {tiles.map((t) => (
+          <div key={t.l} className="glass-card card-lift p-5 group hover:border-primary/40">
+            <div className="font-display font-extrabold text-3xl gradient-text">{t.v}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1 font-semibold">{t.l}</div>
+          </div>
+        ))}
+      </div>
+      <div className="glass-card p-5">
+        <div className="text-xs font-bold uppercase tracking-wider text-primary-light mb-3">Quick links</div>
+        <div className="flex gap-2 flex-wrap">
+          <Link to="/admin/mcp" className="btn-ghost text-xs py-1.5 px-3">MCP server config</Link>
+          <a href="/api/feed" target="_blank" className="btn-ghost text-xs py-1.5 px-3">Public LLM feed</a>
+          <a href="/api/feed/llms" target="_blank" className="btn-ghost text-xs py-1.5 px-3">llms.txt feed</a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -139,10 +149,6 @@ function ClaimsAdmin() {
       {!rows.length && <p className="text-muted-foreground">No claims.</p>}
     </div>
   );
-}
-
-function ReviewsAdmin() {
-  return <ReviewsModerationUI />;
 }
 
 function PricingAdmin() {
@@ -705,15 +711,20 @@ export default function Admin() {
   return (
     <RequireAdmin>
       <section className="container-tight py-10 space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="display-3">Admin</h1>
-            <p className="text-muted-foreground">Full CMS for listings, reviews, billing, pricing, and platform config.</p>
+            <div className="section-eyebrow mb-2"><Settings2 className="w-3.5 h-3.5" /> Admin panel</div>
+            <h1 className="display-3">Dashboard</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Manage listings, content, branding, media, reviews, and platform config.
+            </p>
           </div>
-          <Link to="/admin/mcp" className="btn-ghost text-sm">MCP server</Link>
+          <Link to="/admin/mcp" className="btn-ghost text-sm">MCP server →</Link>
         </div>
+
         <Tabs defaultValue="overview">
-          <TabsList className="flex-wrap h-auto">
+          <TabsList className="flex-wrap h-auto gap-1 bg-card/50 border border-border/60 p-1.5 rounded-xl">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="listings">Listings</TabsTrigger>
             <TabsTrigger value="ai-listings">AI Listings</TabsTrigger>
@@ -723,6 +734,7 @@ export default function Admin() {
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="homepage">Homepage CMS</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="media">Media Library</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
@@ -732,11 +744,12 @@ export default function Admin() {
           <TabsContent value="listings"    className="pt-5"><ListingsAdmin /></TabsContent>
           <TabsContent value="ai-listings" className="pt-5"><AiListingsAdmin /></TabsContent>
           <TabsContent value="claims"      className="pt-5"><ClaimsAdmin /></TabsContent>
-          <TabsContent value="reviews"     className="pt-5"><ReviewsAdmin /></TabsContent>
+          <TabsContent value="reviews"     className="pt-5"><ReviewsModerationUI /></TabsContent>
           <TabsContent value="blog"        className="pt-5"><BlogAdmin /></TabsContent>
           <TabsContent value="content"     className="pt-5"><ContentAdmin /></TabsContent>
           <TabsContent value="homepage"    className="pt-5"><HomepageEditor /></TabsContent>
           <TabsContent value="branding"    className="pt-5"><BrandingEditor /></TabsContent>
+          <TabsContent value="media"       className="pt-5"><MediaLibrary /></TabsContent>
           <TabsContent value="categories"  className="pt-5"><CategoryAdmin /></TabsContent>
           <TabsContent value="pricing"     className="pt-5"><PricingAdmin /></TabsContent>
           <TabsContent value="messages"    className="pt-5"><ContactMessagesAdmin /></TabsContent>
