@@ -5,7 +5,7 @@
  *       + OAuth Server Metadata (RFC 8414) + Resource Metadata (RFC 9396)
  *       + JWKS (RFC 7517) for token verification
  *
- * Deployed on: https://biz.h-tv.online
+ * Deployed on: https://biz.engineerstechbd.com
  *
  * Endpoints served by this file (called from api/index.php AND directly via .htaccess):
  *

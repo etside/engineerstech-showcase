@@ -769,7 +769,7 @@ function mcp_get_config(PDO $db): array {
 function mcp_base_url(): string {
     // Use the canonical SITE_URL constant defined in config.php
     // This ensures issuer/audience in JWTs always match regardless of proxy headers
-    return defined('SITE_URL') ? SITE_URL : 'https://biz.h-tv.online';
+    return defined('SITE_URL') ? SITE_URL : 'https://biz.engineerstechbd.com';
 }
 
 function mcp_log_call(string $tool, string $clientId, PDO $db): void {

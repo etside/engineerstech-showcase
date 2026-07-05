@@ -20,9 +20,11 @@ set_exception_handler(function($e) {
 
 // --- CORS: whitelist specific origins, never wildcard with credentials ---
 $allowedOrigins = [
-    'https://biz.h-tv.online',
-    'http://biz.h-tv.online',
-    'https://www.biz.h-tv.online',
+    'https://biz.engineerstechbd.com',
+    'http://biz.engineerstechbd.com',
+    'https://www.biz.engineerstechbd.com',
+    'https://engineerstechbd.com',
+    'https://www.engineerstechbd.com',
     'http://localhost:5173',
     'http://localhost:3000',
 ];
@@ -80,7 +82,7 @@ define('JWT_EXPIRY', 86400 * 7); // 7 days
 $siteUrl = $cfg['SITE_URL'] ?? '';
 if (empty($siteUrl)) {
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host    = $_SERVER['HTTP_HOST'] ?? 'biz.h-tv.online';
+    $host    = $_SERVER['HTTP_HOST'] ?? 'biz.engineerstechbd.com';
     $siteUrl = $scheme . '://' . $host;
 }
 define('SITE_URL', rtrim($siteUrl, '/'));

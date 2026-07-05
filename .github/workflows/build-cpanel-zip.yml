@@ -63,7 +63,7 @@ jobs:
       - name: Build frontend
         env:
           VITE_API_URL: /api
-          VITE_SITE_URL: https://biz.h-tv.online
+          VITE_SITE_URL: https://biz.engineerstechbd.com
           NODE_ENV: production
         run: npm run build
 
@@ -82,7 +82,7 @@ jobs:
       # Required secrets (Settings → Secrets → Actions):
       #   DB_HOST, DB_NAME, DB_USER, DB_PASS, JWT_SECRET
       # Optional secrets:
-      #   SITE_URL (defaults to https://biz.h-tv.online)
+      #   SITE_URL (defaults to https://biz.engineerstechbd.com)
       #   SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM
       - name: Write production config.env
         env:
@@ -104,12 +104,12 @@ jobs:
           DB_USER=${DB_USER}
           DB_PASS=${DB_PASS}
           JWT_SECRET=${JWT_SECRET}
-          SITE_URL=${SITE_URL:-https://biz.h-tv.online}
+          SITE_URL=${SITE_URL:-https://biz.engineerstechbd.com}
           SMTP_HOST=${SMTP_HOST:-localhost}
           SMTP_PORT=587
           SMTP_USER=${SMTP_USER:-}
           SMTP_PASS=${SMTP_PASS:-}
-          SMTP_FROM=${SMTP_FROM:-no-reply@biz.h-tv.online}
+          SMTP_FROM=${SMTP_FROM:-no-reply@biz.engineerstechbd.com}
           EOF
             echo "✓ config.env written from GitHub Secrets"
           else
@@ -213,7 +213,7 @@ jobs:
 
             ---
 
-            ### How to deploy to biz.h-tv.online
+            ### How to deploy to biz.engineerstechbd.com
 
             1. **Download** `engineerstech-cpanel-latest.zip` from Assets below
             2. **cPanel → File Manager** → navigate to webroot (`public_html/` or subdomain folder)
@@ -221,20 +221,20 @@ jobs:
             4. **Verify** `api/config.env` has correct DB credentials
             5. **cPanel → phpMyAdmin** → select database → **Import** `api/schema.sql` *(first deploy only)*
             6. Set `uploads/` to **chmod 755** in File Manager
-            7. Visit **https://biz.h-tv.online** ✅
+            7. Visit **https://biz.engineerstechbd.com** ✅
 
             ### MCP / OAuth Endpoints
             | Endpoint | URL |
             |---|---|
-            | MCP Server | https://biz.h-tv.online/api/mcp-server |
-            | OAuth Discovery (AS) | https://biz.h-tv.online/.well-known/oauth-authorization-server |
-            | OAuth Discovery (RS) | https://biz.h-tv.online/.well-known/oauth-protected-resource |
-            | Dynamic Registration | https://biz.h-tv.online/api/oauth/register |
-            | JWKS | https://biz.h-tv.online/api/oauth/jwks |
+            | MCP Server | https://biz.engineerstechbd.com/api/mcp-server |
+            | OAuth Discovery (AS) | https://biz.engineerstechbd.com/.well-known/oauth-authorization-server |
+            | OAuth Discovery (RS) | https://biz.engineerstechbd.com/.well-known/oauth-protected-resource |
+            | Dynamic Registration | https://biz.engineerstechbd.com/api/oauth/register |
+            | JWKS | https://biz.engineerstechbd.com/api/oauth/jwks |
 
             ### ChatGPT MCP — One-time connection
             1. ChatGPT → Settings → Connected Apps → Add
-            2. Enter MCP URL: `https://biz.h-tv.online/api/mcp-server`
+            2. Enter MCP URL: `https://biz.engineerstechbd.com/api/mcp-server`
             3. ChatGPT auto-discovers OAuth via `.well-known`, auto-registers a client
             4. Authorize once → refresh tokens keep connection alive (30-day rotation)
 
