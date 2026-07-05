@@ -1,141 +1,125 @@
 import { Link } from "react-router-dom";
-import { Zap, Twitter, Github, Linkedin, MessageCircle, ExternalLink, Users, Globe2, MapPin, Clock } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Zap, Twitter, Github, Linkedin, MessageCircle, ExternalLink } from "lucide-react";
 import NewsletterSignup from "./NewsletterSignup";
-import AnimatedCounter from "./AnimatedCounter";
-import Reveal from "./Reveal";
 
-const awards = [
+// ─── Award data (matches what's in the marquee) ───────────────────────────────
+const footerAwards = [
   { label: "Bangladesh #1 Tech Directory", icon: "🏆" },
-  { label: "AI-Powered GEO", icon: "🤖" },
-  { label: "GEO Certified 2026", icon: "✅" },
-  { label: "Top Rated Platform", icon: "⭐" },
-  { label: "500+ Verified Listings", icon: "🔒" },
-  { label: "50K+ Monthly Users", icon: "🚀" },
+  { label: "AI-Powered GEO",              icon: "🤖" },
+  { label: "GEO Certified 2026",          icon: "✅" },
+  { label: "Top Rated Platform",          icon: "⭐" },
+  { label: "500+ Verified Listings",      icon: "🔒" },
+  { label: "50K+ Monthly Users",          icon: "🚀" },
+  { label: "Best Tech Directory 2026",    icon: "🥇" },
+  { label: "Community Choice Award",      icon: "🎖️" },
+];
+
+// ─── Footer link columns (FundedNext: 4 columns) ─────────────────────────────
+const footerColumns = [
+  {
+    title: "Product & Offerings",
+    links: [
+      { to: "/listings",   label: "Browse Listings" },
+      { to: "/categories", label: "Categories" },
+      { to: "/pricing",    label: "Pricing" },
+      { to: "/submit",     label: "List Your Business" },
+      { to: "/leaderboards", label: "Leaderboards" },
+      { to: "/faq",        label: "Help Centre (FAQ)" },
+      { to: "/for-vendors", label: "Partners" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { to: "/how-it-works", label: "How GEO Works" },
+      { to: "/blog",         label: "Blog" },
+      { to: "/ai-discover",  label: "AI Discover" },
+      { to: "/api-docs",     label: "LLM / MCP API" },
+      { to: "/resources",    label: "Resources" },
+      { to: "/services",     label: "Services" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { to: "/about",          label: "About engineersTech" },
+      { to: "/contact",        label: "Contact Us" },
+      { to: "/about#news",     label: "News & Media" },
+      { to: "/about#awards",   label: "Achievements & Awards" },
+      { to: "/contact#events", label: "Events" },
+    ],
+  },
+  {
+    title: "Privacy & Policy",
+    links: [
+      { to: "/terms",   label: "Terms of Service" },
+      { to: "/privacy", label: "Privacy Policy" },
+      { to: "/privacy#cookies", label: "Cookie Policy" },
+      { to: "/privacy#aml",     label: "AML Policy" },
+      { to: "/privacy#risk",    label: "Risk Disclosure" },
+    ],
+  },
+];
+
+const socials = [
+  { Icon: Twitter,        label: "Twitter / X", href: "https://twitter.com/engineerstech" },
+  { Icon: Linkedin,       label: "LinkedIn",    href: "https://linkedin.com/company/engineerstech" },
+  { Icon: Github,         label: "GitHub",      href: "https://github.com/etside" },
+  { Icon: MessageCircle,  label: "Discord",     href: "#" },
 ];
 
 export default function Footer() {
-  const { t } = useTranslation();
-
-  const sections = [
-    {
-      title: "Platform",
-      links: [
-        { to: "/listings", label: "Browse Listings" },
-        { to: "/categories", label: "Categories" },
-        { to: "/pricing", label: "Pricing" },
-        { to: "/submit", label: "List Your Business" },
-        { to: "/blog", label: "Blog" },
-        { to: "/leaderboards", label: "Leaderboards" },
-      ],
-    },
-    {
-      title: "AI & GEO",
-      links: [
-        { to: "/how-it-works", label: "How GEO Works" },
-        { to: "/ai-discover", label: "AI Discover" },
-        { to: "/api-docs", label: "LLM / MCP API" },
-        { to: "/resources", label: "Resources" },
-        { to: "/faq", label: "FAQ" },
-      ],
-    },
-    {
-      title: "Company",
-      links: [
-        { to: "/about", label: "About engineersTech" },
-        { to: "/for-vendors", label: "For Vendors" },
-        { to: "/contact", label: "Contact Us" },
-        { to: "/services", label: "Services" },
-      ],
-    },
-    {
-      title: "Legal",
-      links: [
-        { to: "/privacy", label: "Privacy Policy" },
-        { to: "/terms", label: "Terms of Service" },
-      ],
-    },
-  ];
-
-  const socials = [
-    { Icon: Twitter, label: "Twitter / X", href: "https://twitter.com/engineerstech" },
-    { Icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com/company/engineerstech" },
-    { Icon: Github, label: "GitHub", href: "https://github.com/etside" },
-    { Icon: MessageCircle, label: "Discord", href: "#" },
-  ];
-
   return (
-    <footer className="relative mt-24 border-t border-border/60">
-      {/* Award strip */}
-      <div className="border-b border-border/40 overflow-hidden bg-muted/20">
-        <div className="py-4 relative">
-          <div className="flex gap-4 whitespace-nowrap marquee-track">
-            {[...awards, ...awards].map((a, i) => (
-              <div key={i} className="award-strip transition-all cursor-default shrink-0">
-                <span>{a.icon}</span>
-                <span>{a.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <footer className="relative mt-24 border-t border-border/50">
 
-      {/* Global Presence Stats */}
-      <div className="border-b border-border/40 bg-card/30">
-        <div className="container-tight py-8">
-          <Reveal>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { icon: Users, value: 500, suffix: "+", label: "Verified Listings", desc: "Trusted businesses" },
-                { icon: Globe2, value: 12, suffix: "+", label: "Categories", desc: "Across industries" },
-                { icon: MapPin, value: 17, suffix: "+", label: "Countries Served", desc: "Global reach" },
-                { icon: Clock, value: 24, suffix: "/7", label: "AI Discovery", desc: "Always indexed" },
-              ].map((s, i) => (
-                <Reveal key={s.label} delay={i * 80} className="text-center group">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-500 ease-spring">
-                    <s.icon className="w-[18px] h-[18px] text-primary-light" />
-                  </div>
-                  <div className="font-display text-2xl font-extrabold gradient-text mb-0.5">
-                    <AnimatedCounter value={s.value} suffix={s.suffix} />
-                  </div>
-                  <div className="text-sm font-semibold text-foreground">{s.label}</div>
-                  <div className="text-xs text-muted-foreground">{s.desc}</div>
-                </Reveal>
-              ))}
+      {/* ── Award strip marquee (FundedNext: scrolling award logos) ── */}
+      <div className="border-b border-border/30 overflow-hidden bg-card/30 py-4">
+        <div className="flex gap-3 whitespace-nowrap marquee-track">
+          {[...footerAwards, ...footerAwards].map((a, i) => (
+            <div key={i} className="award-strip shrink-0 cursor-default">
+              <span>{a.icon}</span>
+              <span>{a.label}</span>
             </div>
-          </Reveal>
+          ))}
         </div>
       </div>
 
-      {/* Main footer */}
-      <div className="bg-card/40">
+      {/* ── Main footer body — 4 columns (FundedNext layout) ── */}
+      <div className="bg-card/20">
         <div className="container-tight py-16">
-          <div className="grid lg:grid-cols-5 gap-10 xl:gap-14">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 xl:gap-14">
 
-            {/* Brand col */}
-            <div className="lg:col-span-1">
-              <Link to="/" className="flex items-center gap-2.5 mb-5 group">
-                <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-primary/40 group-hover:scale-105 transition-transform ease-spring">
-                  <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+            {/* Brand / about column (takes 1 extra col) */}
+            <div className="col-span-2 md:col-span-3 lg:col-span-1">
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-2.5 mb-5 group w-fit">
+                <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md shadow-primary/30 group-hover:scale-105 transition-transform duration-200">
+                  <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
                 </div>
-                <div className="font-display font-extrabold text-base leading-none">
-                  <span className="text-foreground">engineers</span><span className="gradient-text">Tech</span>
-                </div>
+                <span className="font-display font-extrabold text-[15px] leading-none">
+                  <span className="text-foreground">engineers</span>
+                  <span className="gradient-text">Tech</span>
+                </span>
               </Link>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                The AI-powered directory for engineers & tech professionals in Bangladesh and beyond.
-                Get discovered by LLMs, ranked by GEO score.
+
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
+                The AI-powered directory for engineers & tech professionals. Get discovered by LLMs,
+                ranked by GEO score.
               </p>
+
               <div className="mb-6">
                 <NewsletterSignup />
               </div>
+
               <div className="flex items-center gap-2">
                 {socials.map(({ Icon, label, href }) => (
                   <a
                     key={label}
                     href={href}
                     aria-label={label}
-                    className="w-9 h-9 rounded-lg border border-border bg-muted/20 flex items-center justify-center text-muted-foreground hover:text-primary-light hover:border-primary/50 hover:bg-primary/10 transition-all"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center text-muted-foreground hover:text-primary-light hover:border-primary/40 hover:bg-primary/10 transition-all duration-200"
                   >
                     <Icon className="w-4 h-4" />
                   </a>
@@ -143,18 +127,18 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Link columns */}
-            {sections.map((s) => (
-              <div key={s.title}>
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-primary-light mb-5">
-                  {s.title}
+            {/* 4 link columns */}
+            {footerColumns.map((col) => (
+              <div key={col.title}>
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-primary-light mb-5">
+                  {col.title}
                 </div>
                 <ul className="space-y-3">
-                  {s.links.map((l) => (
+                  {col.links.map((l) => (
                     <li key={l.label}>
                       <Link
                         to={l.to}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors hover:translate-x-0.5 inline-block"
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 inline-block"
                       >
                         {l.label}
                       </Link>
@@ -167,33 +151,59 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="border-t border-border/60 bg-background/80">
+      {/* ── Legal text (FundedNext: long disclosure paragraph) ── */}
+      <div className="border-t border-border/30 bg-background/60">
+        <div className="container-tight py-8">
+          <p className="text-xs text-muted-foreground/70 leading-relaxed max-w-4xl">
+            engineersTech is an AI-powered business directory platform. All listings are provided
+            for discovery and evaluation purposes only. engineersTech does not guarantee the
+            accuracy, completeness, or availability of any listed business. Businesses are
+            independently operated and not affiliated with engineersTech unless explicitly stated.
+            GEO scoring is algorithmic and does not constitute a professional recommendation.
+            engineersTech is a registered trademark of engineersTech Ltd.
+          </p>
+          <p className="text-xs text-muted-foreground/50 mt-3 leading-relaxed max-w-4xl">
+            Jurisdictional Notice: engineersTech services are available globally. Users are
+            responsible for compliance with their local laws and regulations. Not a financial
+            advisor · Not FDIC Insured · Past performance not indicative of future results.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Bottom bar (FundedNext: logo + copyright + links) ── */}
+      <div className="border-t border-border/30 bg-background/80">
         <div className="container-tight py-5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+
+            {/* Copyright */}
             <p className="text-xs text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()}{" "}
+              engineersTech™ ©{" "}{new Date().getFullYear()}{" "}·{" "}
               <a
                 href="https://engineerstechbd.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-foreground hover:text-primary-light transition-colors inline-flex items-center gap-1"
               >
-                engineersTech <ExternalLink className="w-3 h-3" />
+                engineerstechbd.com <ExternalLink className="w-3 h-3" />
               </a>
-              . Copyright reserved.
             </p>
+
             <div className="flex items-center gap-4">
+              {/* Live status indicator */}
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="text-xs text-muted-foreground">LLM API operational</span>
               </div>
+
+              {/* FundedNext: Trust and Security + Subscribe footer links */}
               <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
-                <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-                <span className="text-border">·</span>
-                <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-                <span className="text-border">·</span>
-                <Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link>
+                <Link to="/privacy" className="hover:text-foreground transition-colors">
+                  Trust & Security
+                </Link>
+                <span className="text-border">|</span>
+                <Link to="/privacy#newsletter" className="hover:text-foreground transition-colors">
+                  Subscribe to newsletter
+                </Link>
               </div>
             </div>
           </div>

@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Star, TrendingUp, Clock, HeartHandshake, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight, HeartHandshake, Clock, ShieldCheck, Globe2, Users,
+  Building2, MapPin, Headphones,
+} from "lucide-react";
 import JsonLd from "@/components/JsonLd";
 import Reveal from "@/components/Reveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { businessApi, categoryApi } from "@/lib/api";
 import { useHomepageContent } from "@/hooks/useHomepageContent";
-import { HeroSection, TrustedSection, AiDiscoverySection, StatsRibbon } from "./HomeSections1";
-import { FeaturedSection, CategoriesSection, HowItWorksSection, CommunitySection } from "./HomeSections2";
+import {
+  HeroSection, TrustedSection, StatsRibbon, RecognitionSection, AiDiscoverySection,
+} from "./HomeSections1";
+import {
+  FeaturedSection, CategoriesSection, HowItWorksSection, CommunitySection,
+} from "./HomeSections2";
 
 interface Business {
   id: string; slug: string; name: string; tagline?: string | null;
@@ -16,152 +23,220 @@ interface Business {
   location?: string | null; services?: string[] | null; category?: string | null;
 }
 
-// ─── Support stats section ──────────────────────────────────────────────────
-function SupportSection() {
-  const items = [
-    { icon: HeartHandshake, stat: "98%", label: "Customer satisfaction score", sub: "Based on moderated community reviews" },
-    { icon: Clock, stat: "<25s", label: "Avg. first response time", sub: "Our team replies fast, always" },
-    { icon: ShieldCheck, stat: "500+", label: "Verified tech businesses", sub: "Manually reviewed & approved" },
+// ─── "Powered by a global team" section (FundedNext: team/company metrics) ────
+function GlobalTeamSection() {
+  const teamStats = [
+    { icon: Users,    value: 50,  suffix: "+",  label: "Team Members",     desc: "Across all hubs" },
+    { icon: Building2, value: 5, suffix: "",    label: "Global Offices",   desc: "Regional presence" },
+    { icon: MapPin,   value: 17,  suffix: "+",  label: "Countries Served", desc: "And growing" },
+    { icon: Clock,    value: 24,  suffix: "/7", label: "Operations",       desc: "Always running" },
   ];
+
+  return (
+    <section className="py-20 bg-card/20 border-y border-border/30">
+      <div className="container-tight">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div>
+            <div className="section-eyebrow mb-4">
+              <Globe2 className="w-3.5 h-3.5" /> Our team
+            </div>
+            <h2 className="display-2">
+              Powered by a <span className="gradient-text">global team</span>
+            </h2>
+            <p className="text-muted-foreground text-base max-w-xl mt-3 leading-relaxed">
+              Dozens of engineers, designers, and community managers — across multiple hubs —
+              focused on one thing: engineersTech users.
+            </p>
+          </div>
+          <Link to="/about" className="btn-ghost text-sm shrink-0 self-start md:self-auto">
+            Company <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {teamStats.map((s, i) => (
+            <Reveal key={s.label} delay={i * 80} className="glass-card p-6 text-center group card-lift">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-all duration-300">
+                <s.icon className="w-5 h-5 text-primary-light" />
+              </div>
+              <div className="font-display font-black text-3xl gradient-text mb-0.5">
+                <AnimatedCounter value={s.value} suffix={s.suffix} />
+              </div>
+              <div className="text-sm font-semibold text-foreground">{s.label}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{s.desc}</div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Support section (FundedNext: "Support that never clocks out") ─────────────
+function SupportSection() {
+  // Language flags matching FundedNext's language strip
+  const languages = [
+    { flag: "🇧🇩", lang: "Bangla" },
+    { flag: "🇬🇧", lang: "English" },
+    { flag: "🇮🇳", lang: "Hindi" },
+    { flag: "🇸🇦", lang: "Arabic" },
+    { flag: "🇫🇷", lang: "French" },
+    { flag: "🇨🇳", lang: "Chinese" },
+    { flag: "🇯🇵", lang: "Japanese" },
+    { flag: "🇩🇪", lang: "German" },
+  ];
+
   return (
     <section className="container-tight py-24">
       <div className="glass-card p-10 md:p-14 relative overflow-hidden">
-        <div className="absolute inset-0 hero-glow opacity-40 pointer-events-none" />
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,hsl(142_76%_45%/0.08),transparent_60%)] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+
         <div className="relative grid md:grid-cols-2 gap-12 items-center">
+          {/* Left: text content */}
           <div>
-            <div className="section-eyebrow mb-4">
-              <HeartHandshake className="w-3.5 h-3.5" /> Support that never clocks out
+            <div className="section-eyebrow mb-5">
+              <Headphones className="w-3.5 h-3.5" /> Support
             </div>
-            <h2 className="display-2 mb-4">
-              We're here<br />
-              <span className="gradient-text">24 hours a day.</span>
+            {/* FundedNext: 2-line bold headline */}
+            <h2 className="display-2 mb-2">
+              Support that never
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              Our dedicated support team helps businesses get listed, verified, and discovered.
-              Whether you're a new vendor or an established firm, we're one message away.
+            <h2 className="display-2 mb-5">
+              <span className="gradient-text">clocks out</span>
+            </h2>
+            <p className="text-muted-foreground text-base leading-relaxed mb-6 max-w-md">
+              Our support team operates 24 hours a day, 7 days a week. Day or night, the first
+              response to your question arrives in under 25 seconds.
             </p>
+
+            {/* Languages spoken row (FundedNext pattern) */}
+            <div className="mb-7">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3">
+                Languages spoken
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {languages.map((l) => (
+                  <span
+                    key={l.lang}
+                    title={l.lang}
+                    className="text-xl cursor-default hover:scale-110 transition-transform duration-200"
+                    aria-label={l.lang}
+                  >
+                    {l.flag}
+                  </span>
+                ))}
+                <span className="text-sm text-muted-foreground font-semibold">+ more</span>
+              </div>
+            </div>
+
+            {/* CTAs (FundedNext: Get Support + Read FAQs) */}
             <div className="flex gap-3">
-              <Link to="/contact" className="btn-gradient text-sm">Get Support</Link>
-              <Link to="/faq" className="btn-ghost text-sm">Read FAQs</Link>
+              <Link to="/contact" className="btn-gradient text-sm py-2.5 px-5">
+                Get Support
+              </Link>
+              <Link to="/faq" className="btn-ghost text-sm py-2.5 px-5">
+                Read FAQs
+              </Link>
             </div>
           </div>
+
+          {/* Right: support stats + agent photo placeholder */}
           <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.label} className="flex items-center gap-5 glass-card p-5">
-                <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
-                  <item.icon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-display font-extrabold text-2xl gradient-text">{item.stat}</div>
-                  <div className="font-semibold text-sm text-foreground">{item.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{item.sub}</div>
-                </div>
+            {/* Support team image placeholder */}
+            <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-card border border-border/50 h-40 flex items-center justify-center overflow-hidden">
+              <div className="text-center">
+                <div className="text-4xl mb-2">🎧</div>
+                <p className="text-sm text-muted-foreground font-semibold">engineersTech support team</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+            </div>
 
-// ─── Reviews section ─────────────────────────────────────────────────────────
-function ReviewsSection({ content }: { content: ReturnType<typeof useHomepageContent>["content"] }) {
-  return (
-    <section className="container-tight py-24">
-      <div className="glass-card p-10 md:p-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_hsl(var(--primary)/0.08),_transparent_60%)] pointer-events-none" />
-        <div className="relative grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <div className="section-eyebrow mb-4"><Star className="w-3.5 h-3.5" /> {content.reviewSection.eyebrow}</div>
-            <h2 className="display-2 mb-4">
-              {content.reviewSection.title}<br />
-              <span className="gradient-text">{content.reviewSection.highlightedTitle}</span>
-            </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              {content.reviewSection.subtitle}
-            </p>
-            <div className="flex gap-2">
-              <Link to="/listings" className="btn-gradient text-sm">Read reviews</Link>
-              <Link to="/auth" className="btn-ghost text-sm">Leave a review</Link>
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: ShieldCheck, stat: "98%",  label: "Customer satisfaction score" },
+                { icon: Clock,       stat: "<25s",  label: "Avg. response time" },
+              ].map((item) => (
+                <div key={item.label} className="glass-card p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-md shadow-primary/20">
+                    <item.icon className="w-4.5 h-4.5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <div className="font-display font-extrabold text-xl gradient-text">{item.stat}</div>
+                    <div className="text-xs text-muted-foreground leading-tight">{item.label}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="space-y-3">
-            {[
-              { tag: "Pro · 142 mentions", text: "Exceptional engineering quality, ships on time every sprint.", c: "emerald" },
-              { tag: "Pro · 98 mentions",  text: "Deep AI/LLM expertise across regulated enterprise domains.", c: "emerald" },
-              { tag: "Con · 12 mentions",  text: "Higher rate than offshore-only alternatives.", c: "amber" },
-            ].map((r) => (
-              <div key={r.text} className="glass-card p-4 flex items-start gap-3">
-                <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${r.c === "emerald" ? "bg-emerald-400" : "bg-amber-400"}`} />
-                <div>
-                  <div className={`text-[10px] font-bold uppercase tracking-wider ${r.c === "emerald" ? "text-emerald-400" : "text-amber-400"}`}>
-                    {r.tag}
-                  </div>
-                  <p className="text-sm text-foreground/90 mt-1">{r.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// ─── Final CTA section ────────────────────────────────────────────────────────
-function CtaSection({ content }: { content: ReturnType<typeof useHomepageContent>["content"] }) {
-  const trustStats = [
-    { value: 500, suffix: "+", label: "Verified" },
-    { value: 98, suffix: "%", label: "Satisfaction" },
-    { value: 50, suffix: "K+", label: "Users" },
-  ];
-
+// ─── Final CTA section (FundedNext: "Start your challenge") ──────────────────
+function CtaSection() {
   return (
     <section className="container-tight py-24">
       <Reveal
         as="div"
-        className="relative overflow-hidden rounded-3xl p-12 md:p-20 text-center"
+        className="relative overflow-hidden rounded-3xl text-center"
         style={{
-          background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 40%, hsl(270 60% 45%) 100%)",
+          background:
+            "linear-gradient(135deg, hsl(142 76% 18%) 0%, hsl(160 50% 12%) 50%, hsl(142 60% 20%) 100%)",
         }}
       >
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 cta-grid-pattern pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.12),_transparent_65%)]" />
-        <div className="orb orb-1 w-[350px] h-[350px] -top-24 -left-12 bg-white/15" aria-hidden />
-        <div className="orb orb-2 w-[400px] h-[400px] -bottom-24 -right-12 bg-white/10" aria-hidden />
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-bold mb-6 backdrop-blur">
-            <TrendingUp className="w-3.5 h-3.5" /> {content.ctaSection.badge}
-          </div>
-          <h2 className="display-2 text-white mb-4 text-balance">{content.ctaSection.title}</h2>
-          <p className="text-white/80 text-lg max-w-xl mx-auto mb-8">{content.ctaSection.subtitle}</p>
+        {/* Grid pattern overlay (FundedNext CTA background) */}
+        <div className="absolute inset-0 cta-grid-pattern pointer-events-none opacity-60" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,hsl(142_76%_45%/0.25),transparent_60%)] pointer-events-none" />
+        {/* Orbs */}
+        <div className="orb w-[350px] h-[350px] -top-24 -left-12 bg-primary/20" aria-hidden />
+        <div className="orb w-[400px] h-[400px] -bottom-24 -right-12 bg-primary/15" aria-hidden />
+
+        <div className="relative px-8 py-20 md:py-24">
+          {/* FundedNext: "Start your challenge" style */}
+          <h2 className="display-2 text-white mb-4">
+            Start your
+            <span className="block text-primary-light">engineersTech journey</span>
+          </h2>
+          <p className="text-white/70 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
+            Thousands of engineers are already discovering top-rated tech vendors through
+            engineersTech. The only one missing from that list is you. Your listing is open now.
+          </p>
 
           {/* Trust stats row */}
-          <div className="flex items-center justify-center gap-8 mb-10">
-            {trustStats.map((s) => (
+          <div className="flex flex-wrap items-center justify-center gap-10 mb-10">
+            {[
+              { value: 500,  suffix: "+", label: "Verified" },
+              { value: 98,   suffix: "%", label: "Satisfaction" },
+              { value: 50,   suffix: "K+", label: "Users" },
+            ].map((s) => (
               <div key={s.label} className="text-center">
-                <div className="font-display text-2xl md:text-3xl font-extrabold text-white">
+                <div className="font-display text-3xl font-extrabold text-white">
                   <AnimatedCounter value={s.value} suffix={s.suffix} />
                 </div>
-                <div className="text-xs text-white/70 uppercase tracking-wider font-semibold">{s.label}</div>
+                <div className="text-xs text-white/60 uppercase tracking-wider font-semibold mt-0.5">
+                  {s.label}
+                </div>
               </div>
             ))}
           </div>
 
+          {/* FundedNext CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/auth?mode=signup"
-              className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all shadow-xl shadow-black/20"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:brightness-110 transition-all shadow-xl shadow-black/30 shimmer-btn"
             >
-              {content.ctaSection.ctaPrimary} <ArrowRight className="w-4 h-4" />
+              List Your Business <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              to="/pricing"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm border border-white/30 text-white hover:bg-white/10 transition-all"
+              to="/listings"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm border border-white/25 text-white hover:bg-white/10 transition-all"
             >
-              {content.ctaSection.ctaSecondary}
+              Browse Listings
             </Link>
           </div>
         </div>
@@ -170,7 +245,7 @@ function CtaSection({ content }: { content: ReturnType<typeof useHomepageContent
   );
 }
 
-// ─── Main Home component ──────────────────────────────────────────────────────
+// ─── Main Home page ────────────────────────────────────────────────────────────
 export default function Home() {
   const { content } = useHomepageContent();
   const [featured, setFeatured] = useState<Business[]>([]);
@@ -190,24 +265,53 @@ export default function Home() {
     "@type": "Organization",
     name: "engineersTech",
     url: "https://engineerstechbd.com",
-    description: "AI-powered business directory for engineers & tech professionals. GEO-optimized for LLM discovery.",
-    sameAs: ["https://twitter.com/engineerstech", "https://linkedin.com/company/engineerstech"],
+    description:
+      "AI-powered business directory for engineers & tech professionals. GEO-optimized for LLM discovery.",
+    sameAs: [
+      "https://twitter.com/engineerstech",
+      "https://linkedin.com/company/engineerstech",
+    ],
   };
 
   return (
     <>
       <JsonLd data={orgJsonLd} />
+
+      {/* 1. Hero — FundedNext: 2-line headline, trust badges, inline stats, CTAs */}
       <HeroSection content={content} />
+
+      {/* 2. Trusted marquee */}
       <TrustedSection />
+
+      {/* 3. Horizontal stats ribbon */}
       <StatsRibbon />
+
+      {/* 4. "Recognized globally" award marquee (FundedNext pattern) */}
+      <RecognitionSection />
+
+      {/* 5. AI Discovery features */}
       <AiDiscoverySection content={content} />
+
+      {/* 6. Featured / "Choose your next discovery" (FundedNext: challenge cards) */}
       <FeaturedSection content={content} featured={featured} />
+
+      {/* 7. Categories */}
       <CategoriesSection cats={cats} />
+
+      {/* 8. How It Works */}
       <HowItWorksSection content={content} />
+
+      {/* 9. Community (Discord + YouTube) */}
       <CommunitySection />
+
+      {/* 10. "Powered by a global team" */}
+      <GlobalTeamSection />
+
+      {/* 11. Support that never clocks out (FundedNext pattern) */}
       <SupportSection />
-      <ReviewsSection content={content} />
-      <CtaSection content={content} />
+
+      {/* 12. Final CTA — "Start your challenge" */}
+      <CtaSection />
     </>
   );
 }
