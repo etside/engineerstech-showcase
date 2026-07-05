@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Bot, Search, BarChart3, Globe2, MessageSquare, Sparkles, ShieldCheck, Languages } from "lucide-react";
+import { setPageMeta } from "@/lib/seo";
 
 const services = [
   { Icon: Bot, title: "AI Recommendation Chatbot", d: "Conversational discovery for buyers — describe a problem, get matched to the right vendors." },
@@ -12,6 +14,14 @@ const services = [
 ];
 
 export default function Services() {
+  useEffect(() => {
+    setPageMeta(
+      'Services — engineersTech',
+      'AI recommendation chatbot, GEO optimization, LLM analytics, review collection, and more.',
+      'https://engineerstechbd.com/services',
+    );
+  }, []);
+
   return (
     <section className="container-tight py-16">
       <div className="max-w-2xl mb-12">

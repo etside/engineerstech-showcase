@@ -86,23 +86,36 @@ function businesses_featured() {
 
 function businesses_search() {
     $db = getDB();
+    ensure_business_profile_column($db);
     $q = trim($_GET['q'] ?? '');
     $limit = min(50, max(1, (int)($_GET['limit'] ?? 20)));
+    $service = trim($_GET['service'] ?? '');
 
     if (!$q) {
         json_error('Search query required');
     }
 
-    $stmt = $db->prepare(
-        "SELECT b.*, c.name AS category_name, c.slug AS category_slug
-         FROM businesses b
-         LEFT JOIN categories c ON b.category_id = c.id
-         WHERE b.status = 'approved'
-         AND MATCH(b.name, b.description, b.short_description) AGAINST(? IN BOOLEAN MODE)
-         ORDER BY b.rating DESC
-         LIMIT ?"
-    );
-    $stmt->execute([$q . '*', $limit]);
+    $sql = "SELECT b.*, c.name AS category_name, c.slug AS category_slug
+            FROM businesses b
+            LEFT JOIN categories c ON b.category_id = c.id
+            WHERE b.status = 'approved'
+              AND (
+                    MATCH(b.name, b.description, b.short_description) AGAINST(? IN BOOLEAN MODE)
+                    OR LOWER(CAST(b.profile_data AS CHAR)) LIKE ?
+              )";
+    $params = [$q . '*', '%' . strtolower($q) . '%'];
+
+    if ($service) {
+        $sql .= " AND (LOWER(CAST(b.profile_data AS CHAR)) LIKE ? OR JSON_SEARCH(LOWER(b.services), 'one', ?) IS NOT NULL)";
+        $params[] = '%' . strtolower($service) . '%';
+        $params[] = '%' . strtolower($service) . '%';
+    }
+
+    $sql .= " ORDER BY b.is_featured DESC, b.rating DESC, b.review_count DESC LIMIT ?";
+    $params[] = $limit;
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     json_response($stmt->fetchAll());
 }
 
@@ -124,6 +137,7 @@ function businesses_stats() {
 
 function businesses_get(string $identifier) {
     $db = getDB();
+    ensure_business_profile_column($db);
 
     // Try by slug first, then by ID
     $stmt = $db->prepare(
@@ -137,6 +151,13 @@ function businesses_get(string $identifier) {
 
     if (!$business) {
         json_error('Business not found', 404);
+    }
+
+    $profileData = json_decode($business['profile_data'] ?? 'null', true) ?: [];
+    if (!empty($profileData)) {
+        $business['profile_data'] = $profileData;
+        $business['profile_completeness'] = $profileData['profile_completeness'] ?? calculate_profile_completeness($profileData);
+        $business['structured_data'] = $profileData['structured_data'] ?? build_business_structured_data($business, $profileData);
     }
 
     // Get reviews
@@ -162,6 +183,7 @@ function businesses_create() {
     }
 
     $db = getDB();
+    ensure_business_profile_column($db);
     $id = uuid();
     $slug = slugify($input['name']);
 
@@ -172,9 +194,54 @@ function businesses_create() {
         $slug .= '-' . substr($id, 0, 8);
     }
 
+    $profileData = merge_business_profile_data([
+        'name' => $input['name'] ?? null,
+        'description' => $input['description'] ?? null,
+        'short_description' => $input['short_description'] ?? null,
+        'website' => $input['website'] ?? null,
+        'email' => $input['email'] ?? null,
+        'phone' => $input['phone'] ?? null,
+        'address' => $input['address'] ?? null,
+        'city' => $input['city'] ?? null,
+        'country' => $input['country'] ?? null,
+        'categories' => $input['categories'] ?? null,
+        'services' => $input['services'] ?? null,
+        'industries' => $input['industries'] ?? null,
+        'technologies' => $input['technologies'] ?? null,
+        'certifications' => $input['certifications'] ?? null,
+        'awards' => $input['awards'] ?? null,
+        'portfolio' => $input['portfolio'] ?? null,
+        'case_studies' => $input['case_studies'] ?? null,
+        'testimonials' => $input['testimonials'] ?? null,
+        'team_size' => $input['team_size'] ?? null,
+        'years_in_business' => $input['years_in_business'] ?? null,
+        'pricing' => $input['pricing'] ?? null,
+        'minimum_project_size' => $input['minimum_project_size'] ?? null,
+        'hourly_rate' => $input['hourly_rate'] ?? null,
+        'headquarters' => $input['headquarters'] ?? null,
+        'service_locations' => $input['service_locations'] ?? null,
+        'languages' => $input['languages'] ?? null,
+        'contact_information' => [
+            'email' => $input['email'] ?? null,
+            'phone' => $input['phone'] ?? null,
+            'address' => $input['address'] ?? null,
+            'city' => $input['city'] ?? null,
+            'country' => $input['country'] ?? null,
+        ],
+        'social_profiles' => $input['social_profiles'] ?? null,
+        'external_links' => $input['external_links'] ?? null,
+        'business_attributes' => $input['business_attributes'] ?? null,
+        'accessibility_features' => $input['accessibility_features'] ?? null,
+        'delivery_methods' => $input['delivery_methods'] ?? null,
+        'appointment_options' => $input['appointment_options'] ?? null,
+        'verification_status' => $input['verification_status'] ?? 'unverified',
+        'seo_metadata' => $input['seo_metadata'] ?? null,
+        'structured_data' => $input['structured_data'] ?? null,
+    ], []);
+
     $stmt = $db->prepare(
-        "INSERT INTO businesses (id, owner_id, name, slug, description, short_description, website, email, phone, address, city, country, category_id, logo_url, cover_url, tags, services, social_links, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')"
+        "INSERT INTO businesses (id, owner_id, name, slug, description, short_description, website, email, phone, address, city, country, category_id, logo_url, cover_url, tags, services, social_links, status, profile_data)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)"
     );
     $stmt->execute([
         $id, $user['id'], $input['name'], $slug,
@@ -192,6 +259,7 @@ function businesses_create() {
         !empty($input['tags']) ? json_encode($input['tags']) : null,
         !empty($input['services']) ? json_encode($input['services']) : null,
         !empty($input['social_links']) ? json_encode($input['social_links']) : null,
+        json_encode($profileData),
     ]);
 
     json_response(['id' => $id, 'slug' => $slug], 201);
@@ -201,6 +269,7 @@ function businesses_update(string $id) {
     $user = require_auth();
     $input = get_json_input();
     $db = getDB();
+    ensure_business_profile_column($db);
 
     // Check ownership or admin
     $stmt = $db->prepare("SELECT owner_id FROM businesses WHERE id = ?");
@@ -215,6 +284,13 @@ function businesses_update(string $id) {
     if (!$isOwner && !$isAdmin) {
         json_error('Not authorized', 403);
     }
+
+    $existingProfile = [];
+    if (!empty($biz['profile_data'])) {
+        $existingProfile = json_decode($biz['profile_data'], true) ?: [];
+    }
+
+    $profileData = merge_business_profile_data($input, $existingProfile);
 
     $fields = ['name', 'description', 'short_description', 'website', 'email', 'phone', 'address', 'city', 'country', 'category_id', 'logo_url', 'cover_url'];
     $updates = [];
@@ -233,6 +309,11 @@ function businesses_update(string $id) {
             $updates[] = "$f = ?";
             $params[] = json_encode($input[$f]);
         }
+    }
+
+    if (!empty($profileData)) {
+        $updates[] = "profile_data = ?";
+        $params[] = json_encode($profileData);
     }
 
     // Admin-only fields

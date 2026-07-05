@@ -22,7 +22,6 @@ export default function NotFound() {
 
   return (
     <section className="container-tight py-24 text-center">
-      {/* 404 number */}
       <div
         className="gradient-text font-display font-bold leading-none mb-4"
         style={{ fontSize: "clamp(6rem, 20vw, 12rem)" }}
@@ -31,15 +30,12 @@ export default function NotFound() {
         404
       </div>
 
-      {/* Proper h1 */}
       <h1 className="display-2 mb-4">Page not found</h1>
 
       <p className="text-muted-foreground text-lg mb-10 max-w-md mx-auto">
-        The page you were looking for doesn't exist, was moved, or the link is
-        incorrect.
+        The page you were looking for doesn't exist, was moved, or the link is incorrect.
       </p>
 
-      {/* Search suggestion */}
       <div className="glass-card p-5 max-w-md mx-auto mb-10 text-left">
         <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
           <Search className="w-4 h-4 shrink-0" />
@@ -59,16 +55,12 @@ export default function NotFound() {
             placeholder="Search businesses, services…"
             className="flex-1 h-10 px-3 rounded-xl bg-muted/40 border border-border focus:border-primary focus:outline-none text-sm placeholder:text-muted-foreground"
           />
-          <button
-            type="submit"
-            className="btn-gradient px-4 py-2 text-sm"
-          >
+          <button type="submit" className="btn-gradient px-4 py-2 text-sm">
             Search
           </button>
         </form>
       </div>
 
-      {/* Helpful links */}
       <div className="flex flex-wrap justify-center gap-3 mb-10">
         {helpfulLinks.map(({ to, label, Icon }) => (
           <Link
@@ -82,7 +74,6 @@ export default function NotFound() {
         ))}
       </div>
 
-      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"

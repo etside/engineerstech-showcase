@@ -45,7 +45,6 @@ export default function Auth() {
   };
 
   const signInGoogle = async () => {
-    // TODO: Implement Google OAuth via PHP backend
     toast.error("Google sign-in is not yet available. Please use email.");
   };
 

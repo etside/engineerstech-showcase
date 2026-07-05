@@ -14,7 +14,7 @@ export default {
     container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
     extend: {
       fontFamily: {
-        display: ['"DM Sans"', "system-ui", "sans-serif"],
+        display: ['"Plus Jakarta Sans"', '"Inter"', "system-ui", "sans-serif"],
         body:    ['"Inter"',   "system-ui", "sans-serif"],
         sans:    ['"Inter"',   "system-ui", "sans-serif"],
       },
@@ -81,6 +81,7 @@ export default {
         "slide-up":       { "0%": { transform: "translateY(20px)", opacity: "0" }, "100%": { transform: "translateY(0)", opacity: "1" } },
         glow:             { "0%, 100%": { opacity: "0.6" }, "50%": { opacity: "1" } },
         marquee:          { "0%": { transform: "translateX(0)" }, "100%": { transform: "translateX(-50%)" } },
+        "float":          { "0%, 100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-8px)" } },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -90,6 +91,7 @@ export default {
         "slide-up":       "slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         glow:             "glow 3s ease-in-out infinite",
         marquee:          "marquee 35s linear infinite",
+        float:            "float 6s ease-in-out infinite",
       },
     },
   },

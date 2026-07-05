@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Sparkles, Star } from "lucide-react";
 import { businessApi } from "@/lib/api";
+import { setPageMeta } from "@/lib/seo";
 
 interface LeaderboardBusiness {
   slug: string;
@@ -16,6 +17,14 @@ export default function Leaderboards() {
   const [tab, setTab] = useState<"geo" | "rated" | "reviewed">("geo");
   const [list, setList] = useState<LeaderboardBusiness[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setPageMeta(
+      'Leaderboards — engineersTech',
+      'Top vendors ranked by GEO score, rating, and review count. See who leads in AI discovery.',
+      'https://engineerstechbd.com/leaderboards',
+    );
+  }, []);
 
   useEffect(() => {
     businessApi.list({ limit: 200 }).then(({ data }) => {
@@ -46,8 +55,9 @@ export default function Leaderboards() {
       </div>
       <div className="flex gap-2 flex-wrap">
         {[{ k: "geo", l: "GEO score", i: Sparkles }, { k: "rated", l: "Highest rated", i: Star }, { k: "reviewed", l: "Most reviewed", i: Trophy }].map(({ k, l, i: Icon }) => (
-          <button key={k} onClick={() => setTab(k as any)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm border transition ${tab === k ? "bg-primary/15 text-primary-light border-primary/40" : "border-border text-muted-foreground hover:text-foreground"}`}>
+          <button key={k} onClick={() => setTab(k as "geo" | "rated" | "reviewed")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm border transition ${tab === k ? "bg-primary/15 text-primary-light border-primary/40" : "border-border text-muted-foreground hover:text-foreground"}`}
+            aria-pressed={tab === k}>
             <Icon className="w-3.5 h-3.5" /> {l}
           </button>
         ))}

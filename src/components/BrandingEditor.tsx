@@ -24,8 +24,8 @@ export const defaultBrand: BrandSettings = {
   logo_url: null,
   favicon_url: null,
   og_image_url: null,
-  primary_color: "#22c55e",
-  font_display: "DM Sans",
+  primary_color: "#D946EF",
+  font_display: "Plus Jakarta Sans",
   font_body: "Inter",
   twitter_handle: "@engineerstech",
   company_url: "https://engineerstechbd.com",
@@ -60,7 +60,7 @@ export function hexToHsl(hex: string): string {
       }
     }
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-  } catch { return "142 76% 45%"; }
+  } catch { return "291 85% 60%"; }
 }
 
 export function injectPrimaryColor(hex: string) {

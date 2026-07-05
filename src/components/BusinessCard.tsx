@@ -21,8 +21,8 @@ type Business = {
 
 function gradientColors(name: string) {
   const hash = Array.from(name).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const color1 = `hsl(${hash % 360}, 72%, 45%)`;
-  const color2 = `hsl(${(hash + 120) % 360}, 68%, 57%)`;
+  const color1 = `hsl(${270 + (hash % 40)}, 80%, 55%)`;
+  const color2 = `hsl(${290 + (hash % 30)}, 85%, 65%)`;
   return [color1, color2];
 }
 
@@ -42,7 +42,7 @@ export default function BusinessCard({ business }: { business: Business }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center font-display font-bold text-lg text-white shadow-lg"
+            className="w-12 h-12 rounded-xl flex items-center justify-center font-display font-bold text-lg text-white shadow-lg shadow-primary/20"
             style={{ background: `linear-gradient(135deg, ${business.color1 ?? color1}, ${business.color2 ?? color2})` }}
           >
             {business.name.slice(0, 1)}
@@ -53,7 +53,7 @@ export default function BusinessCard({ business }: { business: Business }) {
           </div>
         </div>
         {business.is_verified && (
-          <div className="flex items-center gap-1 text-emerald-400 text-xs font-medium" title="Verified">
+          <div className="flex items-center gap-1 text-primary-light text-xs font-medium" title="Verified">
             <ShieldCheck className="w-3.5 h-3.5" />
           </div>
         )}

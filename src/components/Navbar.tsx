@@ -1,21 +1,47 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu, X, Zap, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, ArrowRight, Sparkles } from "lucide-react";
 import LanguageToggle from "./LanguageToggle";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/use-auth";
 
-// ─── Top announcement banner (like FundedNext's top strip) ───────────────────
+// ─── 8-bladed glowing violet star icon ──────────────────────────────────────
+function VioletStar({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#D946EF" />
+          <stop offset="100%" stopColor="#A855F7" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M12 2L14.09 8.26L20.18 8.63L15.54 12.74L17.12 19.02L12 15.77L6.88 19.02L8.46 12.74L3.82 8.63L9.91 8.26L12 2Z"
+        fill="url(#starGrad)"
+        opacity="0.9"
+      />
+      <path
+        d="M12 2L14.09 8.26L20.18 8.63L15.54 12.74L17.12 19.02L12 15.77L6.88 19.02L8.46 12.74L3.82 8.63L9.91 8.26L12 2Z"
+        stroke="#D946EF"
+        strokeWidth="0.5"
+        strokeOpacity="0.4"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+// ─── Top announcement banner ───────────────────────────────────────────────
 function AnnouncementBanner({ onClose }: { onClose: () => void }) {
   return (
     <div className="relative z-50 bg-primary/95 text-primary-foreground text-center text-xs font-semibold py-2.5 px-4">
       <div className="container-tight flex items-center justify-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-primary-foreground/80 animate-pulse shrink-0" />
         <span>
-          🚀 AI-powered GEO scoring now live — get your tech business discovered by LLMs&nbsp;
+          AI-powered GEO scoring now live — get your tech business discovered by LLMs&nbsp;
           <Link to="/how-it-works" className="underline underline-offset-2 hover:opacity-80 transition-opacity">
-            Learn how →
+            Learn more
           </Link>
         </span>
       </div>
@@ -47,6 +73,8 @@ function MoreDropdown() {
       <button
         onMouseEnter={() => setOpen(true)}
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="true"
         className="flex items-center gap-1 px-3.5 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-all duration-200"
       >
         More <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", open && "rotate-180")} />
@@ -78,11 +106,12 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen]     = useState(false);
   const { pathname }                = useLocation();
 
-  // Primary nav links (FundedNext style: minimal, 3-4 top-level items)
   const primaryLinks = [
-    { to: "/listings",   label: t("nav.listings")   },
-    { to: "/categories", label: t("nav.categories") },
+    { to: "/listings",     label: t("nav.listings")   },
+    { to: "/categories",   label: t("nav.categories") },
     { to: "/how-it-works", label: "How It Works" },
+    { to: "/resources",    label: "Resources" },
+    { to: "/pricing",      label: "Pricing" },
   ];
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -114,18 +143,16 @@ export default function Navbar() {
           <div className="h-16 flex items-center justify-between gap-6">
 
             {/* ── Logo ── */}
-            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md shadow-primary/30 group-hover:scale-105 transition-transform duration-200">
-                <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
-              </div>
+            <Link to="/" className="flex items-center gap-2 group shrink-0">
+              <VioletStar className="w-7 h-7 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)] group-hover:scale-110 transition-transform duration-200" />
               <span className="font-display font-extrabold text-[15px] tracking-tight leading-none">
                 <span className="text-foreground">engineers</span>
                 <span className="gradient-text">Tech</span>
               </span>
             </Link>
 
-            {/* ── Desktop Navigation (FundedNext: clean, few items, "More" dropdown) ── */}
-            <nav className="hidden lg:flex items-center gap-0.5 flex-1">
+            {/* ── Desktop Navigation ── */}
+            <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center">
               {primaryLinks.map((l) => (
                 <NavLink
                   key={l.to}
@@ -147,7 +174,6 @@ export default function Navbar() {
 
             {/* ── Right Actions ── */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Language toggle (EN-style like FundedNext) */}
               <LanguageToggle />
 
               {user ? (
@@ -166,11 +192,11 @@ export default function Navbar() {
                   >
                     {t("nav.dashboard")}
                   </Link>
-                  <Link
-                    to="/submit"
-                    className="hidden md:inline-flex btn-gradient shimmer-btn text-sm py-2 px-5"
-                  >
+                  <Link to="/submit" className="hidden md:inline-flex pill-cta">
                     {t("nav.addListing")}
+                    <span className="pill-cta-arrow">
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
+                    </span>
                   </Link>
                   <button
                     onClick={signOut}
@@ -181,18 +207,17 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  {/* FundedNext pattern: plain "Login" link + solid CTA button */}
                   <Link
                     to="/auth"
                     className="hidden md:inline-flex px-3.5 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-all duration-200"
                   >
                     {t("nav.signIn")}
                   </Link>
-                  <Link
-                    to="/auth?mode=signup"
-                    className="hidden md:inline-flex btn-gradient shimmer-btn text-sm py-2 px-5"
-                  >
+                  <Link to="/auth?mode=signup" className="hidden md:inline-flex pill-cta">
                     Get Started
+                    <span className="pill-cta-arrow">
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
+                    </span>
                   </Link>
                 </>
               )}

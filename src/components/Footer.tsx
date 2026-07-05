@@ -1,62 +1,46 @@
 import { Link } from "react-router-dom";
-import { Zap, Twitter, Github, Linkedin, MessageCircle, ExternalLink } from "lucide-react";
+import { Twitter, Github, Linkedin, MessageCircle, ExternalLink } from "lucide-react";
 import NewsletterSignup from "./NewsletterSignup";
 
-// ─── Award data (matches what's in the marquee) ───────────────────────────────
-const footerAwards = [
-  { label: "Bangladesh #1 Tech Directory", icon: "🏆" },
-  { label: "AI-Powered GEO",              icon: "🤖" },
-  { label: "GEO Certified 2026",          icon: "✅" },
-  { label: "Top Rated Platform",          icon: "⭐" },
-  { label: "500+ Verified Listings",      icon: "🔒" },
-  { label: "50K+ Monthly Users",          icon: "🚀" },
-  { label: "Best Tech Directory 2026",    icon: "🥇" },
-  { label: "Community Choice Award",      icon: "🎖️" },
-];
-
-// ─── Footer link columns (FundedNext: 4 columns) ─────────────────────────────
+// ─── Footer link columns ─────────────────────────────────────────────────────
 const footerColumns = [
   {
-    title: "Product & Offerings",
+    title: "Product",
     links: [
-      { to: "/listings",   label: "Browse Listings" },
-      { to: "/categories", label: "Categories" },
-      { to: "/pricing",    label: "Pricing" },
-      { to: "/submit",     label: "List Your Business" },
+      { to: "/listings",     label: "Browse Listings" },
+      { to: "/categories",   label: "Categories" },
+      { to: "/pricing",      label: "Pricing" },
+      { to: "/submit",       label: "List Your Business" },
       { to: "/leaderboards", label: "Leaderboards" },
-      { to: "/faq",        label: "Help Centre (FAQ)" },
-      { to: "/for-vendors", label: "Partners" },
+      { to: "/faq",          label: "Help Centre (FAQ)" },
+    ],
+  },
+  {
+    title: "Our Data",
+    links: [
+      { to: "/how-it-works", label: "How GEO Works" },
+      { to: "/ai-discover",  label: "AI Discover" },
+      { to: "/api-docs",     label: "LLM / MCP API" },
+      { to: "/services",     label: "Services" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { to: "/how-it-works", label: "How GEO Works" },
       { to: "/blog",         label: "Blog" },
-      { to: "/ai-discover",  label: "AI Discover" },
-      { to: "/api-docs",     label: "LLM / MCP API" },
       { to: "/resources",    label: "Resources" },
-      { to: "/services",     label: "Services" },
+      { to: "/for-vendors",  label: "For Vendors" },
+      { to: "/about",        label: "About engineersTech" },
     ],
   },
   {
     title: "Company",
     links: [
-      { to: "/about",          label: "About engineersTech" },
       { to: "/contact",        label: "Contact Us" },
       { to: "/about#news",     label: "News & Media" },
-      { to: "/about#awards",   label: "Achievements & Awards" },
-      { to: "/contact#events", label: "Events" },
-    ],
-  },
-  {
-    title: "Privacy & Policy",
-    links: [
-      { to: "/terms",   label: "Terms of Service" },
-      { to: "/privacy", label: "Privacy Policy" },
-      { to: "/privacy#cookies", label: "Cookie Policy" },
-      { to: "/privacy#aml",     label: "AML Policy" },
-      { to: "/privacy#risk",    label: "Risk Disclosure" },
+      { to: "/about#awards",   label: "Achievements" },
+      { to: "/terms",          label: "Terms of Service" },
+      { to: "/privacy",        label: "Privacy Policy" },
     ],
   },
 ];
@@ -72,30 +56,23 @@ export default function Footer() {
   return (
     <footer className="relative mt-24 border-t border-border/50">
 
-      {/* ── Award strip marquee (FundedNext: scrolling award logos) ── */}
-      <div className="border-b border-border/30 overflow-hidden bg-card/30 py-4">
-        <div className="flex gap-3 whitespace-nowrap marquee-track">
-          {[...footerAwards, ...footerAwards].map((a, i) => (
-            <div key={i} className="award-strip shrink-0 cursor-default">
-              <span>{a.icon}</span>
-              <span>{a.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Main footer body — 4 columns (FundedNext layout) ── */}
+      {/* ── Main footer body ── */}
       <div className="bg-card/20">
         <div className="container-tight py-16">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 xl:gap-14">
 
-            {/* Brand / about column (takes 1 extra col) */}
+            {/* Brand column */}
             <div className="col-span-2 md:col-span-3 lg:col-span-1">
-              {/* Logo */}
-              <Link to="/" className="flex items-center gap-2.5 mb-5 group w-fit">
-                <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md shadow-primary/30 group-hover:scale-105 transition-transform duration-200">
-                  <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
-                </div>
+              <Link to="/" className="flex items-center gap-2 mb-5 group w-fit">
+                <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 drop-shadow-[0_0_8px_rgba(217,70,239,0.4)]" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="footerStarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#D946EF" />
+                      <stop offset="100%" stopColor="#A855F7" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 2L14.09 8.26L20.18 8.63L15.54 12.74L17.12 19.02L12 15.77L6.88 19.02L8.46 12.74L3.82 8.63L9.91 8.26L12 2Z" fill="url(#footerStarGrad)" opacity="0.9" />
+                </svg>
                 <span className="font-display font-extrabold text-[15px] leading-none">
                   <span className="text-foreground">engineers</span>
                   <span className="gradient-text">Tech</span>
@@ -151,7 +128,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* ── Legal text (FundedNext: long disclosure paragraph) ── */}
+      {/* ── Legal text ── */}
       <div className="border-t border-border/30 bg-background/60">
         <div className="container-tight py-8">
           <p className="text-xs text-muted-foreground/70 leading-relaxed max-w-4xl">
@@ -170,12 +147,11 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* ── Bottom bar (FundedNext: logo + copyright + links) ── */}
+      {/* ── Bottom bar ── */}
       <div className="border-t border-border/30 bg-background/80">
         <div className="container-tight py-5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
 
-            {/* Copyright */}
             <p className="text-xs text-muted-foreground text-center md:text-left">
               engineersTech™ ©{" "}{new Date().getFullYear()}{" "}·{" "}
               <a
@@ -189,13 +165,11 @@ export default function Footer() {
             </p>
 
             <div className="flex items-center gap-4">
-              {/* Live status indicator */}
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="text-xs text-muted-foreground">LLM API operational</span>
               </div>
 
-              {/* FundedNext: Trust and Security + Subscribe footer links */}
               <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
                 <Link to="/privacy" className="hover:text-foreground transition-colors">
                   Trust & Security

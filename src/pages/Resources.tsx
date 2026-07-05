@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, FileText, Sparkles, Code } from "lucide-react";
+import { setPageMeta } from "@/lib/seo";
 
 const items = [
   { i: BookOpen, t: "Buyer's guide to AI-discovery directories", d: "How GEO is changing B2B buying.", to: "/how-it-works" },
@@ -9,6 +11,14 @@ const items = [
 ];
 
 export default function Resources() {
+  useEffect(() => {
+    setPageMeta(
+      'Resources — engineersTech',
+      'Guides, playbooks, and APIs for buyers, vendors, and builders.',
+      'https://engineerstechbd.com/resources',
+    );
+  }, []);
+
   return (
     <section className="container-tight py-16 space-y-6">
       <div>

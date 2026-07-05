@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
-import * as Icons from "lucide-react";
 import {
-  ArrowRight, Award, LayoutGrid, Zap, Star,
+  ArrowRight, Award, LayoutGrid, Zap, Star, Folder,
   Users, Youtube, MessagesSquare, CheckCircle,
+  Bot, Sparkles, Globe2, ShieldCheck, Code, Cpu, Database, Briefcase,
+  HeartPulse, GraduationCap, Megaphone, Palette, Building2, Truck,
+  Scale, Landmark, ShoppingCart, Wifi, Stethoscope, PenTool, Server,
+  BarChart3, MonitorSmartphone, Cloud, Lock, CircuitBoard, Headphones,
 } from "lucide-react";
+import type { ComponentType } from "react";
 import BusinessCard from "@/components/BusinessCard";
 import Reveal from "@/components/Reveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
@@ -16,11 +20,20 @@ interface Business {
   location?: string | null; services?: string[] | null; category?: string | null;
 }
 
+// Curated icon map for dynamic category icons (avoids barrel import)
+const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
+  Bot, Sparkles, Globe2, ShieldCheck, Code, Cpu, Database, Briefcase,
+  HeartPulse, GraduationCap, Megaphone, Palette, Building2, Truck,
+  Scale, Landmark, ShoppingCart, Wifi, Stethoscope, PenTool, Server,
+  BarChart3, MonitorSmartphone, Cloud, Lock, CircuitBoard, Headphones,
+  Folder, Star, Zap, LayoutGrid,
+};
+
 function toPascal(s: string) {
   return s.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
 }
 
-// ─── Featured / Plans section (FundedNext: "Choose your next challenge") ──────
+// ─── Featured section ────────────────────────────────────────────────────────
 export function FeaturedSection({
   content,
   featured,
@@ -28,7 +41,6 @@ export function FeaturedSection({
   content: ReturnType<typeof useHomepageContent>["content"];
   featured: Business[];
 }) {
-  // FundedNext-style stats above the cards
   const planStats = [
     { value: 316,  suffix: "M+",   label: "Total Listings" },
     { value: 40,   suffix: "hrs",  label: "Avg. processing time" },
@@ -39,7 +51,6 @@ export function FeaturedSection({
   return (
     <section className="py-20 bg-card/20 border-y border-border/30">
       <div className="container-tight">
-        {/* Section header (FundedNext: left-aligned headline + right CTA) */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
           <div>
             <div className="section-eyebrow mb-4">
@@ -54,7 +65,6 @@ export function FeaturedSection({
           </Link>
         </div>
 
-        {/* FundedNext: stats row above cards */}
         <div className="flex flex-wrap items-center gap-6 md:gap-10 mb-10 text-sm">
           {planStats.map((s) => (
             <div key={s.label} className="flex items-baseline gap-1.5">
@@ -64,12 +74,11 @@ export function FeaturedSection({
               <span className="text-muted-foreground text-xs">{s.label}</span>
             </div>
           ))}
-          <Link to="/listings" className="btn-outline-green text-xs py-1.5 px-4 ml-auto hidden md:inline-flex">
+          <Link to="/listings" className="btn-outline-violet text-xs py-1.5 px-4 ml-auto hidden md:inline-flex">
             Discover Listings <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Business cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {featured.map((b, i) => (
             <Reveal key={b.id} delay={i * 80}>
@@ -87,7 +96,7 @@ export function FeaturedSection({
   );
 }
 
-// ─── Categories section ───────────────────────────────────────────────────────
+// ─── Categories section ─────────────────────────────────────────────────────
 export function CategoriesSection({
   cats,
 }: {
@@ -111,9 +120,7 @@ export function CategoriesSection({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {cats.map((c, i) => {
-          const Icon = (Icons as Record<string, unknown>)[toPascal(c.icon || "folder")] as
-            | React.ComponentType<{ className?: string }>
-            | undefined;
+          const Icon = ICON_MAP[toPascal(c.icon || "folder")] || Folder;
           return (
             <Reveal key={c.slug} delay={i * 40}>
               <Link
@@ -121,11 +128,7 @@ export function CategoriesSection({
                 className="glass-card card-lift p-4 flex items-center gap-3 hover:border-primary/50 group"
               >
                 <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-300 shrink-0">
-                  {Icon ? (
-                    <Icon className="w-4 h-4 text-primary-light" />
-                  ) : (
-                    <Icons.Folder className="w-4 h-4 text-primary-light" />
-                  )}
+                  <Icon className="w-4 h-4 text-primary-light" />
                 </div>
                 <span className="text-sm font-semibold truncate">{c.name}</span>
               </Link>
@@ -137,7 +140,7 @@ export function CategoriesSection({
   );
 }
 
-// ─── How It Works section ─────────────────────────────────────────────────────
+// ─── How It Works section ────────────────────────────────────────────────────
 export function HowItWorksSection({
   content,
 }: {
@@ -177,11 +180,10 @@ export function HowItWorksSection({
   );
 }
 
-// ─── Community section (FundedNext: "A community that adds value") ────────────
+// ─── Community section ───────────────────────────────────────────────────────
 export function CommunitySection() {
   return (
     <section className="container-tight py-24">
-      {/* Section header — matches FundedNext layout exactly */}
       <div className="text-center max-w-2xl mx-auto mb-14">
         <div className="section-eyebrow mb-4 justify-center">
           <Users className="w-3.5 h-3.5" /> Community
@@ -196,11 +198,9 @@ export function CommunitySection() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-5">
-        {/* Discord card (FundedNext: image-style with community stats) */}
+        {/* Discord card */}
         <Reveal className="glass-card card-lift relative overflow-hidden group hover:border-[#5865F2]/40">
-          {/* Background gradient overlay like FundedNext */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#5865F2]/10 via-transparent to-purple-900/10 pointer-events-none" />
-          {/* Faux screenshot area (FundedNext shows a community screenshot) */}
           <div className="h-40 bg-gradient-to-br from-[#5865F2]/20 to-[#23272A]/60 flex items-center justify-center border-b border-border/40 relative overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center opacity-20">
               <div className="grid grid-cols-3 gap-2 p-4">
@@ -221,7 +221,6 @@ export function CommunitySection() {
               connected with the engineering community.
             </p>
 
-            {/* Stats row */}
             <div className="flex items-center gap-4 mb-6">
               <div className="text-center">
                 <div className="font-display font-black text-xl text-foreground">
@@ -243,22 +242,11 @@ export function CommunitySection() {
               </div>
             </div>
 
-            {/* FundedNext pattern: two server buttons */}
             <div className="flex gap-2">
-              <a
-                href="https://discord.gg/engineerstech"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost text-xs py-2 px-4 flex-1 justify-center"
-              >
+              <a href="https://discord.gg/engineerstech" target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-2 px-4 flex-1 justify-center">
                 Main Server
               </a>
-              <a
-                href="https://discord.gg/engineerstech"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost text-xs py-2 px-4 flex-1 justify-center"
-              >
+              <a href="https://discord.gg/engineerstech" target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-2 px-4 flex-1 justify-center">
                 Dev Server
               </a>
             </div>
@@ -268,7 +256,6 @@ export function CommunitySection() {
         {/* YouTube card */}
         <Reveal delay={80} className="glass-card card-lift relative overflow-hidden group hover:border-red-500/40">
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/8 via-transparent to-red-900/6 pointer-events-none" />
-          {/* Faux thumbnail area */}
           <div className="h-40 bg-gradient-to-br from-red-900/30 to-gray-900/60 flex items-center justify-center border-b border-border/40 relative overflow-hidden">
             <div className="absolute inset-0 flex items-end justify-start p-4 opacity-30">
               <div className="space-y-1.5">
@@ -310,20 +297,10 @@ export function CommunitySection() {
             </div>
 
             <div className="flex gap-2">
-              <a
-                href="https://youtube.com/@engineerstech"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost text-xs py-2 px-4 flex-1 justify-center"
-              >
+              <a href="https://youtube.com/@engineerstech" target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-2 px-4 flex-1 justify-center">
                 Subscribe
               </a>
-              <a
-                href="https://youtube.com/@engineerstech"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost text-xs py-2 px-4 flex-1 justify-center"
-              >
+              <a href="https://youtube.com/@engineerstech" target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-2 px-4 flex-1 justify-center">
                 Watch Now
               </a>
             </div>

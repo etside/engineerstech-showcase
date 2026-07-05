@@ -24,7 +24,6 @@ export default function Pricing() {
     pricingApi.list()
       .then((data) => {
         let rows = (data || []) as PricingTier[];
-        // Payment is mandatory for every new listing — hide free tier in submission flow
         if (bizParam) rows = rows.filter((t) => t.price_usd > 0);
         setTiers(rows);
       })

@@ -24,7 +24,7 @@ interface Business {
   location?: string | null; services?: string[] | null; category?: string | null;
 }
 
-// ─── "Powered by a global team" section (FundedNext: team/company metrics) ────
+// ─── "Powered by a global team" section ─────────────────────────────────────
 function GlobalTeamSection() {
   const teamStats = [
     { icon: Users,    value: 50,  suffix: "+",  label: "Team Members",     desc: "Across all hubs" },
@@ -73,9 +73,8 @@ function GlobalTeamSection() {
   );
 }
 
-// ─── Support section (FundedNext: "Support that never clocks out") ─────────────
+// ─── Support section ─────────────────────────────────────────────────────────
 function SupportSection() {
-  // Language flags matching FundedNext's language strip
   const languages = [
     { flag: "🇧🇩", lang: "Bangla" },
     { flag: "🇬🇧", lang: "English" },
@@ -90,21 +89,16 @@ function SupportSection() {
   return (
     <section className="container-tight py-24">
       <div className="glass-card p-10 md:p-14 relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,hsl(142_76%_45%/0.08),transparent_60%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,hsl(291_85%_60%/0.08),transparent_60%)] pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
         <div className="relative grid md:grid-cols-2 gap-12 items-center">
-          {/* Left: text content */}
           <div>
             <div className="section-eyebrow mb-5">
               <Headphones className="w-3.5 h-3.5" /> Support
             </div>
-            {/* FundedNext: 2-line bold headline */}
-            <h2 className="display-2 mb-2">
-              Support that never
-            </h2>
             <h2 className="display-2 mb-5">
+              Support that never{" "}
               <span className="gradient-text">clocks out</span>
             </h2>
             <p className="text-muted-foreground text-base leading-relaxed mb-6 max-w-md">
@@ -112,7 +106,6 @@ function SupportSection() {
               response to your question arrives in under 25 seconds.
             </p>
 
-            {/* Languages spoken row (FundedNext pattern) */}
             <div className="mb-7">
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3">
                 Languages spoken
@@ -132,7 +125,6 @@ function SupportSection() {
               </div>
             </div>
 
-            {/* CTAs (FundedNext: Get Support + Read FAQs) */}
             <div className="flex gap-3">
               <Link to="/contact" className="btn-gradient text-sm py-2.5 px-5">
                 Get Support
@@ -143,9 +135,7 @@ function SupportSection() {
             </div>
           </div>
 
-          {/* Right: support stats + agent photo placeholder */}
           <div className="space-y-4">
-            {/* Support team image placeholder */}
             <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-card border border-border/50 h-40 flex items-center justify-center overflow-hidden">
               <div className="text-center">
                 <div className="text-4xl mb-2">🎧</div>
@@ -153,7 +143,6 @@ function SupportSection() {
               </div>
             </div>
 
-            {/* Stats cards */}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { icon: ShieldCheck, stat: "98%",  label: "Customer satisfaction score" },
@@ -177,7 +166,7 @@ function SupportSection() {
   );
 }
 
-// ─── Final CTA section (FundedNext: "Start your challenge") ──────────────────
+// ─── Final CTA section ──────────────────────────────────────────────────────
 function CtaSection() {
   return (
     <section className="container-tight py-24">
@@ -186,18 +175,15 @@ function CtaSection() {
         className="relative overflow-hidden rounded-3xl text-center"
         style={{
           background:
-            "linear-gradient(135deg, hsl(142 76% 18%) 0%, hsl(160 50% 12%) 50%, hsl(142 60% 20%) 100%)",
+            "linear-gradient(135deg, hsl(291 85% 22%) 0%, hsl(270 50% 14%) 50%, hsl(291 70% 18%) 100%)",
         }}
       >
-        {/* Grid pattern overlay (FundedNext CTA background) */}
         <div className="absolute inset-0 cta-grid-pattern pointer-events-none opacity-60" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,hsl(142_76%_45%/0.25),transparent_60%)] pointer-events-none" />
-        {/* Orbs */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,hsl(291_85%_60%/0.25),transparent_60%)] pointer-events-none" />
         <div className="orb w-[350px] h-[350px] -top-24 -left-12 bg-primary/20" aria-hidden />
-        <div className="orb w-[400px] h-[400px] -bottom-24 -right-12 bg-primary/15" aria-hidden />
+        <div className="orb w-[400px] h-[400px] -bottom-24 -right-12 bg-primary-glow/15" aria-hidden />
 
         <div className="relative px-8 py-20 md:py-24">
-          {/* FundedNext: "Start your challenge" style */}
           <h2 className="display-2 text-white mb-4">
             Start your
             <span className="block text-primary-light">engineersTech journey</span>
@@ -207,7 +193,6 @@ function CtaSection() {
             engineersTech. The only one missing from that list is you. Your listing is open now.
           </p>
 
-          {/* Trust stats row */}
           <div className="flex flex-wrap items-center justify-center gap-10 mb-10">
             {[
               { value: 500,  suffix: "+", label: "Verified" },
@@ -225,13 +210,15 @@ function CtaSection() {
             ))}
           </div>
 
-          {/* FundedNext CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/auth?mode=signup"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:brightness-110 transition-all shadow-xl shadow-black/30 shimmer-btn"
+              className="pill-cta text-base pl-7 pr-2 py-2"
             >
-              List Your Business <ArrowRight className="w-4 h-4" />
+              List Your Business
+              <span className="pill-cta-arrow w-8 h-8">
+                <ArrowRight className="w-4 h-4 text-white" />
+              </span>
             </Link>
             <Link
               to="/listings"
@@ -246,7 +233,7 @@ function CtaSection() {
   );
 }
 
-// ─── Main Home page ────────────────────────────────────────────────────────────
+// ─── Main Home page ──────────────────────────────────────────────────────────
 export default function Home() {
   const { content } = useHomepageContent();
   const [featured, setFeatured] = useState<Business[]>([]);
@@ -285,41 +272,17 @@ export default function Home() {
   return (
     <>
       <JsonLd data={orgJsonLd} />
-
-      {/* 1. Hero — FundedNext: 2-line headline, trust badges, inline stats, CTAs */}
       <HeroSection content={content} />
-
-      {/* 2. Trusted marquee */}
       <TrustedSection />
-
-      {/* 3. Horizontal stats ribbon */}
       <StatsRibbon />
-
-      {/* 4. "Recognized globally" award marquee (FundedNext pattern) */}
       <RecognitionSection />
-
-      {/* 5. AI Discovery features */}
       <AiDiscoverySection content={content} />
-
-      {/* 6. Featured / "Choose your next discovery" (FundedNext: challenge cards) */}
       <FeaturedSection content={content} featured={featured} />
-
-      {/* 7. Categories */}
       <CategoriesSection cats={cats} />
-
-      {/* 8. How It Works */}
       <HowItWorksSection content={content} />
-
-      {/* 9. Community (Discord + YouTube) */}
       <CommunitySection />
-
-      {/* 10. "Powered by a global team" */}
       <GlobalTeamSection />
-
-      {/* 11. Support that never clocks out (FundedNext pattern) */}
       <SupportSection />
-
-      {/* 12. Final CTA — "Start your challenge" */}
       <CtaSection />
     </>
   );

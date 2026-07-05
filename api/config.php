@@ -205,6 +205,193 @@ function slugify(string $text): string {
     return trim($text, '-');
 }
 
+function ensure_business_profile_column(PDO $db): void {
+    try {
+        $db->query('SELECT profile_data FROM businesses LIMIT 1');
+    } catch (PDOException $e) {
+        if (stripos($e->getMessage(), 'Unknown column') !== false) {
+            $db->exec('ALTER TABLE businesses ADD COLUMN profile_data JSON NULL AFTER social_links');
+        } else {
+            throw $e;
+        }
+    }
+}
+
+function decode_json_field($value): array {
+    if (is_array($value)) return $value;
+    if ($value === null || $value === '') return [];
+    $decoded = json_decode($value, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+function normalize_array_value($value): array {
+    if (is_array($value)) {
+        return array_values(array_filter($value, fn($item) => $item !== null && $item !== ''));
+    }
+
+    if (is_string($value)) {
+        $parts = preg_split('/[;,]+/', $value) ?: [];
+        return array_values(array_filter(array_map('trim', $parts), 'strlen'));
+    }
+
+    return [];
+}
+
+function calculate_profile_completeness(array $profile): int {
+    $score = 0;
+    $checks = [
+        ['business_description', 15],
+        ['categories', 10],
+        ['services', 15],
+        ['industries', 10],
+        ['technologies', 10],
+        ['certifications', 5],
+        ['awards', 5],
+        ['portfolio', 5],
+        ['case_studies', 5],
+        ['testimonials', 5],
+        ['team_size', 3],
+        ['years_in_business', 3],
+        ['pricing', 3],
+        ['minimum_project_size', 3],
+        ['hourly_rate', 3],
+        ['headquarters', 3],
+        ['service_locations', 5],
+        ['languages', 3],
+        ['contact_information', 5],
+        ['website', 5],
+        ['social_profiles', 3],
+        ['media_gallery', 3],
+        ['videos', 3],
+        ['faqs', 3],
+        ['seo_metadata', 3],
+        ['structured_data', 3],
+        ['external_links', 3],
+    ];
+
+    foreach ($checks as [$field, $weight]) {
+        $value = $profile[$field] ?? null;
+        if (is_array($value)) {
+            if (!empty($value)) $score += $weight;
+        } elseif (is_string($value) && trim($value) !== '') {
+            $score += $weight;
+        } elseif ($value !== null && $value !== '') {
+            $score += $weight;
+        }
+    }
+
+    return min(100, (int)round($score));
+}
+
+function build_business_structured_data(array $business, array $profile): array {
+    $name = $business['name'] ?? ($profile['company_information']['name'] ?? 'Business');
+    $description = $business['description'] ?? ($profile['business_description'] ?? '');
+    $website = $business['website'] ?? ($profile['website'] ?? null);
+    $city = $business['city'] ?? ($profile['headquarters']['city'] ?? null);
+    $country = $business['country'] ?? ($profile['headquarters']['country'] ?? null);
+    $address = $business['address'] ?? ($profile['headquarters']['address'] ?? null);
+
+    $data = [
+        '@context' => 'https://schema.org',
+        '@type' => 'LocalBusiness',
+        'name' => $name,
+        'description' => $description,
+    ];
+
+    if ($website) $data['url'] = $website;
+    if ($address || $city || $country) {
+        $location = [];
+        if ($address) $location['streetAddress'] = $address;
+        if ($city) $location['addressLocality'] = $city;
+        if ($country) $location['addressCountry'] = $country;
+        $data['address'] = $location;
+    }
+
+    $services = $profile['services'] ?? [];
+    if (!empty($services)) {
+        $data['keywords'] = is_array($services) ? implode($services, ', ') : (string)$services;
+    }
+
+    if (!empty($business['rating'])) {
+        $data['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => (string)$business['rating'],
+            'reviewCount' => (int)($business['review_count'] ?? 0),
+        ];
+    }
+
+    return $data;
+}
+
+function build_business_search_text(array $business, array $profile = []): string {
+    $parts = [];
+    $parts[] = $business['name'] ?? '';
+    $parts[] = $business['description'] ?? '';
+    $parts[] = $business['short_description'] ?? '';
+    $parts[] = $business['category_name'] ?? '';
+    $parts[] = $profile['business_description'] ?? '';
+    $parts[] = implode(' ', normalize_array_value($profile['services'] ?? []));
+    $parts[] = implode(' ', normalize_array_value($profile['industries'] ?? []));
+    $parts[] = implode(' ', normalize_array_value($profile['technologies'] ?? []));
+    $parts[] = implode(' ', normalize_array_value($profile['certifications'] ?? []));
+    $parts[] = $business['city'] ?? '';
+    $parts[] = $business['country'] ?? '';
+    return mb_strtolower(implode(' ', array_filter($parts, 'strlen')), 'UTF-8');
+}
+
+function merge_business_profile_data(array $input, array $existing = []): array {
+    $profile = is_array($existing) ? $existing : [];
+    $fields = [
+        'company_information', 'business_description', 'categories', 'services', 'industries',
+        'technologies', 'certifications', 'awards', 'portfolio', 'case_studies',
+        'testimonials', 'team_size', 'years_in_business', 'pricing', 'minimum_project_size',
+        'hourly_rate', 'headquarters', 'service_locations', 'languages', 'contact_information',
+        'website', 'social_profiles', 'media_gallery', 'videos', 'faqs', 'seo_metadata',
+        'structured_data', 'external_links', 'business_attributes', 'accessibility_features',
+        'delivery_methods', 'appointment_options', 'verification_status',
+    ];
+
+    foreach ($fields as $field) {
+        if (array_key_exists($field, $input)) {
+            $value = $input[$field];
+            if (in_array($field, ['categories','services','industries','technologies','certifications','awards','portfolio','case_studies','testimonials','service_locations','languages','social_profiles','media_gallery','videos','faqs','external_links','business_attributes','accessibility_features','delivery_methods','appointment_options'], true)) {
+                $profile[$field] = normalize_array_value($value);
+            } else {
+                $profile[$field] = $value;
+            }
+        }
+    }
+
+    if (array_key_exists('profile_data', $input) && is_array($input['profile_data'])) {
+        foreach ($input['profile_data'] as $field => $value) {
+            if (in_array($field, ['categories','services','industries','technologies','certifications','awards','portfolio','case_studies','testimonials','service_locations','languages','social_profiles','media_gallery','videos','faqs','external_links','business_attributes','accessibility_features','delivery_methods','appointment_options'], true)) {
+                $profile[$field] = normalize_array_value($value);
+            } else {
+                $profile[$field] = $value;
+            }
+        }
+    }
+
+    if (empty($profile['business_description']) && !empty($input['description'])) {
+        $profile['business_description'] = $input['description'];
+    }
+
+    if (empty($profile['company_information']) && !empty($input['company_info'])) {
+        $profile['company_information'] = $input['company_info'];
+    }
+
+    if (empty($profile['verification_status'])) {
+        $profile['verification_status'] = 'unverified';
+    }
+
+    if (empty($profile['structured_data'])) {
+        $profile['structured_data'] = build_business_structured_data($input, $profile);
+    }
+
+    $profile['profile_completeness'] = calculate_profile_completeness($profile);
+    return $profile;
+}
+
 // --- Cryptographically secure UUID v4 ---
 function uuid(): string {
     $bytes = random_bytes(16);

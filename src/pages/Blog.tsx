@@ -16,7 +16,6 @@ const FALLBACK: Post[] = [
 export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
   useEffect(() => {
-    // Blog posts are served from the PHP API
     fetch("/api/blog")
       .then((r) => r.json())
       .then((data) => {

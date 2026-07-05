@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import * as Icons from "lucide-react";
+import { LayoutGrid, Folder, Bot, Sparkles, Globe2, ShieldCheck, Code, Cpu, Database, Briefcase, HeartPulse, GraduationCap, Megaphone, Palette, Building2, Truck, Scale, Landmark, ShoppingCart, Wifi, Stethoscope, PenTool, Server, BarChart3, MonitorSmartphone, Cloud, Lock, CircuitBoard, Headphones } from "lucide-react";
+import type { ComponentType } from "react";
 import { categoryApi } from "@/lib/api";
 import JsonLd from "@/components/JsonLd";
 import { setPageMeta } from "@/lib/seo";
+
+const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
+  Bot, Sparkles, Globe2, ShieldCheck, Code, Cpu, Database, Briefcase,
+  HeartPulse, GraduationCap, Megaphone, Palette, Building2, Truck,
+  Scale, Landmark, ShoppingCart, Wifi, Stethoscope, PenTool, Server,
+  BarChart3, MonitorSmartphone, Cloud, Lock, CircuitBoard, Headphones,
+  Folder, LayoutGrid,
+};
 
 interface Category {
   slug: string;
@@ -62,7 +71,7 @@ export default function Categories() {
         ) : (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {cats.map((c) => {
-              const Icon = (Icons as Record<string, unknown>)[toPascal(c.icon || "folder")] as React.ComponentType<{ className?: string }> | undefined;
+              const Icon = ICON_MAP[toPascal(c.icon || "folder")] || Folder;
               return (
                 <Link
                   key={c.slug}
@@ -70,7 +79,7 @@ export default function Categories() {
                   className="glass-card p-6 group hover:border-primary/50 transition-all"
                 >
                   <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    {Icon ? <Icon className="w-5 h-5 text-primary-light" /> : <Icons.Folder className="w-5 h-5 text-primary-light" />}
+                    <Icon className="w-5 h-5 text-primary-light" />
                   </div>
                   <h3 className="font-display font-semibold text-base mb-1">{c.name}</h3>
                   {c.description && (

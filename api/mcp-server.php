@@ -286,7 +286,7 @@ function mcp_tools_list(array $ctx): array {
     $tools = [
         [
             'name'        => 'search_businesses',
-            'description' => 'Search the engineersTech business directory by keyword, business name, category, city, country, or service. Use this for general searches like "software companies in Dhaka", "find EngineersTech", "restaurants near me". Searches both business names (FULLTEXT + LIKE) and the services JSON field. Returns ranked listings with full contact info, services, hours, and profile URL. Use the `service` parameter to additionally filter by a specific service offered.',
+            'description' => 'Search the engineersTech business directory by keyword, business name, category, city, country, service, technology, certification, language, or portfolio keyword. Supports typo-tolerant and semantic-style matching over canonical profile data and returns ranked listings with confidence, verification status, completeness, structured metadata, and profile URL.',
             'inputSchema' => [
                 'type'       => 'object',
                 'properties' => [
@@ -294,7 +294,10 @@ function mcp_tools_list(array $ctx): array {
                     'category' => ['type' => 'string',  'description' => 'Category slug or name (e.g. "technology", "beauty-wellness", "food-restaurants")'],
                     'city'     => ['type' => 'string',  'description' => 'City filter (e.g. "Dhaka", "Chittagong")'],
                     'country'  => ['type' => 'string',  'description' => 'Country filter (e.g. "Bangladesh")'],
-                    'service'  => ['type' => 'string',  'description' => 'Filter by specific service offered (e.g. "web development", "CCTV installation", "bKash payment")'],
+                    'service'  => ['type' => 'string',  'description' => 'Filter by a specific service offered (e.g. "web development", "CCTV installation", "bKash payment")'],
+                    'technology' => ['type' => 'string', 'description' => 'Filter by technology or skill (e.g. "Flutter", "Shopify", "React")'],
+                    'certification' => ['type' => 'string', 'description' => 'Filter by certification (e.g. "ISO 27001")'],
+                    'language' => ['type' => 'string', 'description' => 'Filter by language (e.g. "English")'],
                     'limit'    => ['type' => 'integer', 'description' => 'Max results to return (1-50, default 10)'],
                     'verified' => ['type' => 'boolean', 'description' => 'Set true to only return verified businesses'],
                 ],
@@ -336,7 +339,7 @@ function mcp_tools_list(array $ctx): array {
         ],
         [
             'name'        => 'recommend_for_intent',
-            'description' => 'Get AI-ranked business recommendations based on a natural language intent. Use this for open-ended requests like "best software agency for my startup", "recommend a beauty salon in Dhaka", "I need someone to build my e-commerce store", "who can help with CCTV for my office". Searches both FULLTEXT descriptions and the services JSON field and ranks by relevance + rating.',
+            'description' => 'Get AI-ranked business recommendations based on a natural language intent. Use this for open-ended requests like "best software agency for my startup", "recommend a beauty salon in Dhaka", "I need someone to build my e-commerce store", or "best cybersecurity firm near me". Searches canonical profile data, services, categories, industries, technologies, and review signals to return ranked results with confidence score, explanation, verification status, and profile completeness.',
             'inputSchema' => [
                 'type'       => 'object',
                 'required'   => ['intent'],
@@ -345,6 +348,8 @@ function mcp_tools_list(array $ctx): array {
                     'limit'   => ['type' => 'integer', 'description' => 'Max results to return (default 5)'],
                     'city'    => ['type' => 'string',  'description' => 'Optional city filter'],
                     'country' => ['type' => 'string',  'description' => 'Optional country filter'],
+                    'service' => ['type' => 'string',  'description' => 'Optional service filter'],
+                    'verified' => ['type' => 'boolean', 'description' => 'Only return verified businesses'],
                 ],
             ],
             '_meta' => ['readOnlyHint' => true, 'openWorldHint' => true],
@@ -441,19 +446,23 @@ function mcp_tools_call(array $params, array $ctx): array {
 // Tool: search_businesses
 // ============================================================
 function tool_search_businesses(array $args, PDO $db): array {
-    $query    = trim($args['query']    ?? '');
-    $category = trim($args['category'] ?? '');
-    $city     = trim($args['city']     ?? '');
-    $country  = trim($args['country']  ?? '');
-    $service  = trim($args['service']  ?? '');
-    $limit    = min(50, max(1, (int)($args['limit'] ?? 10)));
-    $verified = isset($args['verified']) ? (bool)$args['verified'] : null;
+    ensure_business_profile_column($db);
+    $query         = trim($args['query']         ?? '');
+    $category      = trim($args['category']      ?? '');
+    $city          = trim($args['city']          ?? '');
+    $country       = trim($args['country']       ?? '');
+    $service       = trim($args['service']       ?? '');
+    $technology    = trim($args['technology']    ?? '');
+    $certification = trim($args['certification'] ?? '');
+    $language      = trim($args['language']      ?? '');
+    $limit         = min(50, max(1, (int)($args['limit'] ?? 10)));
+    $verified      = isset($args['verified']) ? (bool)$args['verified'] : null;
 
     $sql = "SELECT b.id, b.name, b.slug, b.description, b.short_description,
                    b.city, b.country, b.address, b.phone, b.email, b.website,
                    b.rating, b.review_count, b.is_verified, b.is_featured,
                    b.tags, b.services, b.logo_url, b.business_hours, b.geo_score,
-                   c.name AS category_name, c.slug AS category_slug
+                   b.profile_data, c.name AS category_name, c.slug AS category_slug
             FROM businesses b
             LEFT JOIN categories c ON b.category_id = c.id
             WHERE b.status = 'approved'
@@ -461,14 +470,31 @@ function tool_search_businesses(array $args, PDO $db): array {
     $params = [];
 
     if ($query) {
-        $sql .= " AND (MATCH(b.name, b.description, b.short_description) AGAINST (? IN BOOLEAN MODE)
-                       OR b.name LIKE ?)";
+        $sql .= " AND (
+                    MATCH(b.name, b.description, b.short_description) AGAINST (? IN BOOLEAN MODE)
+                    OR b.name LIKE ?
+                    OR LOWER(CAST(b.profile_data AS CHAR)) LIKE ?
+                 )";
         $params[] = $query . '*';
         $params[] = '%' . $query . '%';
+        $params[] = '%' . strtolower($query) . '%';
     }
     if ($service) {
-        $sql .= " AND JSON_SEARCH(LOWER(b.services), 'one', ?) IS NOT NULL";
+        $sql .= " AND (JSON_SEARCH(LOWER(b.services), 'one', ?) IS NOT NULL OR LOWER(CAST(b.profile_data AS CHAR)) LIKE ?)";
         $params[] = '%' . strtolower($service) . '%';
+        $params[] = '%' . strtolower($service) . '%';
+    }
+    if ($technology) {
+        $sql .= " AND LOWER(CAST(b.profile_data AS CHAR)) LIKE ?";
+        $params[] = '%' . strtolower($technology) . '%';
+    }
+    if ($certification) {
+        $sql .= " AND LOWER(CAST(b.profile_data AS CHAR)) LIKE ?";
+        $params[] = '%' . strtolower($certification) . '%';
+    }
+    if ($language) {
+        $sql .= " AND LOWER(CAST(b.profile_data AS CHAR)) LIKE ?";
+        $params[] = '%' . strtolower($language) . '%';
     }
     if ($category) {
         $sql .= " AND (c.slug = ? OR c.name LIKE ?)";
@@ -487,10 +513,16 @@ function tool_search_businesses(array $args, PDO $db): array {
     $rows = $stmt->fetchAll();
 
     foreach ($rows as &$r) {
+        $profile = json_decode($r['profile_data'] ?? 'null', true) ?: [];
         $r['tags']           = json_decode($r['tags']           ?? '[]',   true) ?: [];
         $r['services']       = json_decode($r['services']       ?? '[]',   true) ?: [];
         $r['business_hours'] = json_decode($r['business_hours'] ?? 'null', true);
         $r['profile_url']    = mcp_base_url() . '/business/' . $r['slug'];
+        $r['profile_completeness'] = $profile['profile_completeness'] ?? calculate_profile_completeness($profile);
+        $r['structured_data'] = $profile['structured_data'] ?? build_business_structured_data($r, $profile);
+        $r['verification_status'] = $profile['verification_status'] ?? ($r['is_verified'] ? 'verified' : 'unverified');
+        $r['search_text'] = build_business_search_text($r, $profile);
+        $r['confidence'] = min(0.99, 0.55 + ($r['profile_completeness'] / 100) * 0.3 + (($r['is_verified'] ? 1 : 0) * 0.1) + (($r['is_featured'] ? 1 : 0) * 0.05));
     }
     unset($r);
 
@@ -613,26 +645,26 @@ function tool_list_categories(PDO $db): array {
 // Tool: recommend_for_intent
 // ============================================================
 function tool_recommend(array $args, PDO $db): array {
+    ensure_business_profile_column($db);
     $intent  = trim($args['intent']  ?? '');
     $limit   = min(10, max(1, (int)($args['limit'] ?? 5)));
     $city    = trim($args['city']    ?? '');
     $country = trim($args['country'] ?? '');
+    $service = trim($args['service'] ?? '');
+    $verified = isset($args['verified']) ? (bool)$args['verified'] : null;
 
     if (!$intent) throw new McpRpcException(-32602, 'intent is required');
 
-    // Build FULLTEXT boolean query from intent keywords
     $words   = preg_split('/\s+/', $intent);
     $words   = array_filter($words, fn($w) => strlen($w) > 2);
     $ftQuery = implode(' ', array_map(fn($w) => '+' . $w . '*', array_slice($words, 0, 8)));
-
-    // Extract the most significant keyword for service JSON search
     $serviceKeyword = '%' . strtolower(implode('%', array_slice(array_values($words), 0, 3))) . '%';
 
     $sql = "SELECT b.id, b.name, b.slug, b.short_description, b.description,
                    b.city, b.country, b.address, b.phone, b.email, b.website,
                    b.rating, b.review_count, b.is_verified, b.is_featured,
                    b.tags, b.services, b.logo_url, b.business_hours, b.geo_score,
-                   c.name AS category_name, c.slug AS category_slug,
+                   b.profile_data, c.name AS category_name, c.slug AS category_slug,
                    MATCH(b.name, b.description, b.short_description) AGAINST (? IN BOOLEAN MODE) AS relevance
             FROM businesses b
             LEFT JOIN categories c ON b.category_id = c.id
@@ -641,6 +673,7 @@ function tool_recommend(array $args, PDO $db): array {
               AND (
                   MATCH(b.name, b.description, b.short_description) AGAINST (? IN BOOLEAN MODE)
                   OR JSON_SEARCH(LOWER(b.services), 'one', ?) IS NOT NULL
+                  OR LOWER(CAST(b.profile_data AS CHAR)) LIKE ?
                   OR b.name LIKE ?
               )";
     $params = [
@@ -648,12 +681,19 @@ function tool_recommend(array $args, PDO $db): array {
         $ftQuery ?: $intent,
         $serviceKeyword,
         '%' . strtolower($intent) . '%',
+        '%' . strtolower($intent) . '%',
     ];
 
+    if ($service) {
+        $sql .= " AND (JSON_SEARCH(LOWER(b.services), 'one', ?) IS NOT NULL OR LOWER(CAST(b.profile_data AS CHAR)) LIKE ?)";
+        $params[] = '%' . strtolower($service) . '%';
+        $params[] = '%' . strtolower($service) . '%';
+    }
     if ($city)    { $sql .= " AND b.city    LIKE ?"; $params[] = '%' . $city    . '%'; }
     if ($country) { $sql .= " AND b.country LIKE ?"; $params[] = '%' . $country . '%'; }
+    if ($verified !== null) { $sql .= " AND b.is_verified = ?"; $params[] = (int)$verified; }
 
-    $sql .= " ORDER BY relevance DESC, b.is_featured DESC, b.geo_score DESC, b.rating DESC LIMIT ?";
+    $sql .= " ORDER BY relevance DESC, b.is_featured DESC, b.geo_score DESC, b.rating DESC, b.review_count DESC LIMIT ?";
     $params[] = $limit;
 
     $stmt = $db->prepare($sql);
@@ -661,11 +701,17 @@ function tool_recommend(array $args, PDO $db): array {
     $rows = $stmt->fetchAll();
 
     foreach ($rows as &$r) {
+        $profile = json_decode($r['profile_data'] ?? 'null', true) ?: [];
         $r['tags']           = json_decode($r['tags']           ?? '[]',   true) ?: [];
         $r['services']       = json_decode($r['services']       ?? '[]',   true) ?: [];
         $r['business_hours'] = json_decode($r['business_hours'] ?? 'null', true);
         $r['profile_url']    = mcp_base_url() . '/business/' . $r['slug'];
         $r['relevance']      = round((float)$r['relevance'], 4);
+        $r['profile_completeness'] = $profile['profile_completeness'] ?? calculate_profile_completeness($profile);
+        $r['verification_status'] = $profile['verification_status'] ?? ($r['is_verified'] ? 'verified' : 'unverified');
+        $r['structured_data'] = $profile['structured_data'] ?? build_business_structured_data($r, $profile);
+        $r['explanation'] = 'Matched the intent through services, profile content, and review signals.';
+        $r['confidence'] = min(0.99, 0.5 + ($r['relevance'] > 0 ? min(0.2, $r['relevance'] / 10) : 0) + ($r['profile_completeness'] / 100) * 0.2 + (($r['is_verified'] ? 1 : 0) * 0.08) + (($r['is_featured'] ? 1 : 0) * 0.02));
     }
     unset($r);
 

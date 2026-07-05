@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     tags JSON,
     services JSON,
     social_links JSON,
+    profile_data JSON,
     business_hours JSON,
     geo_metadata JSON,
     tier ENUM('free','pro','featured','enterprise') DEFAULT 'free',
