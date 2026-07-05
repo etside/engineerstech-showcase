@@ -33,7 +33,18 @@ import BlogPost from "./pages/BlogPost";
 import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30000,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      onError: (err) => console.error(err),
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,37 +52,39 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route element={<SiteLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/listings" element={<Listings />} />
-            <Route path="/business/:slug" element={<BusinessProfile />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/ai-discover" element={<AiDiscover />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/categories/:slug" element={<CategoryDetail />} />
-            <Route path="/submit" element={<Submit />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/mcp" element={<AdminMCP />} />
-            <Route path="/for-vendors" element={<ForVendors />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/leaderboards" element={<Leaderboards />} />
-            <Route path="/resources" element={<Resources />} />
-            <Route path="/api-docs" element={<ApiDocs />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/super-admin" element={<SuperAdmin />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route element={<SiteLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/listings" element={<Listings />} />
+              <Route path="/business/:slug" element={<BusinessProfile />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/ai-discover" element={<AiDiscover />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/categories/:slug" element={<CategoryDetail />} />
+              <Route path="/submit" element={<Submit />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/mcp" element={<AdminMCP />} />
+              <Route path="/for-vendors" element={<ForVendors />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/leaderboards" element={<Leaderboards />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/api-docs" element={<ApiDocs />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/super-admin" element={<SuperAdmin />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

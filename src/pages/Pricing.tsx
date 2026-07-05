@@ -4,12 +4,21 @@ import { Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { pricingApi, authApi, businessApi, PricingTier } from "@/lib/api";
 import { invokeFn } from "@/lib/fn";
+import { setPageMeta } from "@/lib/seo";
 
 export default function Pricing() {
   const [tiers, setTiers] = useState<PricingTier[]>([]);
   const nav = useNavigate();
   const [params] = useSearchParams();
   const bizParam = params.get("biz");
+
+  useEffect(() => {
+    setPageMeta(
+      'Pricing — engineersTech',
+      'Simple transparent pricing for business listings on engineersTech. Free, Pro and Enterprise plans available.',
+      'https://engineerstechbd.com/pricing',
+    );
+  }, []);
 
   useEffect(() => {
     pricingApi.list()

@@ -3,8 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import BusinessCard from "@/components/BusinessCard";
 import JsonLd from "@/components/JsonLd";
+import { Skeleton } from "@/components/ui/skeleton";
 import { categories, industries } from "@/data/mockBusinesses";
 import { businessApi, categoryApi } from "@/lib/api";
+import { setPageMeta } from "@/lib/seo";
 
 interface Business {
   id: string;
@@ -34,6 +36,14 @@ export default function Listings() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
+
+  useEffect(() => {
+    setPageMeta(
+      'Browse Business Listings — engineersTech',
+      'Search and filter thousands of verified business listings. Find agencies, software companies and service providers ranked by AI score and reviews.',
+      'https://engineerstechbd.com/listings',
+    );
+  }, []);
 
   useEffect(() => {
     categoryApi.list().then((data) => {
@@ -135,23 +145,62 @@ export default function Listings() {
         </div>
 
         <div className="flex items-center justify-between mb-5 text-sm">
-          <div className="text-muted-foreground"><span className="font-semibold text-foreground">{filtered.length}</span> results</div>
+          {loading ? (
+            <Skeleton className="h-4 w-24" />
+          ) : (
+            <div className="text-muted-foreground"><span className="font-semibold text-foreground">{filtered.length}</span> results</div>
+          )}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <SlidersHorizontal className="w-3.5 h-3.5" /> Ranked for AI discovery
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {paginated.map((b) => <BusinessCard key={b.id} business={b} />)}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="glass-card p-16 text-center text-muted-foreground">
-            No listings match your filters. Try clearing them.
+        {loading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="glass-card p-6 flex flex-col gap-4">
+                {/* Logo + name row */}
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+                {/* Tagline */}
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                </div>
+                {/* Tags row */}
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-14 rounded-full" />
+                </div>
+                {/* Footer row */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginated.map((b) => <BusinessCard key={b.id} business={b} />)}
+            </div>
+
+            {filtered.length === 0 && (
+              <div className="glass-card p-16 text-center text-muted-foreground">
+                No listings match your filters. Try clearing them.
+              </div>
+            )}
+          </>
         )}
 
-        {totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mt-8">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}

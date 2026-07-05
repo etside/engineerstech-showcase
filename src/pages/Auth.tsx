@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { authApi, setAuthToken } from "@/lib/api";
+import { setPageMeta } from "@/lib/seo";
 
 export default function Auth() {
   const [params] = useSearchParams();
@@ -11,6 +12,14 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPageMeta(
+      'Sign In — engineersTech',
+      'Sign in or create your engineersTech account to manage your business listing.',
+      'https://engineerstechbd.com/auth',
+    );
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

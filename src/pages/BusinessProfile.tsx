@@ -5,7 +5,9 @@ import JsonLd from "@/components/JsonLd";
 import ReviewList from "@/components/ReviewList";
 import ClaimButton from "@/components/ClaimButton";
 import WriteReviewDialog from "@/components/WriteReviewDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { businessApi, authApi } from "@/lib/api";
+import { setPageMeta } from "@/lib/seo";
 
 type SocialLinks = {
   twitter?: string;
@@ -83,8 +85,107 @@ export default function BusinessProfile() {
     return () => { active = false; };
   }, [slug]);
 
+  useEffect(() => {
+    if (!business) return;
+    const desc = business.tagline
+      || (business.description ? business.description.slice(0, 160) : `${business.name} — verified business listing on engineersTech.`);
+    setPageMeta(
+      `${business.name} — engineersTech`,
+      desc,
+      `https://engineerstechbd.com/business/${business.slug}`,
+    );
+  }, [business]);
+
   if (loading) {
-    return <div className="container-tight py-32 text-center">Loading listing…</div>;
+    return (
+      <section className="container-tight pt-6 pb-12">
+        {/* Back link skeleton */}
+        <Skeleton className="h-4 w-32 mb-6" />
+
+        {/* Hero card skeleton */}
+        <div className="glass-card p-8 md:p-10">
+          <div className="flex flex-col md:flex-row gap-6 md:items-start">
+            {/* Logo */}
+            <Skeleton className="w-20 h-20 rounded-2xl shrink-0" />
+            <div className="flex-1 space-y-3">
+              {/* Name + badges */}
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-6 w-20 rounded-md" />
+              </div>
+              {/* Tagline */}
+              <Skeleton className="h-5 w-3/4" />
+              {/* Meta row */}
+              <div className="flex flex-wrap gap-4 mt-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+            {/* CTA buttons */}
+            <div className="flex md:flex-col gap-2 md:w-48">
+              <Skeleton className="h-10 flex-1 rounded-xl" />
+              <Skeleton className="h-10 flex-1 rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Main content skeleton */}
+        <div className="grid lg:grid-cols-3 gap-6 mt-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* About card */}
+            <div className="glass-card p-7 space-y-3">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/6" />
+            </div>
+            {/* Services card */}
+            <div className="glass-card p-7">
+              <Skeleton className="h-6 w-28 mb-4" />
+              <div className="grid sm:grid-cols-2 gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-11 rounded-lg" />
+                ))}
+              </div>
+            </div>
+            {/* AI Summary card */}
+            <div className="glass-card p-7 space-y-3">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </div>
+
+          {/* Sidebar skeleton */}
+          <aside className="space-y-4">
+            <div className="glass-card p-6 space-y-3">
+              <Skeleton className="h-3 w-20" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Skeleton className="w-4 h-4 rounded" />
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+            <div className="glass-card p-6 space-y-3">
+              <Skeleton className="h-3 w-16" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-4 w-full" />
+              ))}
+            </div>
+            <div className="glass-card p-6 space-y-3">
+              <Skeleton className="h-3 w-12" />
+              {/* GEO score bar */}
+              <Skeleton className="h-2 w-full rounded-full" />
+              <Skeleton className="h-3 w-5/6" />
+            </div>
+          </aside>
+        </div>
+      </section>
+    );
   }
 
   if (!business) {

@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, MessageSquare, MapPin, Send } from "lucide-react";
 import { toast } from "sonner";
 import { contactApi } from "@/lib/api";
+import { setPageMeta } from "@/lib/seo";
 
 export default function Contact() {
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPageMeta(
+      'Contact Us — engineersTech',
+      'Get in touch with the engineersTech team.',
+      'https://engineerstechbd.com/contact',
+    );
+  }, []);
   return (
     <section className="container-tight py-16">
       <div className="max-w-2xl mb-12">

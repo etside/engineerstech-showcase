@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import * as Icons from "lucide-react";
 import { categoryApi } from "@/lib/api";
 import JsonLd from "@/components/JsonLd";
+import { setPageMeta } from "@/lib/seo";
 
 interface Category {
   slug: string;
@@ -18,6 +19,14 @@ function toPascal(s: string) {
 export default function Categories() {
   const [cats, setCats] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setPageMeta(
+      'Business Categories — engineersTech',
+      'Browse all business categories on engineersTech. Find software, healthcare, finance, marketing agencies and more.',
+      'https://engineerstechbd.com/categories',
+    );
+  }, []);
 
   useEffect(() => {
     categoryApi.list()

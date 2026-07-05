@@ -9,6 +9,7 @@ import Reveal from "@/components/Reveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { businessApi, categoryApi } from "@/lib/api";
 import { useHomepageContent } from "@/hooks/useHomepageContent";
+import { setPageMeta } from "@/lib/seo";
 import {
   HeroSection, TrustedSection, StatsRibbon, RecognitionSection, AiDiscoverySection,
 } from "./HomeSections1";
@@ -250,6 +251,14 @@ export default function Home() {
   const { content } = useHomepageContent();
   const [featured, setFeatured] = useState<Business[]>([]);
   const [cats, setCats] = useState<{ slug: string; name: string; icon: string | null }[]>([]);
+
+  useEffect(() => {
+    setPageMeta(
+      'engineersTech — AI-Powered Business Directory',
+      'Discover top businesses ranked by AI. The Clutch alternative built for the AI era — find verified agencies, tech companies and service providers.',
+      'https://engineerstechbd.com/',
+    );
+  }, []);
 
   useEffect(() => {
     categoryApi.list().then((data) => {
