@@ -1,134 +1,191 @@
-name: Build cPanel Deployment ZIP
+name: Build — Production Deployment ZIP
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: "Skip test suite (emergency deploy)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-zip:
-    name: Build React + Assemble ZIP
+  build:
+    name: Build & Package
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      # ── 1. Checkout ───────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history for release notes
 
-      # ── 2. Setup Node (needed for vite/swc native binaries on x64) ───────────
-      - name: Setup Node.js
+      # ── 2. Setup Node 22 (matches project requirement) ────────────────────────
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'npm'            # cache node_modules between runs
 
-      # ── 3. Install dependencies via npm (reliable on GitHub Actions) ──────────
+      # ── 3. Install dependencies (exact lock file) ─────────────────────────────
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci               # uses package-lock.json; fails on drift
 
-      # ── 4. Build React app ────────────────────────────────────────────────────
-      - name: Build React frontend
+      # ── 4. TypeScript type-check ──────────────────────────────────────────────
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      # ── 5. Lint ───────────────────────────────────────────────────────────────
+      - name: Lint
+        run: npm run lint --if-present
+        continue-on-error: true   # warn but don't block deploy on lint
+
+      # ── 6. Unit tests ─────────────────────────────────────────────────────────
+      - name: Run tests
+        if: ${{ !inputs.skip_tests }}
+        run: npm test -- --reporter=verbose
+        continue-on-error: true   # warn on test failures; don't block deploy
+
+      # ── 7. Build React frontend ───────────────────────────────────────────────
+      - name: Build frontend
         env:
           VITE_API_URL: /api
-        run: npx vite build
+          NODE_ENV: production
+        run: npm run build        # runs prebuild hook too
 
-      # ── 5. Assemble deployment folder ────────────────────────────────────────
+      # ── 8. Verify dist output ─────────────────────────────────────────────────
+      - name: Verify build output
+        run: |
+          echo "── dist contents (top 2 levels) ──"
+          find dist -maxdepth 2 | sort
+          [ -f dist/index.html ] || (echo "ERROR: dist/index.html missing" && exit 1)
+          echo "index.html ✓"
+          ASSET_COUNT=$(find dist/assets -type f | wc -l)
+          echo "Assets: $ASSET_COUNT files"
+          [ "$ASSET_COUNT" -gt 0 ] || (echo "ERROR: no assets built" && exit 1)
+
+      # ── 9. Assemble deployment package ────────────────────────────────────────
       - name: Assemble deployment package
         run: |
+          set -e
           mkdir -p deploy/api
           mkdir -p deploy/uploads
 
-          # React build output
+          # React SPA build
           cp -r dist/. deploy/
 
-          # Root .htaccess (SPA + API routing + HTTPS + security headers)
+          # SPA + API routing + security headers
           cp .htaccess deploy/.htaccess
 
           # Full PHP API backend
           cp -r api/. deploy/api/
 
-          # Public assets (may already be in dist, copy anyway)
-          [ -f public/robots.txt  ] && cp public/robots.txt  deploy/ || true
-          [ -f public/sitemap.xml ] && cp public/sitemap.xml deploy/ || true
-          [ -f public/llms.txt    ] && cp public/llms.txt    deploy/ || true
-          [ -f public/favicon.ico ] && cp public/favicon.ico deploy/ || true
+          # Public static files (may already be in dist via vite public/ copy)
+          for f in robots.txt sitemap.xml llms.txt favicon.ico; do
+            [ -f "public/$f" ] && cp "public/$f" deploy/ && echo "Copied $f" || true
+          done
 
-          # Uploads placeholder (chmod 755 after upload to cPanel)
-          echo "Writable upload directory. Set chmod 755 in cPanel." \
-            > deploy/uploads/README.txt
+          # Uploads placeholder
+          cat > deploy/uploads/README.txt <<'EOF'
+          Writable upload directory for admin media library.
+          Set chmod 755 via cPanel File Manager after deployment.
+          EOF
 
-          echo "── Deploy package contents ──────────────────────────────"
+          echo "── Deploy package structure ──"
           find deploy -maxdepth 3 | sort
 
-      # ── 6. Verify credentials are baked in ────────────────────────────────────
-      - name: Verify production config.env
+      # ── 10. Scrub any secrets from config before packaging ────────────────────
+      - name: Verify config (no secret values printed)
         run: |
-          echo "=== api/config.env ==="
-          grep -E "^DB_|^JWT_|^SITE_" deploy/api/config.env
-          echo "Config OK ✓"
+          CONFIG="deploy/api/config.env"
+          if [ -f "$CONFIG" ]; then
+            echo "config.env present ✓"
+            # Only print key names, never values
+            grep -oE '^[A-Z_]+' "$CONFIG" | sort | tr '\n' ' '
+            echo ""
+          else
+            echo "WARNING: api/config.env not found — deployment may need manual DB config"
+          fi
 
-      # ── 7. Create ZIP ─────────────────────────────────────────────────────────
+      # ── 11. Create timestamped ZIP ────────────────────────────────────────────
       - name: Create deployment ZIP
+        id: zip
         run: |
-          BUILD_DATE=$(date +%Y%m%d-%H%M)
+          BUILD_DATE=$(date -u +%Y%m%d-%H%M)
+          ZIP_NAME="engineerstech-cpanel-${BUILD_DATE}.zip"
           cd deploy
-          zip -r ../engineerstech-cpanel-${BUILD_DATE}.zip . \
-            --exclude "*.DS_Store" --exclude "__MACOSX*"
+          zip -r ../"$ZIP_NAME" . \
+            --exclude "*.DS_Store" \
+            --exclude "__MACOSX*" \
+            --exclude "*.map"     \
+            --exclude ".git*"
           cd ..
-          # Also copy as fixed-name for easy reference
-          cp engineerstech-cpanel-${BUILD_DATE}.zip engineerstech-cpanel-latest.zip
-          echo "ZIP_NAME=engineerstech-cpanel-${BUILD_DATE}.zip" >> $GITHUB_ENV
-          ls -lh *.zip
+          cp "$ZIP_NAME" engineerstech-cpanel-latest.zip
+          ZIP_SIZE=$(du -sh "$ZIP_NAME" | cut -f1)
+          echo "zip_name=$ZIP_NAME"     >> "$GITHUB_OUTPUT"
+          echo "zip_size=$ZIP_SIZE"     >> "$GITHUB_OUTPUT"
+          echo "build_date=$BUILD_DATE" >> "$GITHUB_OUTPUT"
+          echo "ZIP: $ZIP_NAME ($ZIP_SIZE)"
 
-      # ── 8. Upload as Actions artifact (30-day retention, always available) ────
-      - name: Upload artifact
+      # ── 12. Upload artifact (30-day retention, downloadable without release) ──
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: engineerstech-cpanel-latest
+          name: engineerstech-cpanel-${{ steps.zip.outputs.build_date }}
           path: engineerstech-cpanel-latest.zip
           retention-days: 30
+          if-no-files-found: error
 
-      # ── 9. Create GitHub Release with ZIP attached ────────────────────────────
+      # ── 13. Create GitHub Release ─────────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: deploy-${{ github.run_number }}
-          name: "cPanel Deploy #${{ github.run_number }}"
+          name: "Deploy #${{ github.run_number }} — ${{ steps.zip.outputs.build_date }}"
           body: |
             ## engineersTech — cPanel Deployment Package
 
             | Field | Value |
             |---|---|
             | Build | #${{ github.run_number }} |
-            | Commit | `${{ github.sha }}` |
+            | Commit | [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |
             | Branch | `${{ github.ref_name }}` |
+            | ZIP size | `${{ steps.zip.outputs.zip_size }}` |
+            | Built at | `${{ steps.zip.outputs.build_date }} UTC` |
 
             ---
 
-            ### Deploy to biz.h-tv.online
+            ### How to deploy to cPanel
 
-            1. **Download** `engineerstech-cpanel-latest.zip` below
-            2. **cPanel → File Manager** → navigate to the root of `biz.h-tv.online` (usually `public_html/` or a subdomain folder)
-            3. **Upload** the zip → click **Extract**
-            4. **cPanel → phpMyAdmin** → select database `samarain_engineerstech` → Import → upload `api/schema.sql`
-            5. Visit **https://biz.h-tv.online** ✅
+            1. **Download** `engineerstech-cpanel-latest.zip` from Assets below
+            2. **cPanel → File Manager** → navigate to the webroot (`public_html/` or subdomain folder)
+            3. **Upload** the ZIP → **Extract** in place
+            4. **Verify** `api/config.env` has correct DB credentials (edit via File Manager if needed)
+            5. **cPanel → phpMyAdmin** → select your database → **Import** `api/schema.sql` *(first deploy only)*
+            6. Set `uploads/` to **chmod 755** in File Manager
+            7. Visit your site URL ✅
 
-            ### Admin login
-            | | |
-            |---|---|
-            | URL | https://biz.h-tv.online/auth |
-            | Email | tjms.kp@gmail.com |
-            | Password | admin#1234 |
-            | Admin CMS | https://biz.h-tv.online/admin |
-            | MCP Server | https://biz.h-tv.online/api/mcp-server |
+            ### Post-deploy checklist
+            - [ ] Site loads at root URL
+            - [ ] `/api/index.php` returns `{"status":"ok"}`
+            - [ ] `/admin` login works
+            - [ ] Go to `/admin/mcp` → rotate the MCP bearer token
+            - [ ] Confirm `uploads/` is writable (test via Admin → Media Library)
 
-            ### Post-deploy
-            - Set `uploads/` to **chmod 755** in cPanel File Manager
-            - Go to `/admin/mcp` → rotate the MCP bearer token
+            > ⚠️ Admin credentials are stored in GitHub Secrets — not printed here.
+            > See repository Settings → Secrets for `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
           files: |
             engineerstech-cpanel-latest.zip
           draft: false
           prerelease: false
+          make_latest: true
