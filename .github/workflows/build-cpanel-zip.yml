@@ -195,27 +195,24 @@ jobs:
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_PASS_B64: ${{ secrets.FTP_PASS_B64 }}
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
-          # Write lftp script to avoid shell escaping issues with special chars in password
-          # Use unquoted heredoc so $FTP_HOST, $FTP_USER, $FTP_PASS get expanded by shell
-          cat > /tmp/ftp-deploy.sh <<SCRIPT
-          set ftp:ssl-allow yes
-          set ssl:verify-certificate no
-          set ftp:passive-mode yes
+          # Decode password from base64 to avoid all shell escaping issues
+          FTP_PASS=$(echo "$FTP_PASS_B64" | base64 -d)
 
-          open "$FTP_HOST" -u "$FTP_USER","$FTP_PASS"
-          cd match.hause.ink/ceo/
-          mirror --reverse --verbose --parallel=5 --delete \
-            --exclude .git/ \
-            --exclude .gitignore \
-            deploy/
-          quit
-          SCRIPT
-
-          lftp -f /tmp/ftp-deploy.sh
+          lftp -u "$FTP_USER,$FTP_PASS" "$FTP_HOST" -e "
+            set ftp:ssl-allow yes;
+            set ssl:verify-certificate no;
+            set ftp:passive-mode yes;
+            cd match.hause.ink/ceo/;
+            mirror --reverse --verbose --parallel=5 --delete \
+              --exclude .git/ \
+              --exclude .gitignore \
+              deploy/;
+            quit;
+          "
 
       - name: Verify deployment
         run: |
