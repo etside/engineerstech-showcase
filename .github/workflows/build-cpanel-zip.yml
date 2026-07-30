@@ -192,18 +192,30 @@ jobs:
           find deploy -maxdepth 2 | sort
 
       - name: Deploy to match.hause.ink via FTP
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
-          lftp -u "${{ secrets.FTP_USER }},${{ secrets.FTP_PASS }}" "${{ secrets.FTP_HOST }}" -e "
-            set ssl:verify-certificate no;
-            set ftp:ssl-allow yes;
-            mirror --reverse --delete --verbose --parallel=5 \
-              --exclude .git/ \
-              --exclude .gitignore \
-              deploy/ /home/hause/match.hause.ink/;
-            quit
-          "
+          # Write lftp script to avoid shell escaping issues with special chars in password
+          cat > /tmp/ftp-deploy.sh <<'SCRIPT'
+          set ftp:ssl-allow yes
+          set ssl:verify-certificate no
+          set ftp:passive-mode yes
+
+          open "$FTP_HOST" -u "$FTP_USER","$FTP_PASS"
+          mkdir -p /home/hause/match.hause.ink/ceo/
+          cd /home/hause/match.hause.ink/ceo/
+          mirror --reverse --verbose --parallel=5 --delete \
+            --exclude .git/ \
+            --exclude .gitignore \
+            deploy/
+          quit
+          SCRIPT
+
+          lftp -f /tmp/ftp-deploy.sh
 
       - name: Verify deployment
         run: |
