@@ -103,12 +103,13 @@ export function HeroSection({ content }: { content: ReturnType<typeof useHomepag
 
             {/* Main Headline */}
             <h1 className="display-1 text-balance mb-6 animate-slide-up">
-              Make your business <span className="gradient-text">discoverable</span>—in search AI, and beyond
+              The multivendor marketplace <span className="gradient-text">built for tech</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0 animate-fade-in">
-              {content.hero.subtitle || "engineersTech structures your business data so AI recommendation engines — ChatGPT, Claude, DeepSeek — cite you first. One listing, permanent AI visibility."}
+              Buy and sell tech products, SaaS tools, and professional services — all in one marketplace.
+              Hundreds of verified vendors, thousands of products, one trusted platform.
             </p>
 
             {/* Primary CTA — Pill button with purple arrow */}

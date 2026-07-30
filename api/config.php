@@ -20,6 +20,8 @@ set_exception_handler(function($e) {
 
 // --- CORS: whitelist specific origins, never wildcard with credentials ---
 $allowedOrigins = [
+    'https://match.hause.ink',
+    'http://match.hause.ink',
     'https://biz.engineerstechbd.com',
     'http://biz.engineerstechbd.com',
     'https://www.biz.engineerstechbd.com',
@@ -82,7 +84,7 @@ define('JWT_EXPIRY', 86400 * 7); // 7 days
 $siteUrl = $cfg['SITE_URL'] ?? '';
 if (empty($siteUrl)) {
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host    = $_SERVER['HTTP_HOST'] ?? 'biz.engineerstechbd.com';
+    $host    = $_SERVER['HTTP_HOST'] ?? 'match.hause.ink';
     $siteUrl = $scheme . '://' . $host;
 }
 define('SITE_URL', rtrim($siteUrl, '/'));

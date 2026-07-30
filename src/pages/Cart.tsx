@@ -38,18 +38,18 @@ function CartItemRow({ item }: { item: CartItemType }) {
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
             <button onClick={() => updateMutation.mutate(item.quantity - 1)} disabled={item.quantity <= 1}
-              className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-muted/50 disabled:opacity-50">
+              className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-muted/50 disabled:opacity-50 transition-colors">
               <Minus className="w-3 h-3" />
             </button>
             <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
             <button onClick={() => updateMutation.mutate(item.quantity + 1)}
-              className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-muted/50">
+              className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-muted/50 transition-colors">
               <Plus className="w-3 h-3" />
             </button>
           </div>
           <div className="flex items-center gap-3">
             <span className="font-semibold text-foreground">৳{item.line_total.toLocaleString()}</span>
-            <button onClick={() => removeMutation.mutate()} className="text-muted-foreground hover:text-red-500 transition-colors">
+            <button onClick={() => removeMutation.mutate()} className="text-muted-foreground hover:text-red-500 transition-all hover:scale-110">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -104,15 +104,8 @@ export default function Cart() {
         <h1 className="text-2xl font-bold text-foreground mb-8">Shopping Cart ({data?.item_count} items)</h1>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Cart items */}
-          <div className="md:col-span-2">
-            {items.map((item: CartItemType) => (
-              <CartItemRow key={item.id} item={item} />
-            ))}
-          </div>
-
-          {/* Order summary */}
-          <div className="glass-card rounded-xl p-6 border border-border/30 h-fit">
+          {/* Order summary — first on mobile, last on desktop */}
+          <div className="order-first md:order-last glass-card rounded-xl p-6 border border-border/30 h-fit sticky top-24">
             <h2 className="text-lg font-bold text-foreground mb-4">Order Summary</h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
@@ -128,12 +121,19 @@ export default function Cart() {
                 <span className="font-bold text-foreground text-lg">৳{subtotal.toLocaleString()}</span>
               </div>
             </div>
-            <Link to="/checkout" className="mt-6 w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 transition-colors">
+            <Link to="/checkout" className="mt-6 w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 transition-all">
               Proceed to Checkout <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/products" className="mt-3 w-full py-2 text-sm text-muted-foreground hover:text-primary flex items-center justify-center gap-1 transition-colors">
               Continue Shopping
             </Link>
+          </div>
+
+          {/* Cart items */}
+          <div className="md:col-span-2">
+            {items.map((item: CartItemType) => (
+              <CartItemRow key={item.id} item={item} />
+            ))}
           </div>
         </div>
       </div>

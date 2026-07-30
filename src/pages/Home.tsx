@@ -57,7 +57,7 @@ function GlobalTeamSection() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {teamStats.map((s, i) => (
             <Reveal key={s.label} delay={i * 80} className="glass-card p-6 text-center group card-lift">
-              <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-all duration-300">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                 <s.icon className="w-5 h-5 text-primary-light" />
               </div>
               <div className="font-display font-black text-3xl gradient-text mb-0.5">
@@ -185,19 +185,19 @@ function CtaSection() {
 
         <div className="relative px-8 py-20 md:py-24">
           <h2 className="display-2 text-white mb-4">
-            Start your
-            <span className="block text-primary-light">engineersTech journey</span>
+            Start selling on
+            <span className="block text-primary-light">engineersTech today</span>
           </h2>
           <p className="text-white/70 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
-            Thousands of engineers are already discovering top-rated tech vendors through
-            engineersTech. The only one missing from that list is you. Your listing is open now.
+            Join hundreds of verified vendors selling tech products and services.
+            List your products, reach global buyers, and grow your business — all in one place.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-10 mb-10">
             {[
-              { value: 500,  suffix: "+", label: "Verified" },
-              { value: 98,   suffix: "%", label: "Satisfaction" },
-              { value: 50,   suffix: "K+", label: "Users" },
+              { value: 500,  suffix: "+", label: "Vendors" },
+              { value: 10,   suffix: "K+", label: "Products" },
+              { value: 50,   suffix: "K+", label: "Buyers" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className="font-display text-3xl font-extrabold text-white">
@@ -215,16 +215,16 @@ function CtaSection() {
               to="/auth?mode=signup"
               className="pill-cta text-base pl-7 pr-2 py-2"
             >
-              List Your Business
+              Start Selling
               <span className="pill-cta-arrow w-8 h-8">
                 <ArrowRight className="w-4 h-4 text-white" />
               </span>
             </Link>
             <Link
-              to="/listings"
+              to="/products"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm border border-white/25 text-white hover:bg-white/10 transition-all"
             >
-              Browse Listings
+              Browse Products
             </Link>
           </div>
         </div>

@@ -6,49 +6,49 @@ const steps = [
   {
     number: "01",
     icon: CheckCircle,
-    title: "Claim or create your listing",
+    title: "Create your seller account",
     subtitle: "Takes 5 minutes",
-    desc: "Fill in your company details, service categories, portfolio items, pricing tiers, and case studies. The more structured your data, the higher your GEO score.",
+    desc: "Sign up, fill in your business details, and set up your vendor storefront. Add your logo, description, and start listing your products or services.",
     details: [
-      "Company profile with logo, tagline, and detailed description",
-      "Service categories with pricing and delivery timelines",
-      "Portfolio case studies with technology stack details",
-      "Team size, certifications, and client industries served",
+      "Professional vendor storefront with your branding",
+      "Product and service listings with images and descriptions",
+      "Set pricing, inventory, and delivery options",
+      "Accept payments securely through our platform",
     ],
   },
   {
     number: "02",
     icon: Zap,
-    title: "We optimize your data for AI",
-    subtitle: "Automated & instant",
-    desc: "Our pipeline converts your profile into JSON-LD, schema.org markup, and AI-readable structured summaries. We publish your data to our public LLM API endpoint automatically.",
+    title: "List your products & services",
+    subtitle: "Quick & guided",
+    desc: "Add products with photos, variants, and pricing. List services with descriptions and delivery timelines. Our guided flow makes it easy to get everything right.",
     details: [
-      "JSON-LD schema generation for every profile field",
-      "Natural-language summaries for LLM consumption",
-      "Public API endpoint at /api/llm/{slug} for crawlers",
-      "Automatic re-indexing when you update your profile",
+      "Product listings with images, variants, and stock tracking",
+      "Service listings with pricing tiers and delivery estimates",
+      "Category placement for better discoverability",
+      "SEO-optimized listings that rank in search and AI",
     ],
   },
   {
     number: "03",
     icon: Star,
-    title: "Get cited by AI recommendation engines",
+    title: "Start selling & grow",
     subtitle: "Ongoing & compounding",
-    desc: "When users ask ChatGPT, Claude, DeepSeek, or Qwen for tech vendor recommendations, your business surfaces in results. Track your LLM visibility in your dashboard.",
+    desc: "Receive orders, manage inventory, and track your performance. Use analytics to optimize your listings and grow your revenue on the platform.",
     details: [
-      "Real-time GEO score tracking on your dashboard",
-      "LLM citation analytics (which models mention you)",
-      "Keyword visibility — what queries trigger your mention",
-      "Competitive benchmarking vs. similar businesses",
+      "Real-time sales and revenue analytics dashboard",
+      "Order management and fulfillment tools",
+      "Customer reviews and ratings build your reputation",
+      "Promotions, bulk pricing, and upsell tools",
     ],
   },
 ];
 
 const faqs = [
-  { q: "How long does it take to get indexed by LLMs?", a: "Most LLMs crawl our public API within 2–4 weeks of listing. Some may take longer depending on their crawl schedules. We actively submit to known AI data pipelines to accelerate this." },
-  { q: "Is GEO different from SEO?", a: "Yes. SEO optimizes for search engine ranking algorithms. GEO optimizes for how LLMs select and cite sources in conversational answers. Both matter, but GEO is newer and less competitive." },
-  { q: "Do I need technical knowledge to get started?", a: "None at all. You fill in a form, we handle all the structured data generation, JSON-LD output, and API publishing automatically." },
-  { q: "What makes a high GEO score?", a: "Complete profile data, verified reviews, detailed case studies, active updates, and a high trust score all contribute. We show you exactly which fields to improve." },
+  { q: "How do I start selling?", a: "Sign up for a free account, set up your vendor profile, and start listing products or services. The whole process takes about 5 minutes." },
+  { q: "What can I sell on engineersTech?", a: "Tech products (software, hardware, SaaS tools), professional services (development, design, consulting), and digital goods. All listings go through a quality review." },
+  { q: "How do payments work?", a: "We handle checkout, payment processing, and fraud protection. You receive payouts directly to your bank account on a regular schedule." },
+  { q: "Is there a fee to join?", a: "The Starter plan is free forever with up to 10 product listings. Growth plan at ৳1,999/month unlocks unlimited listings, analytics, and a verified badge." },
 ];
 
 export default function HowItWorks() {
@@ -62,19 +62,18 @@ export default function HowItWorks() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="section-eyebrow mb-6 justify-center"><Zap className="w-3.5 h-3.5" /> How it works</div>
             <h1 className="display-1 mb-6">
-              From listing to{" "}
-              <span className="animated-gradient-text">LLM citation</span>
-              {" "}in 24 hours.
+              Start selling in{" "}
+              <span className="animated-gradient-text">three simple steps.</span>
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
-              engineersTech is the only directory built natively for AI discovery. We don't just list
-              your business — we structure it so AI can read, understand, and recommend it.
+              Join hundreds of vendors selling tech products and services on engineersTech.
+              Set up your storefront, list your offerings, and reach buyers worldwide.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/submit" className="btn-gradient shimmer-btn text-base px-7 py-3.5">
-                Get listed <ArrowRight className="w-4 h-4" />
+              <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-base px-7 py-3.5">
+                Start selling <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link to="/pricing" className="btn-ghost text-base px-7 py-3.5">See pricing</Link>
+              <Link to="/products" className="btn-ghost text-base px-7 py-3.5">Browse products</Link>
             </div>
           </div>
         </div>
@@ -85,7 +84,7 @@ export default function HowItWorks() {
         <div className="space-y-6">
           {steps.map((s, i) => (
             <Reveal key={s.number} delay={i * 100}>
-              <div className="glass-card card-lift p-8 md:p-10 group hover:border-primary/40 relative overflow-hidden">
+              <div className="glass-card card-lift p-8 md:p-10 group hover:border-primary/40 relative overflow-hidden transition-all duration-300">
                 <div className="absolute -top-6 -right-4 font-display text-9xl font-black text-primary/6 select-none">
                   {s.number}
                 </div>
@@ -164,12 +163,12 @@ export default function HowItWorks() {
         <Reveal as="div" className="relative overflow-hidden rounded-3xl gradient-bg p-12 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.1),_transparent_65%)]" />
           <div className="relative">
-            <h2 className="display-2 text-white mb-4">Start your GEO journey today.</h2>
+            <h2 className="display-2 text-white mb-4">Ready to start selling?</h2>
             <p className="text-white/80 text-lg max-w-md mx-auto mb-8">
-              Guided listing, payment, verification, and AI indexing in one flow.
+              Join hundreds of vendors reaching tech buyers worldwide.
             </p>
-            <Link to="/submit" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
-              Get listed <ArrowRight className="w-4 h-4" />
+            <Link to="/auth?mode=signup" className="shimmer-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm bg-white text-primary hover:bg-white/92 transition-all">
+              Start selling <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </Reveal>

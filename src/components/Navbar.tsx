@@ -108,13 +108,12 @@ export default function Navbar() {
   const { pathname }                = useLocation();
 
   const primaryLinks = [
-    { to: "/listings",              label: t("nav.listings")   },
-    { to: "/categories",            label: t("nav.categories") },
     { to: "/products",              label: "Products" },
     { to: "/marketplace-services",  label: "Services" },
+    { to: "/listings",              label: "Vendors" },
+    { to: "/categories",            label: "Categories" },
     { to: "/how-it-works",          label: "How It Works" },
     { to: "/resources",             label: "Resources" },
-    { to: "/pricing",               label: "Pricing" },
   ];
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -202,7 +201,7 @@ export default function Navbar() {
                     {t("nav.dashboard")}
                   </Link>
                   <Link to="/submit" className="hidden md:inline-flex pill-cta">
-                    {t("nav.addListing")}
+                    Start Selling
                     <span className="pill-cta-arrow">
                       <ArrowRight className="w-3.5 h-3.5 text-white" />
                     </span>
@@ -223,7 +222,7 @@ export default function Navbar() {
                     {t("nav.signIn")}
                   </Link>
                   <Link to="/auth?mode=signup" className="hidden md:inline-flex pill-cta">
-                    Get Started
+                    Start Selling
                     <span className="pill-cta-arrow">
                       <ArrowRight className="w-3.5 h-3.5 text-white" />
                     </span>
@@ -245,44 +244,49 @@ export default function Navbar() {
         </div>
 
         {/* ── Mobile Menu ── */}
-        {menuOpen && (
-          <div className="lg:hidden border-t border-border/50 bg-background/98 backdrop-blur-2xl animate-fade-in">
-            <div className="container-tight py-4 flex flex-col gap-1">
-              {[...primaryLinks, ...moreLinks, { to: "/cart", label: "Cart" }].map((l) => (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  className={({ isActive }) =>
-                    cn(
-                      "px-4 py-3 rounded-xl text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-primary/10 text-primary-light"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
-                    )
-                  }
-                >
-                  {l.label}
-                </NavLink>
-              ))}
-              <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/50">
-                {user ? (
-                  <>
-                    <Link to="/dashboard" className="btn-ghost text-sm py-2.5">{t("nav.dashboard")}</Link>
-                    <Link to="/submit"    className="btn-gradient text-sm py-2.5">{t("nav.addListing")}</Link>
-                    <button onClick={signOut} className="btn-ghost text-sm py-2.5 col-span-2">
-                      {t("nav.signOut")}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/auth"            className="btn-ghost text-sm py-2.5">Login</Link>
-                    <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-sm py-2.5">Get Started</Link>
-                  </>
-                )}
-              </div>
+        <div
+          className={cn(
+            "lg:hidden border-t border-border/50 bg-background/98 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-spring",
+            menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 border-t-0"
+          )}
+          style={{ pointerEvents: menuOpen ? "auto" : "none" }}
+        >
+          <div className="container-tight py-4 flex flex-col gap-1">
+            {[...primaryLinks, { to: "/pricing", label: "Pricing" }, ...moreLinks, { to: "/cart", label: "Cart" }].map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    "px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary-light"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+                  )
+                }
+              >
+                {l.label}
+              </NavLink>
+            ))}
+            <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-border/50">
+              {user ? (
+                <>
+                  <Link to="/dashboard" className="btn-ghost text-sm py-2.5">{t("nav.dashboard")}</Link>
+                  <Link to="/submit"    className="btn-gradient text-sm py-2.5">Start Selling</Link>
+                  <button onClick={signOut} className="btn-ghost text-sm py-2.5 col-span-2">
+                    {t("nav.signOut")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth"            className="btn-ghost text-sm py-2.5">Login</Link>
+                  <Link to="/auth?mode=signup" className="btn-gradient shimmer-btn text-sm py-2.5">Start Selling</Link>
+                </>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </header>
     </div>
   );

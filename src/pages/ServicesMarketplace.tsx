@@ -29,7 +29,12 @@ function ServiceCard({ service }: { service: Service }) {
       <div className="p-4">
         <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{service.name}</h3>
         {service.business_name && (
-          <p className="text-sm text-muted-foreground mt-1">{service.business_name}</p>
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center shrink-0">
+              {service.business_name.charAt(0)}
+            </span>
+            {service.business_name}
+          </p>
         )}
         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{service.short_description || service.description?.slice(0, 120)}</p>
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
@@ -64,7 +69,7 @@ export default function ServicesMarketplace() {
   });
 
   useEffect(() => {
-    setPageMeta("Services | EngineersTech Marketplace", "Browse professional services from verified vendors");
+    setPageMeta("Services | EngineersTech Marketplace", "Browse professional services from verified vendors on EngineersTech");
   }, []);
 
   const services = data?.data ?? [];
@@ -75,7 +80,7 @@ export default function ServicesMarketplace() {
       <section className="bg-gradient-to-br from-accent/10 via-background to-primary/10 py-12 border-b border-border/30">
         <div className="container-tight">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">Professional Services</h1>
-          <p className="text-muted-foreground mt-2">Find experts for your next project</p>
+          <p className="text-muted-foreground mt-2">Find verified vendors offering expert services for your next project</p>
         </div>
       </section>
 

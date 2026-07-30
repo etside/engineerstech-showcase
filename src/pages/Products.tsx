@@ -34,6 +34,14 @@ function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{product.name}</h3>
+        {product.vendor_name && (
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center shrink-0">
+              {product.vendor_name.charAt(0)}
+            </span>
+            {product.vendor_name}
+          </p>
+        )}
         {product.short_description && (
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{product.short_description}</p>
         )}
@@ -170,12 +178,12 @@ export default function Products() {
         {totalPages > 1 && (
           <div className="flex justify-center gap-2 mt-10">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="px-4 py-2 text-sm border border-border/50 rounded-lg hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed">
+              className="px-4 py-2 text-sm border border-border/50 rounded-lg hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               Previous
             </button>
             <span className="px-4 py-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="px-4 py-2 text-sm border border-border/50 rounded-lg hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed">
+              className="px-4 py-2 text-sm border border-border/50 rounded-lg hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               Next
             </button>
           </div>

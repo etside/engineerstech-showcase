@@ -3,18 +3,18 @@ import { ArrowRight, CheckCircle, Zap, BarChart3, Globe2, Star, ShieldCheck, Tre
 import Reveal from "@/components/Reveal";
 
 const benefits = [
-  { icon: Globe2, title: "Get discovered by AI", desc: "When buyers ask ChatGPT or Claude for tech vendor recommendations, your GEO-optimized listing surfaces. We publish structured JSON-LD to our public LLM API automatically." },
-  { icon: BarChart3, title: "Real analytics dashboard", desc: "Track profile views, AI citation events, review sentiment trends, and conversion rates. Know exactly which keywords and LLMs are sending you traffic." },
-  { icon: Star, title: "Verified reviews build trust", desc: "Collect and display verified client reviews. Our AI summarizes them into pros/cons — the format LLMs prefer when citing your brand in recommendations." },
-  { icon: ShieldCheck, title: "Verified badge & trust signals", desc: "Go through our verification process and earn a Verified badge. Verified listings rank higher in AI results and convert at 3× the rate of unverified ones." },
-  { icon: Users, title: "Lead generation built in", desc: "Buyers contact you directly through your listing. No middleman, no commission. You own the relationship from day one." },
-  { icon: TrendingUp, title: "GEO score tracking", desc: "Your real-time score shows how AI-ready your profile is. Follow our checklist to improve it and watch your citation rate climb." },
+  { icon: Globe2, title: "Reach global buyers", desc: "Your products and services are visible to tech buyers worldwide. Get discovered by AI recommendation engines and traditional search — all channels working for you." },
+  { icon: BarChart3, title: "Real analytics dashboard", desc: "Track views, orders, revenue, and conversion rates. Know exactly which products perform best and optimize your storefront." },
+  { icon: Star, title: "Verified vendor badge", desc: "Go through our verification process and earn a Verified badge. Verified vendors rank higher in search results and convert at 3× the rate." },
+  { icon: ShieldCheck, title: "Secure payments", desc: "Accept payments securely through our platform. We handle checkout, fraud protection, and order management so you can focus on your products." },
+  { icon: Users, title: "Built-in storefront", desc: "Get a professional vendor storefront with product listings, reviews, and inventory management. No coding or design skills needed." },
+  { icon: TrendingUp, title: "Grow your revenue", desc: "Access tools for promotions, bulk pricing, and upsells. Track your revenue trends and optimize your pricing strategy." },
 ];
 
 const plans = [
-  { name: "Starter", price: "৳999", period: "per month", highlight: false, features: ["Verified company profile", "1 service category", "Up to 3 portfolio items", "GEO score (read-only)", "Public LLM API listing", "Guided onboarding support"], cta: "Start listing", href: "/submit" },
-  { name: "Growth", price: "৳1,999", period: "per month", highlight: true, badge: "Most popular", features: ["Everything in Free", "Unlimited service categories", "Unlimited portfolio & case studies", "GEO score optimization tips", "Priority AI indexing", "Analytics dashboard", "Review management", "Verified badge (after review)", "Priority support"], cta: "Choose Growth", href: "/submit" },
-  { name: "Enterprise", price: "Custom", period: "contact us", highlight: false, features: ["Everything in Growth", "Dedicated account manager", "Custom LLM API integration", "White-glove onboarding", "SLA guarantee", "Custom analytics reports"], cta: "Contact sales", href: "/contact" },
+  { name: "Starter", price: "Free", period: "forever", highlight: false, features: ["Seller storefront", "Up to 10 product listings", "Basic analytics dashboard", "Standard payment processing", "Community support", "Mobile-friendly store"], cta: "Start selling", href: "/auth?mode=signup" },
+  { name: "Growth", price: "৳1,999", period: "per month", highlight: true, badge: "Most popular", features: ["Everything in Starter", "Unlimited product listings", "Service listings included", "Advanced analytics & insights", "Verified seller badge", "Priority search ranking", "Promotions & bulk pricing tools", "Priority support"], cta: "Choose Growth", href: "/auth?mode=signup" },
+  { name: "Enterprise", price: "Custom", period: "contact us", highlight: false, features: ["Everything in Growth", "Dedicated account manager", "Custom storefront design", "API access for inventory", "White-glove onboarding", "SLA guarantee", "Custom analytics reports"], cta: "Contact sales", href: "/contact" },
 ];
 
 const testimonials = [

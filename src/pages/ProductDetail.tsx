@@ -111,6 +111,15 @@ export default function ProductDetail() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{product.name}</h1>
 
+            {product.vendor_name && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                  {product.vendor_name.charAt(0)}
+                </span>
+                <span className="text-sm text-muted-foreground">by <span className="text-foreground font-medium">{product.vendor_name}</span></span>
+              </div>
+            )}
+
             <div className="flex items-center gap-3 mt-3">
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -155,21 +164,21 @@ export default function ProductDetail() {
             <div className="mt-6">
               <h3 className="text-sm font-medium text-foreground mb-2">Quantity</h3>
               <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-9 h-9 rounded-lg border border-border/50 flex items-center justify-center hover:bg-muted/50">-</button>
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-9 h-9 rounded-lg border border-border/50 flex items-center justify-center hover:bg-muted/50 transition-colors">-</button>
                 <span className="w-12 text-center font-medium">{quantity}</span>
-                <button onClick={() => setQuantity(q => q + 1)} className="w-9 h-9 rounded-lg border border-border/50 flex items-center justify-center hover:bg-muted/50">+</button>
+                <button onClick={() => setQuantity(q => q + 1)} className="w-9 h-9 rounded-lg border border-border/50 flex items-center justify-center hover:bg-muted/50 transition-colors">+</button>
               </div>
             </div>
 
             {/* Add to cart */}
             <button onClick={() => addToCart.mutate()} disabled={addToCart.isPending || product.stock <= 0}
-              className="mt-6 w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors">
+              className="mt-6 w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all">
               <ShoppingCart className="w-5 h-5" />
               {addToCart.isPending ? 'Adding...' : product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
             </button>
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-border/30">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-border/30">
               <div className="flex flex-col items-center text-center gap-1">
                 <Shield className="w-5 h-5 text-primary" />
                 <span className="text-xs text-muted-foreground">Secure Payment</span>

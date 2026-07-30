@@ -42,9 +42,9 @@ export function FeaturedSection({
   featured: Business[];
 }) {
   const planStats = [
-    { value: 316,  suffix: "M+",   label: "Total Listings" },
-    { value: 40,   suffix: "hrs",  label: "Avg. processing time" },
-    { value: 450,  suffix: "K+",   label: "engineersTech Accounts" },
+    { value: 500,  suffix: "+",    label: "Verified Vendors" },
+    { value: 5000, suffix: "+",    label: "Products Listed" },
+    { value: 10,   suffix: "K+",   label: "Active Buyers" },
     { value: 98,   suffix: "%",    label: "Satisfaction" },
   ];
 
@@ -61,7 +61,7 @@ export function FeaturedSection({
             </h2>
           </div>
           <Link to="/listings" className="btn-ghost text-sm shrink-0 self-start md:self-auto">
-            See all listings <ArrowRight className="w-4 h-4" />
+            See all vendors <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -75,7 +75,7 @@ export function FeaturedSection({
             </div>
           ))}
           <Link to="/listings" className="btn-outline-violet text-xs py-1.5 px-4 ml-auto hidden md:inline-flex">
-            Discover Listings <ArrowRight className="w-3.5 h-3.5" />
+            Browse Vendors <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
@@ -153,11 +153,10 @@ export function HowItWorksSection({
           <Zap className="w-3.5 h-3.5" /> How it works
         </div>
         <h2 className="display-2">
-          From listing to <span className="gradient-text">LLM citation</span> in 24 hours.
+          Start selling in <span className="gradient-text">three simple steps.</span>
         </h2>
         <p className="text-muted-foreground text-lg mt-4 leading-relaxed">
-          Three steps is all it takes. No technical setup. No ongoing management. We handle the AI
-          optimization automatically.
+          Set up your store, list your products, and start reaching buyers worldwide. No technical setup needed.
         </p>
       </div>
       <div className="grid md:grid-cols-3 gap-4">

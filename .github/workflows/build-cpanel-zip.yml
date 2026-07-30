@@ -200,7 +200,7 @@ jobs:
           UPLOAD_RESP=$(curl -s -w "\n%{http_code}" \
             -X POST \
             -H "Authorization: cpanel $CPANEL_USER:$CPANEL_TOKEN" \
-            -F "dir=/home/$CPANEL_USER/$CPANEL_DOMAIN/ceo" \
+            -F "dir=/home/$CPANEL_USER/$CPANEL_DOMAIN" \
             -F "file-1=@$ZIP_FILE;filename=deploy.zip" \
             "$CPANEL_URL/execute/Fileman/upload_files")
 
@@ -230,8 +230,8 @@ jobs:
             -X POST \
             -H "Authorization: cpanel $CPANEL_USER:$CPANEL_TOKEN" \
             -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "dir=/home/$CPANEL_USER/$CPANEL_DOMAIN/ceo" \
-            -d "file=/home/$CPANEL_USER/$CPANEL_DOMAIN/ceo/deploy.zip" \
+            -d "dir=/home/$CPANEL_USER/$CPANEL_DOMAIN" \
+            -d "file=/home/$CPANEL_USER/$CPANEL_DOMAIN/deploy.zip" \
             -d "overwrite=1" \
             "$CPANEL_URL/execute/Fileman/extract_files")
 
@@ -254,7 +254,7 @@ jobs:
             -X POST \
             -H "Authorization: cpanel $CPANEL_USER:$CPANEL_TOKEN" \
             -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "dir=/home/$CPANEL_USER/$CPANEL_DOMAIN/ceo" \
+            -d "dir=/home/$CPANEL_USER/$CPANEL_DOMAIN" \
             -d "files=deploy.zip" \
             "$CPANEL_URL/execute/Fileman/delete_files")
 

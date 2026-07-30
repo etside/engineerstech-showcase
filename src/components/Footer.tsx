@@ -5,42 +5,40 @@ import NewsletterSignup from "./NewsletterSignup";
 // ─── Footer link columns ─────────────────────────────────────────────────────
 const footerColumns = [
   {
-    title: "Product",
+    title: "Marketplace",
     links: [
-      { to: "/listings",     label: "Browse Listings" },
-      { to: "/categories",   label: "Categories" },
-      { to: "/pricing",      label: "Pricing" },
-      { to: "/submit",       label: "List Your Business" },
-      { to: "/leaderboards", label: "Leaderboards" },
-      { to: "/faq",          label: "Help Centre (FAQ)" },
+      { to: "/products",             label: "Browse Products" },
+      { to: "/marketplace-services", label: "Services" },
+      { to: "/categories",           label: "Categories" },
+      { to: "/listings",             label: "Vendors" },
+      { to: "/submit",               label: "Start Selling" },
     ],
   },
   {
-    title: "Our Data",
+    title: "For Sellers",
     links: [
-      { to: "/how-it-works", label: "How GEO Works" },
-      { to: "/ai-discover",  label: "AI Discover" },
-      { to: "/api-docs",     label: "LLM / MCP API" },
-      { to: "/services",     label: "Services" },
+      { to: "/for-vendors",  label: "Sell on engineersTech" },
+      { to: "/how-it-works", label: "How It Works" },
+      { to: "/pricing",      label: "Pricing" },
+      { to: "/leaderboards", label: "Top Vendors" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { to: "/blog",         label: "Blog" },
-      { to: "/resources",    label: "Resources" },
-      { to: "/for-vendors",  label: "For Vendors" },
-      { to: "/about",        label: "About engineersTech" },
+      { to: "/blog",      label: "Blog" },
+      { to: "/resources", label: "Resources" },
+      { to: "/api-docs",  label: "LLM / MCP API" },
+      { to: "/faq",       label: "Help Centre (FAQ)" },
     ],
   },
   {
     title: "Company",
     links: [
-      { to: "/contact",        label: "Contact Us" },
-      { to: "/about#news",     label: "News & Media" },
-      { to: "/about#awards",   label: "Achievements" },
-      { to: "/terms",          label: "Terms of Service" },
-      { to: "/privacy",        label: "Privacy Policy" },
+      { to: "/about",      label: "About engineersTech" },
+      { to: "/contact",    label: "Contact Us" },
+      { to: "/terms",      label: "Terms of Service" },
+      { to: "/privacy",    label: "Privacy Policy" },
     ],
   },
 ];
@@ -80,8 +78,8 @@ export default function Footer() {
               </Link>
 
               <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
-                The AI-powered directory for engineers & tech professionals. Get discovered by LLMs,
-                ranked by GEO score.
+                The multivendor marketplace for tech products and services. Buy from verified vendors
+                or start selling today.
               </p>
 
               <div className="mb-6">

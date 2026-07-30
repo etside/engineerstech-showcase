@@ -28,7 +28,7 @@ export default function Submit() {
   }, []);
 
   if (authed === false) {
-    return <div className="container-tight py-20 text-center"><p className="mb-4">Sign in to submit a listing.</p><button className="btn-gradient" onClick={() => nav("/auth?mode=signup")}>Sign in</button></div>;
+    return <div className="container-tight py-20 text-center"><p className="mb-4">Sign in to start selling.</p><button className="btn-gradient" onClick={() => nav("/auth?mode=signup")}>Sign in</button></div>;
   }
 
   async function submit(e: React.FormEvent) {
@@ -56,7 +56,7 @@ export default function Submit() {
         tags: [f.industry, f.location].filter(Boolean),
       });
       setLoading(false);
-      toast.success("Listing saved -- choose a plan to continue");
+      toast.success("Store saved -- choose a plan to continue");
       nav(`/pricing?biz=${id ?? ""}`);
     } catch (err) {
       setLoading(false);
@@ -66,10 +66,10 @@ export default function Submit() {
 
   return (
     <section className="container-tight py-12 max-w-2xl">
-      <h1 className="display-2 mb-2">Submit your business</h1>
+      <h1 className="display-2 mb-2">Start selling on engineersTech</h1>
       <p className="text-muted-foreground mb-8">
-        Step 1 of 3: Fill in your business details. Next, choose a paid plan and pay via SSLCommerz.
-        Listings go live only after admin verification (usually under 24h).
+        Step 1 of 3: Fill in your store details. Next, choose a plan and set up payment.
+        Your store goes live after a quick verification (usually under 24h).
       </p>
       <div className="glass-card p-5 mb-6">
         <div className="text-xs uppercase tracking-wider text-primary-light font-semibold mb-3">{t("vendorGuide.title")}</div>
@@ -96,7 +96,7 @@ export default function Submit() {
       <form onSubmit={submit} className="glass-card p-6 space-y-4">
         {/* Basic Info */}
         {[
-          { k: "name", l: "Business name", req: true },
+          { k: "name", l: "Store name", req: true },
           { k: "tagline", l: "Tagline" },
           { k: "website", l: "Website" },
         ].map((field) => (
@@ -252,20 +252,20 @@ export default function Submit() {
         {/* Evidence */}
         <div>
           <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-            Ownership / verification evidence <span className="text-primary-light">*</span>
+            Seller verification <span className="text-primary-light">*</span>
           </label>
           <textarea
             required
             value={f.evidence}
             onChange={(e) => setF({ ...f, evidence: e.target.value })}
             rows={4}
-            placeholder="Your role, company email domain, LinkedIn, business registration #, or anything that proves you're authorized to list this business."
+            placeholder="Your role, business email, LinkedIn profile, or business registration to verify you're authorized to sell."
             className="mt-1 w-full px-3 py-2 rounded-xl bg-muted/40 border border-border text-sm"
           />
           <p className="text-[11px] text-muted-foreground mt-1">Reviewed by our admin team before your listing goes live.</p>
         </div>
-        <button disabled={loading} className="btn-gradient w-full justify-center">{loading ? "Saving..." : "Continue to payment"}</button>
-        <p className="text-[11px] text-muted-foreground text-center">All listings require a paid plan. You'll pick a tier on the next step.</p>
+        <button disabled={loading} className="btn-gradient w-full justify-center">{loading ? "Saving..." : "Continue to plan selection"}</button>
+        <p className="text-[11px] text-muted-foreground text-center">Free plan available. Upgrade anytime for more features.</p>
       </form>
     </section>
   );
