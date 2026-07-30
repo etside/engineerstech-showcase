@@ -207,8 +207,7 @@ jobs:
           set ftp:passive-mode yes
 
           open "$FTP_HOST" -u "$FTP_USER","$FTP_PASS"
-          mkdir -p /home/hause/match.hause.ink/ceo/
-          cd /home/hause/match.hause.ink/ceo/
+          cd match.hause.ink/ceo/
           mirror --reverse --verbose --parallel=5 --delete \
             --exclude .git/ \
             --exclude .gitignore \
