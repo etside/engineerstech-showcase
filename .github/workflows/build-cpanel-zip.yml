@@ -200,7 +200,8 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
           # Write lftp script to avoid shell escaping issues with special chars in password
-          cat > /tmp/ftp-deploy.sh <<'SCRIPT'
+          # Use unquoted heredoc so $FTP_HOST, $FTP_USER, $FTP_PASS get expanded by shell
+          cat > /tmp/ftp-deploy.sh <<SCRIPT
           set ftp:ssl-allow yes
           set ssl:verify-certificate no
           set ftp:passive-mode yes
