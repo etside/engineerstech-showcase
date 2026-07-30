@@ -199,20 +199,27 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
-          # Decode password from base64 to avoid all shell escaping issues
-          FTP_PASS=$(echo "$FTP_PASS_B64" | base64 -d)
+          # Build lftp script via Python to avoid ALL shell/lftp escaping issues
+          python3 -c "
+          import base64, os
+          pw = base64.b64decode(os.environ['FTP_PASS_B64']).decode()
+          user = os.environ['FTP_USER']
+          host = os.environ['FTP_HOST']
+          # Single quotes in lftp = literal string, no expansion
+          print(f\"set ftp:ssl-allow yes\")
+          print(f\"set ssl:verify-certificate no\")
+          print(f\"set ftp:passive-mode yes\")
+          print(f\"open -u '{user}','{pw}' '{host}'\")
+          print(f\"cd match.hause.ink/ceo/\")
+          print(f\"mirror --reverse --verbose --parallel=5 --delete --exclude .git/ --exclude .gitignore deploy/\")
+          print(f\"quit\")
+          " > /tmp/lftp_script.txt
 
-          lftp -u "$FTP_USER,$FTP_PASS" "$FTP_HOST" -e "
-            set ftp:ssl-allow yes;
-            set ssl:verify-certificate no;
-            set ftp:passive-mode yes;
-            cd match.hause.ink/ceo/;
-            mirror --reverse --verbose --parallel=5 --delete \
-              --exclude .git/ \
-              --exclude .gitignore \
-              deploy/;
-            quit;
-          "
+          echo "── lftp script (password masked) ──"
+          sed "s/'.*'/'***'/g" /tmp/lftp_script.txt
+
+          lftp -f /tmp/lftp_script.txt
+          rm -f /tmp/lftp_script.txt
 
       - name: Verify deployment
         run: |
