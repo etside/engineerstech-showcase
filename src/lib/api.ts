@@ -437,3 +437,301 @@ export const feedApi = {
 
   llmsTxt: () => fetch(`${BASE_URL}/feed/llms`).then(r => r.text()),
 };
+
+// ============================================================
+// Marketplace — Products API
+// ============================================================
+export interface Product {
+  id: string;
+  seller_id: string;
+  business_id?: string;
+  category_id?: string;
+  category_name?: string;
+  category_slug?: string;
+  seller_email?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  short_description?: string;
+  price: number;
+  compare_at_price?: number | null;
+  currency: string;
+  sku?: string;
+  barcode?: string;
+  stock: number;
+  track_inventory: boolean;
+  weight?: number | null;
+  images: string[];
+  featured_image?: string;
+  tags: string[];
+  status: 'draft' | 'active' | 'archived';
+  is_featured: boolean;
+  rating: number;
+  review_count: number;
+  sales_count: number;
+  meta_title?: string;
+  meta_description?: string;
+  created_at: string;
+  updated_at: string;
+  variants?: ProductVariant[];
+  reviews?: ProductReview[];
+}
+
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  name: string;
+  sku?: string;
+  price: number;
+  stock: number;
+  image?: string;
+  options?: Record<string, string>;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface ProductReview {
+  id: string;
+  product_id: string;
+  user_id?: string;
+  reviewer_email?: string;
+  rating: number;
+  title?: string;
+  body?: string;
+  images?: string[];
+  is_verified_purchase: boolean;
+  created_at: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  image_url?: string;
+  product_count?: number;
+}
+
+export interface ProductListParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  category_id?: string;
+  min_price?: number;
+  max_price?: number;
+  is_featured?: boolean;
+  sort?: 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'rating';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export const productApi = {
+  list: (params?: ProductListParams) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set('page', String(params.page));
+    if (params?.per_page) qs.set('per_page', String(params.per_page));
+    if (params?.search) qs.set('search', params.search);
+    if (params?.category_id) qs.set('category_id', params.category_id);
+    if (params?.min_price) qs.set('min_price', String(params.min_price));
+    if (params?.max_price) qs.set('max_price', String(params.max_price));
+    if (params?.is_featured) qs.set('is_featured', '1');
+    if (params?.sort) qs.set('sort', params.sort);
+    return request<PaginatedResponse<Product>>(`/products?${qs}`);
+  },
+
+  get: (idOrSlug: string) => request<Product>(`/products/${idOrSlug}`),
+
+  categories: () => request<ProductCategory[]>('/products/categories'),
+
+  create: (data: Partial<Product>) =>
+    request<Product>('/products', { method: 'POST', body: data }),
+
+  update: (id: string, data: Partial<Product>) =>
+    request<Product>(`/products/${id}`, { method: 'PUT', body: data }),
+
+  delete: (id: string) =>
+    request<{ deleted: boolean }>(`/products/${id}`, { method: 'DELETE' }),
+
+  sellerProducts: () => request<Product[]>('/products/seller'),
+};
+
+// ============================================================
+// Marketplace — Cart API
+// ============================================================
+export interface CartItem {
+  id: string;
+  product_id: string;
+  variant_id?: string | null;
+  quantity: number;
+  name: string;
+  slug: string;
+  price: number;
+  compare_at_price?: number | null;
+  featured_image?: string;
+  variant_name?: string;
+  variant_price?: number;
+  variant_image?: string;
+  category_name?: string;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface CartResponse {
+  items: CartItem[];
+  item_count: number;
+  subtotal: number;
+  currency: string;
+}
+
+export const cartApi = {
+  show: () => request<CartResponse>('/cart'),
+
+  add: (data: { product_id: string; variant_id?: string | null; quantity: number }) =>
+    request<CartResponse>('/cart', { method: 'POST', body: data }),
+
+  update: (itemId: string, quantity: number) =>
+    request<CartResponse>(`/cart/${itemId}`, { method: 'PATCH', body: { quantity } }),
+
+  remove: (itemId: string) =>
+    request<CartResponse>(`/cart/${itemId}`, { method: 'DELETE' }),
+
+  clear: () => request<CartResponse>('/cart', { method: 'DELETE' }),
+};
+
+// ============================================================
+// Marketplace — Orders API
+// ============================================================
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  variant_id?: string;
+  product_name: string;
+  variant_name?: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  image?: string;
+  product_slug?: string;
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  buyer_id?: string;
+  buyer_email?: string;
+  buyer_phone?: string;
+  buyer_name?: string;
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  payment_status: 'unpaid' | 'paid' | 'refunded' | 'partial';
+  payment_method?: string;
+  subtotal: number;
+  shipping_amount: number;
+  discount_amount: number;
+  total: number;
+  currency: string;
+  shipping_address?: Record<string, unknown>;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  items?: OrderItem[];
+}
+
+export const orderApi = {
+  list: (params?: { page?: number; per_page?: number; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set('page', String(params.page));
+    if (params?.per_page) qs.set('per_page', String(params.per_page));
+    if (params?.status) qs.set('status', params.status);
+    return request<PaginatedResponse<Order>>(`/orders?${qs}`);
+  },
+
+  get: (id: string) => request<Order>(`/orders/${id}`),
+
+  create: (data: {
+    shipping_address: Record<string, unknown>;
+    buyer_email?: string;
+    buyer_phone?: string;
+    buyer_name?: string;
+    payment_method?: string;
+    notes?: string;
+  }) => request<Order>('/orders', { method: 'POST', body: data }),
+
+  sellerOrders: (params?: { page?: number; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set('page', String(params.page));
+    if (params?.status) qs.set('status', params.status);
+    return request<PaginatedResponse<Order>>(`/seller/orders?${qs}`);
+  },
+
+  sellerUpdate: (id: string, data: { status?: string }) =>
+    request<Order>(`/seller/orders/${id}`, { method: 'PUT', body: data }),
+};
+
+// ============================================================
+// Marketplace — Services API
+// ============================================================
+export interface Service {
+  id: string;
+  business_id: string;
+  seller_id: string;
+  category_id?: string;
+  business_name?: string;
+  business_slug?: string;
+  business_description?: string;
+  logo_url?: string;
+  seller_email?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  short_description?: string;
+  price_type: 'fixed' | 'hourly' | 'custom';
+  price?: number | null;
+  price_from?: number | null;
+  currency: string;
+  images?: string[];
+  featured_image?: string;
+  features?: string[];
+  delivery_time?: string;
+  revisions?: number;
+  tags?: string[];
+  status: 'draft' | 'active' | 'archived';
+  is_featured: boolean;
+  rating: number;
+  review_count: number;
+  order_count: number;
+  created_at: string;
+}
+
+export const serviceApi = {
+  list: (params?: { page?: number; per_page?: number; search?: string; business_id?: string; is_featured?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set('page', String(params.page));
+    if (params?.per_page) qs.set('per_page', String(params.per_page));
+    if (params?.search) qs.set('search', params.search);
+    if (params?.business_id) qs.set('business_id', params.business_id);
+    if (params?.is_featured) qs.set('is_featured', '1');
+    return request<PaginatedResponse<Service>>(`/services?${qs}`);
+  },
+
+  get: (idOrSlug: string) => request<Service>(`/services/${idOrSlug}`),
+
+  create: (data: Partial<Service>) =>
+    request<Service>('/services', { method: 'POST', body: data }),
+
+  update: (id: string, data: Partial<Service>) =>
+    request<Service>(`/services/${id}`, { method: 'PUT', body: data }),
+
+  delete: (id: string) =>
+    request<{ deleted: boolean }>(`/services/${id}`, { method: 'DELETE' }),
+
+  createOrder: (data: { service_id: string; requirements: string; buyer_email?: string; buyer_phone?: string }) =>
+    request<Order>('/service-orders', { method: 'POST', body: data }),
+};

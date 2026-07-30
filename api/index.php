@@ -84,6 +84,37 @@ $routes = [
     // Pricing
     'GET /pricing'              => 'pricing.php@pricing_list',
 
+    // Marketplace — Products
+    'GET /products'               => 'products.php@products_list',
+    'GET /products/categories'    => 'products.php@product_categories_list',
+    'GET /products/seller'        => 'products.php@seller_products_list',
+    'GET /products/(.+)'          => 'products.php@products_get',
+    'POST /products'              => 'products.php@products_create',
+    'PUT /products/(.+)'          => 'products.php@products_update',
+    'DELETE /products/(.+)'       => 'products.php@products_delete',
+
+    // Marketplace — Cart
+    'GET /cart'                   => 'cart.php@cart_show',
+    'POST /cart'                  => 'cart.php@cart_add',
+    'PATCH /cart/(.+)'            => 'cart.php@cart_update',
+    'DELETE /cart/(.+)'           => 'cart.php@cart_remove',
+    'DELETE /cart'                => 'cart.php@cart_clear',
+
+    // Marketplace — Orders
+    'GET /orders'                 => 'orders.php@orders_list',
+    'POST /orders'                => 'orders.php@orders_create',
+    'GET /orders/(.+)'            => 'orders.php@orders_get',
+    'GET /seller/orders'          => 'orders.php@seller_orders_list',
+    'PUT /seller/orders/(.+)'     => 'orders.php@seller_orders_update',
+
+    // Marketplace — Services
+    'GET /services'               => 'services.php@services_list',
+    'GET /services/(.+)'          => 'services.php@services_get',
+    'POST /services'              => 'services.php@services_create',
+    'PUT /services/(.+)'          => 'services.php@services_update',
+    'DELETE /services/(.+)'       => 'services.php@services_delete',
+    'POST /service-orders'        => 'services.php@service_orders_create',
+
     // Blog
     'GET /blog'                 => 'blog.php@blog_list',
     'GET /blog/(.+)'            => 'blog.php@blog_get',

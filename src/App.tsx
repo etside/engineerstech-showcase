@@ -33,6 +33,13 @@ import BlogPost from "./pages/BlogPost";
 import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 import OAuthConsent from "./pages/OAuthConsent";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
+import OrderDetail from "./pages/OrderDetail";
+import ServicesMarketplace from "./pages/ServicesMarketplace";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +88,15 @@ const App = () => (
               <Route path="/leaderboards" element={<Leaderboards />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/api-docs" element={<ApiDocs />} />
+              {/* Marketplace */}
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:slug" element={<ProductDetail />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/marketplace-services" element={<ServicesMarketplace />} />
+              {/* End Marketplace */}
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/super-admin" element={<SuperAdmin />} />

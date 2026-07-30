@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu, X, ChevronDown, ArrowRight, Sparkles } from "lucide-react";
+import { Menu, X, ChevronDown, ArrowRight, Sparkles, ShoppingCart } from "lucide-react";
 import LanguageToggle from "./LanguageToggle";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,7 @@ const moreLinks = [
   { to: "/blog",         label: "Blog" },
   { to: "/pricing",      label: "Pricing" },
   { to: "/api-docs",     label: "LLM / MCP API" },
+  { to: "/orders",       label: "My Orders" },
 ];
 
 function MoreDropdown() {
@@ -107,11 +108,13 @@ export default function Navbar() {
   const { pathname }                = useLocation();
 
   const primaryLinks = [
-    { to: "/listings",     label: t("nav.listings")   },
-    { to: "/categories",   label: t("nav.categories") },
-    { to: "/how-it-works", label: "How It Works" },
-    { to: "/resources",    label: "Resources" },
-    { to: "/pricing",      label: "Pricing" },
+    { to: "/listings",              label: t("nav.listings")   },
+    { to: "/categories",            label: t("nav.categories") },
+    { to: "/products",              label: "Products" },
+    { to: "/marketplace-services",  label: "Services" },
+    { to: "/how-it-works",          label: "How It Works" },
+    { to: "/resources",             label: "Resources" },
+    { to: "/pricing",               label: "Pricing" },
   ];
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -175,6 +178,12 @@ export default function Navbar() {
             {/* ── Right Actions ── */}
             <div className="flex items-center gap-2 shrink-0">
               <LanguageToggle />
+              <Link
+                to="/cart"
+                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-all duration-200"
+              >
+                <ShoppingCart className="w-5 h-5" />
+              </Link>
 
               {user ? (
                 <>
@@ -239,7 +248,7 @@ export default function Navbar() {
         {menuOpen && (
           <div className="lg:hidden border-t border-border/50 bg-background/98 backdrop-blur-2xl animate-fade-in">
             <div className="container-tight py-4 flex flex-col gap-1">
-              {[...primaryLinks, ...moreLinks].map((l) => (
+              {[...primaryLinks, ...moreLinks, { to: "/cart", label: "Cart" }].map((l) => (
                 <NavLink
                   key={l.to}
                   to={l.to}
