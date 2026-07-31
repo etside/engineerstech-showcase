@@ -40,6 +40,12 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 import ServicesMarketplace from "./pages/ServicesMarketplace";
+import GovtServices from "./pages/GovtServices";
+import GovtServiceDetail from "./pages/GovtServiceDetail";
+import AirTickets from "./pages/AirTickets";
+import AirTicketDetail from "./pages/AirTicketDetail";
+import TechProducts from "./pages/TechProducts";
+import TechProductDetail from "./pages/TechProductDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +94,18 @@ const App = () => (
               <Route path="/leaderboards" element={<Leaderboards />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/api-docs" element={<ApiDocs />} />
+              {/* Govt. Services */}
+              <Route path="/govt-services" element={<GovtServices />} />
+              <Route path="/govt-services/:slug" element={<GovtServiceDetail />} />
+              {/* End Govt. Services */}
+              {/* Air Tickets */}
+              <Route path="/air-tickets" element={<AirTickets />} />
+              <Route path="/air-tickets/:slug" element={<AirTicketDetail />} />
+              {/* End Air Tickets */}
+              {/* Tech Products */}
+              <Route path="/tech-products" element={<TechProducts />} />
+              <Route path="/tech-products/:slug" element={<TechProductDetail />} />
+              {/* End Tech Products */}
               {/* Marketplace */}
               <Route path="/products" element={<Products />} />
               <Route path="/products/:slug" element={<ProductDetail />} />

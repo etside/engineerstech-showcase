@@ -110,6 +110,9 @@ export default function Navbar() {
   const primaryLinks = [
     { to: "/products",              label: "Products" },
     { to: "/marketplace-services",  label: "Services" },
+    { to: "/govt-services",         label: "Govt. Services" },
+    { to: "/air-tickets",           label: "Air Tickets" },
+    { to: "/tech-products",         label: "Tech Products" },
     { to: "/listings",              label: "Vendors" },
     { to: "/categories",            label: "Categories" },
     { to: "/how-it-works",          label: "How It Works" },
